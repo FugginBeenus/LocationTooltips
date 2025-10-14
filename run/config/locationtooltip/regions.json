@@ -1,0 +1,92 @@
+[
+  {
+    "name": "Spawn District",
+    "world": "minecraft:overworld",
+    "bounds": {
+      "min": [
+        -128.0,
+        60.0,
+        -128.0
+      ],
+      "max": [
+        128.0,
+        150.0,
+        128.0
+      ]
+    },
+    "color": "#FFFFFF",
+    "priority": 0
+  },
+  {
+    "name": "Town Hall",
+    "world": "minecraft:overworld",
+    "bounds": {
+      "min": [
+        -24.0,
+        64.0,
+        -24.0
+      ],
+      "max": [
+        24.0,
+        100.0,
+        24.0
+      ]
+    },
+    "color": "#FFD166",
+    "priority": 10
+  },
+  {
+    "name": "Test Region",
+    "world": "minecraft:overworld",
+    "bounds": {
+      "min": [
+        -9.0,
+        -61.0,
+        -16.0
+      ],
+      "max": [
+        -5.0,
+        -60.0,
+        -11.0
+      ]
+    },
+    "color": "#FFFFFF",
+    "priority": 0
+  },
+  {
+    "name": "Shopping District",
+    "world": "minecraft:overworld",
+    "bounds": {
+      "min": [
+        -4.0,
+        -60.0,
+        -11.0
+      ],
+      "max": [
+        9.0,
+        -51.0,
+        3.0
+      ]
+    },
+    "color": "#FFFFFF",
+    "priority": 0
+  },
+  {
+    "name": "Shop",
+    "world": "minecraft:overworld",
+    "bounds": {
+      "min": [
+        3.0,
+        -60.0,
+        -7.0
+      ],
+      "max": [
+        7.0,
+        -59.0,
+        -1.0
+      ]
+    },
+    "color": "#FFFFFF",
+    "priority": 1
+  }
+]

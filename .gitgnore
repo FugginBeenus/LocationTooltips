@@ -1,0 +1,22 @@
+# Gradle
+.gradle/
+build/
+out/
+
+# IntelliJ / IDEA
+.idea/
+*.iml
+
+# Minecraft dev run dirs
+run/
+runs/
+
+# OS cruft
+.DS_Store
+
+# Logs
+*.log
+logs/
+
+# Local configs you don't want in git (optional)
+config/
