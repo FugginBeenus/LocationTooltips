@@ -5,8 +5,16 @@
   "name": "Location Tooltip",
   "environment": "*",
   "entrypoints": {
-    "main":   ["com.fugginbeenus.locationtooltip.LocationTooltipMod"],
-    "client": ["com.fugginbeenus.locationtooltip.client.LocationTooltipClient"]
+    "client": [
+      "com.fugginbeenus.locationtooltip.client.LocationTooltipClient"
+    ],
+    "modmenu": [
+      "com.fugginbeenus.locationtooltip.client.LocationTooltipModMenu"
+    ]
+  },
+  "suggests": {
+    "modmenu": "*",
+    "cloth-config2": "*"
   },
   "depends": {
     "fabricloader": ">=0.15.11",

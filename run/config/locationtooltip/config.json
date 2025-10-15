@@ -1,7 +1,17 @@
 {
-  "layout": "CENTER",
-  "preferSplitWhenJade": true,
-  "topMargin": 8,
-  "sideMargin": 8,
-  "gap": 10
+  "showClock": true,
+  "layoutMode": "auto",
+  "offsetX": 0,
+  "offsetY": 0,
+  "scale": 0.6,
+  "togetherGap": 0,
+  "centerGap": 263,
+  "useNineSlice": true,
+  "matchJadeMetrics": true,
+  "panelAlpha": 0.35,
+  "textShadow": false,
+  "fontScale": 1.0,
+  "placeOnTop": true,
+  "padAbove": 2,
+  "padBelow": 1
 }

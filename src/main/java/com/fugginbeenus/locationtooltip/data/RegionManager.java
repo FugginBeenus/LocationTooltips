@@ -2,164 +2,111 @@ package com.fugginbeenus.locationtooltip.data;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
-import net.minecraft.text.Text;
+import net.fabricmc.loader.api.FabricLoader;
+import net.minecraft.util.Identifier;
 import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.Vec3d;
 import net.minecraft.world.World;
 
 import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
+import java.nio.file.Path;
 import java.util.*;
 
-/**
- * Handles region storage, loading/saving, and nesting priority logic.
- * Purely common-side — no client-only imports.
- */
-public final class RegionManager {
+/** Persistent region list + ownership + lookups. */
+public class RegionManager {
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
-    private static final String FILE_NAME = "regions.json";
+    private static final List<Region> REGIONS = new ArrayList<>();
+    private static volatile boolean ADMIN_OVERRIDE = false;
 
-    private static List<Region> regions = new ArrayList<>();
+    public static void setAdminOverride(boolean isAdmin) { ADMIN_OVERRIDE = isAdmin; }
+    public static boolean canAdmin() { return ADMIN_OVERRIDE; }
 
-    /* ------------------------------------------------------ */
-    /*                     LOAD / SAVE                        */
-    /* ------------------------------------------------------ */
+    private static File dataFile() {
+        Path gameDir = FabricLoader.getInstance().getGameDir();
+        File dir = gameDir.resolve("config").resolve("locationtooltip").toFile();
+        if (!dir.exists()) dir.mkdirs();
+        return new File(dir, "regions.json");
+    }
 
     public static void load() {
+        REGIONS.clear();
         try {
-            File file = getFile();
-            if (!file.exists()) {
-                file.getParentFile().mkdirs();
-                saveAll(new ArrayList<>());
+            File f = dataFile();
+            if (!f.exists()) { save(); return; }
+            try (FileReader r = new FileReader(f)) {
+                Region[] arr = GSON.fromJson(r, Region[].class);
+                if (arr != null) REGIONS.addAll(Arrays.asList(arr));
             }
-
-            Region[] arr = GSON.fromJson(new FileReader(file), Region[].class);
-            regions = (arr != null) ? new ArrayList<>(Arrays.asList(arr)) : new ArrayList<>();
-
-            boolean mutated = false;
-            for (Region r : regions) {
-                if (r.id() == null || r.id().isBlank()) {
-                    try {
-                        var f = Region.class.getDeclaredField("id");
-                        f.setAccessible(true);
-                        f.set(r, UUID.randomUUID().toString());
-                        mutated = true;
-                    } catch (Exception ignored) {}
-                }
-            }
-            if (mutated) saveAll(regions);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+        } catch (Exception e) { e.printStackTrace(); }
     }
 
-    public static void saveAll(List<Region> list) {
-        try (FileWriter writer = new FileWriter(getFile())) {
-            GSON.toJson(list, writer);
-            regions = new ArrayList<>(list);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+    public static void save() {
+        try (FileWriter w = new FileWriter(dataFile())) {
+            GSON.toJson(REGIONS, w);
+        } catch (Exception e) { e.printStackTrace(); }
     }
 
-    /** getFile must be called client-side (runDirectory is client) */
-    public static File getFile() {
-        File dir = new File("config/locationtooltip");
-        return new File(dir, FILE_NAME);
+    public static List<Region> get() { return REGIONS; }
+
+    public static boolean canRename(UUID requester, Region r) {
+        if (r == null) return false; if (canAdmin()) return true;
+        return r.ownerUuid() != null && r.ownerUuid().equals(requester);
     }
 
-    public static List<Region> all() {
-        return Collections.unmodifiableList(regions);
+    public static Region createAndAdd(String id, String name, Bounds bounds, UUID owner, String ownerName, String worldKey) {
+        Region r = new Region(id, name, worldKey, bounds, owner, ownerName);
+        REGIONS.add(r); save(); return r;
     }
 
-    /* ------------------------------------------------------ */
-    /*                  PRIORITY / NESTING                    */
-    /* ------------------------------------------------------ */
-
-    public static int autoAssignPriority(Region newRegion) {
-        int maxParent = -1;
-
-        for (Region r : regions) {
-            if (!Objects.equals(r.world(), newRegion.world())) continue;
-
-            if (r.containsBox(newRegion.bounds())) {
-                if (r.priority() > maxParent) maxParent = r.priority();
-            }
-        }
-
-        int assigned = Math.max(0, maxParent + 1);
-        try {
-            var f = Region.class.getDeclaredField("priority");
-            f.setAccessible(true);
-            f.setInt(newRegion, assigned);
-        } catch (Exception ignored) {}
-        return assigned;
+    public static boolean renameRegion(Region r, String newName, UUID requester) {
+        if (r == null) return false; if (!canRename(requester, r)) return false;
+        r.setName(newName); save(); return true;
     }
 
-    /* ------------------------------------------------------ */
-    /*                REGION QUERY HELPERS                    */
-    /* ------------------------------------------------------ */
+    public static boolean deleteRegion(Region r, UUID requester) {
+        if (r == null) return false; if (!canRename(requester, r)) return false;
+        boolean ok = REGIONS.remove(r); if (ok) save(); return ok;
+    }
 
-    public static Region findByIdOrName(String query) {
-        for (Region r : regions) {
-            if (r.id() != null && r.id().equalsIgnoreCase(query)) return r;
-            if (r.name() != null && r.name().equalsIgnoreCase(query)) return r;
+    public static Region findByIdOrName(String key) {
+        if (key == null || key.isEmpty()) return null;
+        for (Region r : REGIONS) {
+            if (key.equalsIgnoreCase(r.id()) || key.equalsIgnoreCase(r.name())) return r;
         }
         return null;
     }
 
-    public static boolean deleteById(String id) {
-        ArrayList<Region> copy = new ArrayList<>(regions);
-        boolean removed = copy.removeIf(r -> id.equalsIgnoreCase(r.id()));
-        if (removed) saveAll(copy);
-        return removed;
-    }
-
-    public static List<Region> allMutable() {
-        return new ArrayList<>(regions);
-    }
-
-    /** Returns highest-priority region at given position */
     public static Region getRegionAt(World world, BlockPos pos) {
-        if (world == null || pos == null) return null;
-        String worldKey = world.getRegistryKey().getValue().toString();
-        Vec3d p = new Vec3d(pos.getX() + 0.5, pos.getY() + 0.001, pos.getZ() + 0.5);
-
-        Region best = null;
-        int bestPriority = Integer.MIN_VALUE;
-
-        for (Region r : regions) {
-            if (!Objects.equals(worldKey, r.world())) continue;
-            if (r.contains(p) && r.priority() > bestPriority) {
-                best = r;
-                bestPriority = r.priority();
-            }
+        String wk = worldKey(world);
+        Region best = null; long bestVol = Long.MAX_VALUE;
+        for (Region r : REGIONS) {
+            if (r.worldKey() != null && !r.worldKey().equals(wk)) continue;
+            if (!r.contains(pos)) continue;
+            long vol = r.bounds().volume();
+            if (vol < bestVol) { bestVol = vol; best = r; }
         }
         return best;
     }
 
-    /* ------------------------------------------------------ */
-    /*               REGION CREATION / SAVING                 */
-    /* ------------------------------------------------------ */
+    public static Region getDeepestAt(World world, BlockPos pos) { return getRegionAt(world, pos); }
 
-    public static void add(Region region) {
-        autoAssignPriority(region);
-        ArrayList<Region> copy = new ArrayList<>(regions);
-        copy.add(region);
-        saveAll(copy);
+    public static String worldKey(World world) {
+        Identifier id = world.getRegistryKey().getValue(); // e.g. minecraft:overworld
+        return id.toString();
     }
+    public static boolean rename(Region target, String newName, java.util.UUID actorUuid) {
+        if (target == null) return false;
+        if (newName == null) return false;
+        newName = newName.trim();
+        if (newName.isEmpty()) newName = "Unnamed";
 
-    /* ------------------------------------------------------ */
-    /*              STUBS FOR CLIENT HELPERS                  */
-    /* ------------------------------------------------------ */
+        // Require owner or admin
+        if (!canRename(actorUuid, target)) return false;
 
-    /** always true in singleplayer; client wrapper decides */
-    public static boolean canAdmin() {
+        // Apply & persist
+        target.setName(newName);
+        save(); // ensure this exists; most projects already have RegionManager.save()
         return true;
-    }
-
-    public static void notifyPlayer(String msg) {
-        System.out.println("[LocationTooltip] " + msg);
     }
 }

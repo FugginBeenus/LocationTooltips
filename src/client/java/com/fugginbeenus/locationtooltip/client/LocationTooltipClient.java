@@ -7,42 +7,41 @@ import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.rendering.v1.HudRenderCallback;
+import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.util.Window;
-import net.minecraft.text.Text;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.math.BlockPos;
 
 @Environment(EnvType.CLIENT)
 public class LocationTooltipClient implements ClientModInitializer {
 
-    private static final Identifier BAR_LEFT  = new Identifier("locationtooltip", "textures/gui/location_bar_left.png");
-    private static final Identifier BAR_MID   = new Identifier("locationtooltip", "textures/gui/location_bar_mid.png");
-    private static final Identifier BAR_RIGHT = new Identifier("locationtooltip", "textures/gui/location_bar_right.png");
-    private static final Identifier ICON_LOCATION = new Identifier("locationtooltip", "textures/gui/icon_location.png");
-    private static final Identifier ICON_CLOCK    = new Identifier("locationtooltip", "textures/gui/icon_clock.png");
+    private static final Identifier ICON_LOCATION = new Identifier("locationtooltip","textures/gui/icon_location.png");
+    private static final Identifier ICON_CLOCK    = new Identifier("locationtooltip","textures/gui/icon_clock.png");
+    private static final Identifier BAR_LEFT  = new Identifier("locationtooltip","textures/gui/location_bar_left.png");
+    private static final Identifier BAR_MID   = new Identifier("locationtooltip","textures/gui/location_bar_mid.png");
+    private static final Identifier BAR_RIGHT = new Identifier("locationtooltip","textures/gui/location_bar_right.png");
 
+    private static final boolean JADE_LOADED = FabricLoader.getInstance().isModLoaded("jade");
     private static String currentRegionName = "Wilderness";
-    private static int fadeTicks = 0;
 
     @Override
     public void onInitializeClient() {
         LTConfig.load();
-        ClientReloadCommand.register();
+        RegionManager.load();
         RegionSelectionClient.init();
+        ClientReloadCommand.register();
 
         ClientTickEvents.END_CLIENT_TICK.register(client -> {
             if (client.player == null || client.world == null) return;
+            boolean admin = client.isInSingleplayer() || (client.player != null && client.player.hasPermissionLevel(3));
+            RegionManager.setAdminOverride(admin);
 
             BlockPos pos = client.player.getBlockPos();
             Region inside = RegionManager.getRegionAt(client.world, pos);
             String newName = (inside != null && inside.name() != null) ? inside.name() : "Wilderness";
-
-            if (!newName.equals(currentRegionName)) {
-                currentRegionName = newName;
-                fadeTicks = LTConfig.get().fadeTicks;
-            }
+            if (!newName.equals(currentRegionName)) currentRegionName = newName;
         });
 
         HudRenderCallback.EVENT.register(LocationTooltipClient::renderHUD);
@@ -51,78 +50,164 @@ public class LocationTooltipClient implements ClientModInitializer {
     private static void renderHUD(DrawContext ctx, float tickDelta) {
         MinecraftClient mc = MinecraftClient.getInstance();
         if (mc.player == null || mc.world == null) return;
-
         LTConfig cfg = LTConfig.get();
-        Window window = mc.getWindow();
-        int sw = window.getScaledWidth();
-        int sh = window.getScaledHeight();
 
-        int alpha = (int) (Math.min(fadeTicks, cfg.fadeTicks) / (float) cfg.fadeTicks * 255);
-        int textColor = (alpha << 24) | 0xFFFFFF;
+        var win = mc.getWindow();
+        int sw = win.getScaledWidth();
+        int sh = win.getScaledHeight();
 
-        int barHeight = 20;
-        int textPadX = 8;
-        int iconSize = 16;
-        int iconPad = 4;
-        int minBarW = 110;
-        int maxBarW = 240;
+        // Metrics (unscaled)
+        final int barH  = cfg.matchJadeMetrics ? 24 : 22;
+        final int padX  = cfg.matchJadeMetrics ? 10 : 8;
+        final int icon  = cfg.matchJadeMetrics ? 18 : 16;
+        final int gap   = cfg.matchJadeMetrics ? 8  : 6;
 
-        int locTextW = mc.textRenderer.getWidth(currentRegionName);
-        int locBarW = clamp(minBarW, maxBarW, iconSize + iconPad + textPadX + locTextW + textPadX);
+        float fs    = clamp(cfg.fontScale, 0.75f, 1.50f);
+        float scale = clamp(cfg.scale, 0.50f, 1.50f);
+        float alpha = clamp(cfg.panelAlpha, 0.10f, 1.00f);
 
-        int cx = sw / 2;
-        int y = sh / 2 + cfg.gutterY;
+        String clockText = formatMinecraftTime(mc);
+        int locTextW = (int)(mc.textRenderer.getWidth(currentRegionName) * fs);
+        int clkTextW = (int)(mc.textRenderer.getWidth(clockText) * fs);
 
-        // left-side location bar
-        int locX = cx - cfg.centerOffset - locBarW;
-        drawBar(ctx, locX, y, locBarW, barHeight);
-        drawIconAndText(ctx, locX, y, currentRegionName, ICON_LOCATION, textColor, barHeight, textPadX, iconSize, iconPad);
+        int locW = padX + icon + gap + locTextW + padX;
+        int clkW = padX + icon + gap + clkTextW + padX;
 
-        // right-side clock bar (optional)
-        if (cfg.showClock) {
-            String clockText = formatMinecraftTime(mc);
-            int clkTextW = mc.textRenderer.getWidth(clockText);
-            int clkBarW = clamp(minBarW, maxBarW, iconSize + iconPad + textPadX + clkTextW + textPadX);
-            int clkX = cx + cfg.centerOffset;
-            drawBar(ctx, clkX, y, clkBarW, barHeight);
-            drawIconAndText(ctx, clkX, y, clockText, ICON_CLOCK, textColor, barHeight, textPadX, iconSize, iconPad);
+        String mode = (cfg.layoutMode == null ? "auto" : cfg.layoutMode).toLowerCase();
+        boolean split = switch (mode) {
+            case "split" -> true;
+            case "together" -> false;
+            default -> FabricLoader.getInstance().isModLoaded("jade"); // auto
+        };
+
+        int totalW, totalH = barH;
+
+        if (!cfg.showClock) {
+            totalW = locW;
+
+            // top-center anchor of the single bar
+            int baseX = (int)((sw - totalW * scale) / 2f) + cfg.offsetX;
+            int baseY = Math.max(4, Math.min(cfg.offsetY, sh - (int)(totalH * scale) - 4));
+            baseX = Math.max(4, Math.min(baseX, sw - (int)(totalW * scale) - 4));
+
+            ctx.getMatrices().push();
+            ctx.getMatrices().scale(scale, scale, 1f);
+            ctx.getMatrices().translate(baseX / scale, baseY / scale, 0);
+            drawPanel(ctx, 0, 0, locW, barH, alpha, cfg);
+            drawIconAndText(ctx, 0, 0, currentRegionName, ICON_LOCATION, barH, padX, icon, gap, fs, cfg.textShadow);
+            ctx.getMatrices().pop();
+            return;
         }
 
-        if (fadeTicks > 0) fadeTicks--;
-    }
+        if (split) {
+            // --- NEW: center-anchored split so clock never moves with name width ---
+            int centerX = (sw / 2) + cfg.offsetX;   // anchor at screen center
+            int baseY   = Math.max(4, Math.min(cfg.offsetY, sh - (int)(barH * scale) - 4));
+            int halfGap = Math.max(0, cfg.centerGap) / 2;
 
-    private static void drawBar(DrawContext ctx, int x, int y, int width, int height) {
-        ctx.drawTexture(BAR_LEFT, x, y, 0, 0, 8, height, 8, height);
-        int inner = Math.max(0, width - 16);
-        for (int i = 0; i < inner; i += 8) {
-            int w = Math.min(8, inner - i);
-            ctx.drawTexture(BAR_MID, x + 8 + i, y, 0, 0, w, height, 8, height);
+            ctx.getMatrices().push();
+            ctx.getMatrices().scale(scale, scale, 1f);
+            // translate to center in scaled space
+            ctx.getMatrices().translate(centerX / scale, baseY / scale, 0);
+
+            // left bar is placed to the LEFT of center by half-gap + its own width
+            int leftX  = -(halfGap + locW);
+            // right bar is placed to the RIGHT of center by half-gap (independent of locW)
+            int rightX =  (halfGap);
+
+            drawPanel(ctx, leftX, 0, locW, barH, alpha, cfg);
+            drawIconAndText(ctx, leftX, 0, currentRegionName, ICON_LOCATION, barH, padX, icon, gap, fs, cfg.textShadow);
+
+            drawPanel(ctx, rightX, 0, clkW, barH, alpha, cfg);
+            drawIconAndText(ctx, rightX, 0, clockText, ICON_CLOCK, barH, padX, icon, gap, fs, cfg.textShadow);
+
+            ctx.getMatrices().pop();
+        } else {
+            // together mode unchanged (draw as a single bar)
+            totalW = locW + Math.max(0, cfg.togetherGap) + clkW;
+
+            int baseX = (int)((sw - totalW * scale) / 2f) + cfg.offsetX;
+            int baseY = Math.max(4, Math.min(cfg.offsetY, sh - (int)(totalH * scale) - 4));
+            baseX = Math.max(4, Math.min(baseX, sw - (int)(totalW * scale) - 4));
+
+            ctx.getMatrices().push();
+            ctx.getMatrices().scale(scale, scale, 1f);
+            ctx.getMatrices().translate(baseX / scale, baseY / scale, 0);
+
+            drawPanel(ctx, 0, 0, totalW, barH, alpha, cfg);
+            drawIconAndText(ctx, 0, 0, currentRegionName, ICON_LOCATION, barH, padX, icon, gap, fs, cfg.textShadow);
+
+            int gapW = Math.max(0, cfg.togetherGap);
+            if (gapW == 0) {
+                int a = (int)(alpha * 255);
+                int divider = (a << 24) | 0x303030;
+                int sepX = locW;
+                ctx.fill(sepX - 1, 4, sepX, barH - 4, divider);
+            }
+
+            drawIconAndText(ctx, locW + gapW, 0, clockText, ICON_CLOCK, barH, padX, icon, gap, fs, cfg.textShadow);
+            ctx.getMatrices().pop();
         }
-        ctx.drawTexture(BAR_RIGHT, x + width - 8, y, 0, 0, 8, height, 8, height);
     }
 
-    private static void drawIconAndText(DrawContext ctx, int x, int y, String text, Identifier icon, int color, int height, int pad, int size, int gap) {
-        var tr = MinecraftClient.getInstance().textRenderer;
-        int iconY = y + (height - size) / 2;
-        ctx.drawTexture(icon, x + pad, iconY, 0, 0, size, size, size, size);
-        int tx = x + pad + size + gap;
-        int ty = y + (height - 8) / 2;
-        ctx.drawTextWithShadow(tr, text, tx, ty, color);
+
+    private static void drawPanel(DrawContext ctx, int x, int y, int w, int h, float alpha, LTConfig cfg) {
+        int a = (int)(alpha * 255);
+        // soft drop shadow
+        int shadowA = (int)(a * 0.55f);
+        ctx.fill(x + 2, y + 2, x + w + 2, y + h + 2, (shadowA << 24) | 0x000000);
+
+        if (cfg.useNineSlice) {
+            final int slice = 8;
+            ctx.drawTexture(BAR_LEFT, x, y, 0, 0, slice, h, slice, h);
+            int inner = Math.max(0, w - (slice * 2));
+            for (int i = 0; i < inner; i += slice) {
+                int seg = Math.min(slice, inner - i);
+                ctx.drawTexture(BAR_MID, x + slice + i, y, 0, 0, seg, h, slice, h);
+            }
+            ctx.drawTexture(BAR_RIGHT, x + w - slice, y, 0, 0, slice, h, slice, h);
+            return;
+        }
+        // fallback rect
+        int bgTop = (a << 24) | 0x121416;
+        int bgBot = (a << 24) | 0x1A1C1E;
+        ctx.fillGradient(x, y, x + w, y + h, bgTop, bgBot);
+        int outline = (a << 24) | 0x3A3A3A;
+        ctx.drawBorder(x, y, w, h, outline);
     }
 
-    private static int clamp(int min, int max, int v) {
-        return Math.max(min, Math.min(max, v));
+    private static void drawIconAndText(DrawContext ctx, int x, int y, String text, Identifier iconId,
+                                        int h, int padX, int iconSize, int gap, float fontScale, boolean textShadow) {
+        var mc = MinecraftClient.getInstance();
+        var tr = mc.textRenderer;
+
+        int iconY = y + (h - iconSize) / 2;
+        ctx.drawTexture(iconId, x + padX, iconY, 0, 0, iconSize, iconSize, iconSize, iconSize);
+
+        int tx = x + padX + iconSize + gap;
+        int ty = y + (h - 8) / 2;
+
+        ctx.getMatrices().push();
+        ctx.getMatrices().translate(tx, ty, 0);
+        ctx.getMatrices().scale(fontScale, fontScale, 1f);
+        if (textShadow) {
+            ctx.drawTextWithShadow(tr, text, 0, 0, 0xFFFFFFFF);
+        } else {
+            ctx.drawText(tr, text, 0, 0, 0xFFFFFFFF, false);
+        }
+        ctx.getMatrices().pop();
     }
+
+    private static float clamp(float v, float min, float max) { return Math.max(min, Math.min(max, v)); }
 
     private static String formatMinecraftTime(MinecraftClient mc) {
         long t = mc.world.getTimeOfDay() % 24000L;
-        long totalMinutes = (t * 60L) / 16L;
+        long totalMinutes = (t * 3L) / 50L;
         long minutes = (totalMinutes + 360) % 1440;
-        int hour24 = (int) (minutes / 60);
-        int min = (int) (minutes % 60);
+        int hour24 = (int)(minutes / 60);
+        int min = (int)(minutes % 60);
         String ampm = (hour24 >= 12) ? "PM" : "AM";
-        int hour12 = hour24 % 12;
-        if (hour12 == 0) hour12 = 12;
+        int hour12 = hour24 % 12; if (hour12 == 0) hour12 = 12;
         return String.format("%d:%02d %s", hour12, min, ampm);
     }
 }

@@ -2,46 +2,28 @@ package com.fugginbeenus.locationtooltip.client;
 
 import com.fugginbeenus.locationtooltip.data.Region;
 import com.fugginbeenus.locationtooltip.data.RegionManager;
+import net.fabricmc.api.EnvType;
+import net.fabricmc.api.Environment;
 import net.minecraft.client.MinecraftClient;
-import net.minecraft.util.math.Vec3d;
-import net.minecraft.world.World;
 
+@Environment(EnvType.CLIENT)
 public final class ClientState {
-    private static Region current;
+    private ClientState() {}
 
-    public static void initOnce() { RegionManager.load(); }
-
-    public static void tick(MinecraftClient mc) {
-        if (mc.player == null || mc.world == null) return;
-        var dim = mc.world.getRegistryKey();
-        var pos = mc.player.getPos();
-        current = chooseRegion(dim.getValue().toString(), pos); // just set; no timers
+    /** Lowest-volume region at the player's position. */
+    public static Region current(MinecraftClient mc) {
+        if (mc == null || mc.player == null || mc.world == null) return null;
+        return RegionManager.getRegionAt(mc.world, mc.player.getBlockPos());
     }
 
-    private static Region chooseRegion(String dimId, Vec3d pos) {
-        Region best = null;
-        for (Region r : RegionManager.all()) {
-            if (r.world() != null && !r.world().equals(dimId)) continue;
-            if (!r.contains(pos)) continue;
-            if (best == null || r.priority() > best.priority()) best = r;
-            else if (r.priority() == best.priority()) {
-                // smaller box wins
-                best = (volume(r) < volume(best)) ? r : best;
-            }
-        }
-        return best;
+    /** Convenience: current region name or "Wilderness" (no args). */
+    public static String currentText() {
+        return currentText(MinecraftClient.getInstance());
     }
 
-    private static double volume(Region r) {
-        // defensive bounds extraction omitted for brevity (use your existing helper if you like)
-        try {
-            var f = r.getClass().getDeclaredField("bounds");
-            f.setAccessible(true);
-            var b = (com.fugginbeenus.locationtooltip.data.Region.Bounds) f.get(r);
-            return (b.maxX()-b.minX())*(b.maxY()-b.minY())*(b.maxZ()-b.minZ());
-        } catch (Exception e) { return Double.MAX_VALUE; }
+    /** Convenience: current region name or "Wilderness". */
+    public static String currentText(MinecraftClient mc) {
+        Region r = current(mc);
+        return (r != null && r.name() != null) ? r.name() : "Wilderness";
     }
-
-    public static String currentText() { return (current != null) ? current.name() : "Wilderness"; }
-    public static int currentTextColor() { return 0xFFFFFF; } // keep white for now (your regions can override later)
 }

@@ -3,99 +3,70 @@ package com.fugginbeenus.locationtooltip.client;
 import com.fugginbeenus.locationtooltip.data.Region;
 import com.fugginbeenus.locationtooltip.data.RegionManager;
 import com.mojang.brigadier.arguments.StringArgumentType;
+import net.fabricmc.api.EnvType;
+import net.fabricmc.api.Environment;
 import net.fabricmc.fabric.api.client.command.v2.ClientCommandManager;
 import net.fabricmc.fabric.api.client.command.v2.ClientCommandRegistrationCallback;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.text.Text;
 
-/**
- * Handles /lt commands (save, reload, admin, delete, highlight) — client-side.
- */
+@Environment(EnvType.CLIENT)
 public final class ClientReloadCommand {
+    private ClientReloadCommand() {}
 
     public static void register() {
         ClientCommandRegistrationCallback.EVENT.register((dispatcher, registryAccess) -> {
             dispatcher.register(
                     ClientCommandManager.literal("lt")
-                            // /lt save <name>
+                            .then(ClientCommandManager.literal("reload")
+                                    .executes(ctx -> {
+                                        LTConfig.load();
+                                        RegionManager.load();
+                                        ctx.getSource().sendFeedback(Text.literal("§aLocation Tooltip reloaded."));
+                                        return 1;
+                                    })
+                            )
+                            .then(ClientCommandManager.literal("layout")
+                                    .then(ClientCommandManager.argument("mode", StringArgumentType.word())
+                                            .suggests((c, b) -> { b.suggest("auto"); b.suggest("together"); b.suggest("split"); return b.buildFuture(); })
+                                            .executes(ctx -> {
+                                                String mode = StringArgumentType.getString(ctx, "mode").toLowerCase();
+                                                if (!mode.equals("auto") && !mode.equals("together") && !mode.equals("split")) {
+                                                    ctx.getSource().sendFeedback(Text.literal("§cInvalid mode. Use auto|together|split."));
+                                                    return 0;
+                                                }
+                                                LTConfig.get().layoutMode = mode;
+                                                LTConfig.save();
+                                                ctx.getSource().sendFeedback(Text.literal("§aLayout set to §f" + mode));
+                                                return 1;
+                                            })
+                                    )
+                            )
                             .then(ClientCommandManager.literal("save")
                                     .then(ClientCommandManager.argument("name", StringArgumentType.greedyString())
                                             .executes(ctx -> {
-                                                String name = StringArgumentType.getString(ctx, "name");
-                                                MinecraftClient mc = MinecraftClient.getInstance();
-                                                RegionSelectionClient.saveRegion(mc, name, 0);
+                                                String name = StringArgumentType.getString(ctx, "name").trim();
+                                                if (name.isEmpty()) name = "Unnamed";
+                                                RegionSelectionClient.saveRegion(MinecraftClient.getInstance(), name);
                                                 ctx.getSource().sendFeedback(Text.literal("§aSaved region: §f" + name));
                                                 return 1;
                                             })
                                     )
                             )
-
-                            // /lt reload (regions + config)
-                            .then(ClientCommandManager.literal("reload")
-                                    .executes(ctx -> {
-                                        RegionManager.load();
-                                        LTConfig.load();
-                                        ctx.getSource().sendFeedback(Text.literal("§aReloaded regions and config."));
-                                        return 1;
-                                    })
-                            )
-
-                            // /lt admin (open GUI) — singleplayer only on client
-                            .then(ClientCommandManager.literal("admin")
-                                    .executes(ctx -> {
-                                        if (!RegionManager.canAdmin()) {
-                                            ctx.getSource().sendFeedback(Text.literal("§cYou do not have permission to use this command."));
-                                            return 0;
-                                        }
-                                        MinecraftClient.getInstance().execute(() ->
-                                                MinecraftClient.getInstance().setScreen(new RegionAdminScreen())
-                                        );
-                                        return 1;
-                                    })
-                            )
-
-                            // /lt delete <id|name>
                             .then(ClientCommandManager.literal("delete")
                                     .then(ClientCommandManager.argument("idOrName", StringArgumentType.greedyString())
                                             .executes(ctx -> {
-                                                if (!RegionManager.canAdmin()) {
-                                                    ctx.getSource().sendFeedback(Text.literal("§cYou do not have permission to delete regions."));
-                                                    return 0;
-                                                }
-                                                String s = StringArgumentType.getString(ctx, "idOrName");
-                                                Region r = RegionManager.findByIdOrName(s);
+                                                String key = StringArgumentType.getString(ctx, "idOrName").trim();
+                                                Region r = RegionManager.findByIdOrName(key);
                                                 if (r == null) {
-                                                    ctx.getSource().sendFeedback(Text.literal("§cRegion not found."));
+                                                    ctx.getSource().sendFeedback(Text.literal("§cRegion not found: " + key));
                                                     return 0;
                                                 }
-                                                boolean ok = RegionManager.deleteById(r.id());
-                                                ctx.getSource().sendFeedback(Text.literal(ok
-                                                        ? "§eDeleted region: §f" + (r.name() != null ? r.name() : r.id())
-                                                        : "§cFailed to delete region."));
+                                                var mc = MinecraftClient.getInstance();
+                                                boolean ok = RegionManager.deleteRegion(r, mc.player.getUuid());
+                                                ctx.getSource().sendFeedback(Text.literal(ok ? "§eDeleted " + (r.name() != null ? r.name() : r.id())
+                                                        : "§cNo permission to delete."));
                                                 return ok ? 1 : 0;
-                                            })
-                                    )
-                            )
-
-                            // /lt highlight <id|name>
-                            .then(ClientCommandManager.literal("highlight")
-                                    .then(ClientCommandManager.argument("idOrName", StringArgumentType.greedyString())
-                                            .executes(ctx -> {
-                                                if (!RegionManager.canAdmin()) {
-                                                    ctx.getSource().sendFeedback(Text.literal("§cYou do not have permission to highlight regions."));
-                                                    return 0;
-                                                }
-                                                String s = StringArgumentType.getString(ctx, "idOrName");
-                                                Region r = RegionManager.findByIdOrName(s);
-                                                if (r == null) {
-                                                    ctx.getSource().sendFeedback(Text.literal("§cRegion not found."));
-                                                    return 0;
-                                                }
-                                                MinecraftClient.getInstance().execute(() -> {
-                                                    RegionAdminScreen.highlight(r);
-                                                    ctx.getSource().sendFeedback(Text.literal("§bHighlighted region: §f" + (r.name() != null ? r.name() : r.id())));
-                                                });
-                                                return 1;
                                             })
                                     )
                             )

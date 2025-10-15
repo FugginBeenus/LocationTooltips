@@ -1,92 +1,182 @@
 [
   {
+    "id": "78e4e054-2979-4267-bd7d-1c1ee072c9e8",
     "name": "Spawn District",
-    "world": "minecraft:overworld",
     "bounds": {
-      "min": [
-        -128.0,
-        60.0,
-        -128.0
-      ],
-      "max": [
-        128.0,
-        150.0,
-        128.0
-      ]
-    },
-    "color": "#FFFFFF",
-    "priority": 0
+      "minX": 0,
+      "minY": 0,
+      "minZ": 0,
+      "maxX": 0,
+      "maxY": 0,
+      "maxZ": 0
+    }
   },
   {
+    "id": "0b1436d3-9690-4b76-aa27-68ef1f43a2bc",
     "name": "Town Hall",
-    "world": "minecraft:overworld",
     "bounds": {
-      "min": [
-        -24.0,
-        64.0,
-        -24.0
-      ],
-      "max": [
-        24.0,
-        100.0,
-        24.0
-      ]
-    },
-    "color": "#FFD166",
-    "priority": 10
+      "minX": 0,
+      "minY": 0,
+      "minZ": 0,
+      "maxX": 0,
+      "maxY": 0,
+      "maxZ": 0
+    }
   },
   {
+    "id": "088c5d32-4e30-4909-bc79-c2c01ebe25d6",
     "name": "Test Region",
-    "world": "minecraft:overworld",
     "bounds": {
-      "min": [
-        -9.0,
-        -61.0,
-        -16.0
-      ],
-      "max": [
-        -5.0,
-        -60.0,
-        -11.0
-      ]
-    },
-    "color": "#FFFFFF",
-    "priority": 0
+      "minX": 0,
+      "minY": 0,
+      "minZ": 0,
+      "maxX": 0,
+      "maxY": 0,
+      "maxZ": 0
+    }
   },
   {
+    "id": "c2e28502-36ed-4001-a7ab-47dad5544560",
     "name": "Shopping District",
-    "world": "minecraft:overworld",
     "bounds": {
-      "min": [
-        -4.0,
-        -60.0,
-        -11.0
-      ],
-      "max": [
-        9.0,
-        -51.0,
-        3.0
-      ]
-    },
-    "color": "#FFFFFF",
-    "priority": 0
+      "minX": 0,
+      "minY": 0,
+      "minZ": 0,
+      "maxX": 0,
+      "maxY": 0,
+      "maxZ": 0
+    }
   },
   {
+    "id": "26bd910a-3004-4ea5-b3c8-07791104c289",
     "name": "Shop",
-    "world": "minecraft:overworld",
     "bounds": {
-      "min": [
-        3.0,
-        -60.0,
-        -7.0
-      ],
-      "max": [
-        7.0,
-        -59.0,
-        -1.0
-      ]
+      "minX": 0,
+      "minY": 0,
+      "minZ": 0,
+      "maxX": 0,
+      "maxY": 0,
+      "maxZ": 0
+    }
+  },
+  {
+    "id": "355185a4-eac1-41f1-9e80-4c4af555d336",
+    "name": "Test Region!",
+    "bounds": {
+      "minX": 0,
+      "minY": 0,
+      "minZ": 0,
+      "maxX": 0,
+      "maxY": 0,
+      "maxZ": 0
+    }
+  },
+  {
+    "id": "107e1349-2ce9-42ee-a6c9-5f1735f15e45",
+    "name": "Pee",
+    "bounds": {
+      "minX": 0,
+      "minY": 0,
+      "minZ": 0,
+      "maxX": 0,
+      "maxY": 0,
+      "maxZ": 0
+    }
+  },
+  {
+    "id": "78d80e3c-a207-47d3-a85c-fcfd397c9fb2",
+    "name": "Shopping District",
+    "bounds": {
+      "minX": 0,
+      "minY": 0,
+      "minZ": 0,
+      "maxX": 0,
+      "maxY": 0,
+      "maxZ": 0
+    }
+  },
+  {
+    "id": "f30513c0-eb61-4fe8-b208-b3e9ed66ee88",
+    "name": "Little Wood Shop",
+    "bounds": {
+      "minX": 0,
+      "minY": 0,
+      "minZ": 0,
+      "maxX": 0,
+      "maxY": 0,
+      "maxZ": 0
+    }
+  },
+  {
+    "id": "42a047d9-7eaf-412b-b5e0-0689fcbaeca8",
+    "name": "Tiny Wood Shop",
+    "bounds": {
+      "minX": 0,
+      "minY": 0,
+      "minZ": 0,
+      "maxX": 0,
+      "maxY": 0,
+      "maxZ": 0
+    }
+  },
+  {
+    "id": "a1905bcd-99b7-4f01-b54a-bfa166c263b5",
+    "name": "Shopping District",
+    "worldKey": "minecraft:overworld",
+    "bounds": {
+      "minX": -2,
+      "minY": -61,
+      "minZ": 10,
+      "maxX": 16,
+      "maxY": -58,
+      "maxZ": 32
     },
-    "color": "#FFFFFF",
-    "priority": 1
+    "ownerUuid": "8c4d07ef-5a2e-3e89-afcd-48fd7e18bf32",
+    "ownerName": "Player807"
+  },
+  {
+    "id": "322e132b-05d0-4047-9997-f402ad1beb45",
+    "name": "Wood Hut",
+    "worldKey": "minecraft:overworld",
+    "bounds": {
+      "minX": 10,
+      "minY": -60,
+      "minZ": 26,
+      "maxX": 14,
+      "maxY": -57,
+      "maxZ": 30
+    },
+    "ownerUuid": "8c4d07ef-5a2e-3e89-afcd-48fd7e18bf32",
+    "ownerName": "Player807"
+  },
+  {
+    "id": "7ef94b28-0e09-4e7c-ace5-109a16ba07a7",
+    "name": "Other Wood Hut",
+    "worldKey": "minecraft:overworld",
+    "bounds": {
+      "minX": 10,
+      "minY": -60,
+      "minZ": 26,
+      "maxX": 14,
+      "maxY": -57,
+      "maxZ": 30
+    },
+    "ownerUuid": "8c4d07ef-5a2e-3e89-afcd-48fd7e18bf32",
+    "ownerName": "Player807"
+  },
+  {
+    "id": "394b9fa6-000e-4b0d-a707-c85d204e4bc2",
+    "name": "WOOD",
+    "worldKey": "minecraft:overworld",
+    "bounds": {
+      "minX": 0,
+      "minY": -60,
+      "minZ": 12,
+      "maxX": 4,
+      "maxY": -57,
+      "maxZ": 17
+    },
+    "ownerUuid": "8c4d07ef-5a2e-3e89-afcd-48fd7e18bf32",
+    "ownerName": "Player807"
   }
 ]

@@ -4,7 +4,94 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="88e23b43-6289-4a7c-8e8a-871c5edb11c1" name="Changes" comment="" />
+    <list default="true" id="88e23b43-6289-4a7c-8e8a-871c5edb11c1" name="Changes" comment="">
+      <change afterPath="$PROJECT_DIR$/src/client/java/com/fugginbeenus/locationtooltip/client/ClientWandBridge.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/client/java/com/fugginbeenus/locationtooltip/client/LTConfigScreen.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/client/java/com/fugginbeenus/locationtooltip/client/LocationTooltipModMenu.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/client/java/com/fugginbeenus/locationtooltip/client/RegionNameScreen.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/client/java/com/fugginbeenus/locationtooltip/client/RegionRenameScreen.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/fugginbeenus/locationtooltip/RegionWandItem.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/fugginbeenus/locationtooltip/data/Bounds.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.gradle/8.10.2/checksums/checksums.lock" beforeDir="false" afterPath="$PROJECT_DIR$/.gradle/8.10.2/checksums/checksums.lock" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.gradle/8.10.2/checksums/md5-checksums.bin" beforeDir="false" afterPath="$PROJECT_DIR$/.gradle/8.10.2/checksums/md5-checksums.bin" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.gradle/8.10.2/checksums/sha1-checksums.bin" beforeDir="false" afterPath="$PROJECT_DIR$/.gradle/8.10.2/checksums/sha1-checksums.bin" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.gradle/8.10.2/executionHistory/executionHistory.bin" beforeDir="false" afterPath="$PROJECT_DIR$/.gradle/8.10.2/executionHistory/executionHistory.bin" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.gradle/8.10.2/executionHistory/executionHistory.lock" beforeDir="false" afterPath="$PROJECT_DIR$/.gradle/8.10.2/executionHistory/executionHistory.lock" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.gradle/8.10.2/fileHashes/fileHashes.bin" beforeDir="false" afterPath="$PROJECT_DIR$/.gradle/8.10.2/fileHashes/fileHashes.bin" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.gradle/8.10.2/fileHashes/fileHashes.lock" beforeDir="false" afterPath="$PROJECT_DIR$/.gradle/8.10.2/fileHashes/fileHashes.lock" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.gradle/8.10.2/fileHashes/resourceHashesCache.bin" beforeDir="false" afterPath="$PROJECT_DIR$/.gradle/8.10.2/fileHashes/resourceHashesCache.bin" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.gradle/buildOutputCleanup/buildOutputCleanup.lock" beforeDir="false" afterPath="$PROJECT_DIR$/.gradle/buildOutputCleanup/buildOutputCleanup.lock" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/jarRepositories.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/jarRepositories.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/misc.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/modules/locationtooltip.client.iml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/modules/locationtooltip.client.iml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/modules/locationtooltip.main.iml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/modules/locationtooltip.main.iml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/runConfigurations/Location_Tooltip_Server.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/runConfigurations/Location_Tooltip_Server.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/build.gradle" beforeDir="false" afterPath="$PROJECT_DIR$/build.gradle" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/build/classes/java/client/com/fugginbeenus/locationtooltip/client/ClientReloadCommand.class" beforeDir="false" afterPath="$PROJECT_DIR$/build/classes/java/client/com/fugginbeenus/locationtooltip/client/ClientReloadCommand.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/build/classes/java/client/com/fugginbeenus/locationtooltip/client/ClientState.class" beforeDir="false" afterPath="$PROJECT_DIR$/build/classes/java/client/com/fugginbeenus/locationtooltip/client/ClientState.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/build/classes/java/client/com/fugginbeenus/locationtooltip/client/LTConfig.class" beforeDir="false" afterPath="$PROJECT_DIR$/build/classes/java/client/com/fugginbeenus/locationtooltip/client/LTConfig.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/build/classes/java/client/com/fugginbeenus/locationtooltip/client/LocationTooltipClient.class" beforeDir="false" afterPath="$PROJECT_DIR$/build/classes/java/client/com/fugginbeenus/locationtooltip/client/LocationTooltipClient.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/build/classes/java/client/com/fugginbeenus/locationtooltip/client/NameRegionScreen.class" beforeDir="false" afterPath="$PROJECT_DIR$/build/classes/java/client/com/fugginbeenus/locationtooltip/client/NameRegionScreen.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/build/classes/java/client/com/fugginbeenus/locationtooltip/client/RegionAdminScreen.class" beforeDir="false" afterPath="$PROJECT_DIR$/build/classes/java/client/com/fugginbeenus/locationtooltip/client/RegionAdminScreen.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/build/classes/java/client/com/fugginbeenus/locationtooltip/client/RegionSelectionClient$1.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/build/classes/java/client/com/fugginbeenus/locationtooltip/client/RegionSelectionClient$Axis.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/build/classes/java/client/com/fugginbeenus/locationtooltip/client/RegionSelectionClient$Face.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/build/classes/java/client/com/fugginbeenus/locationtooltip/client/RegionSelectionClient.class" beforeDir="false" afterPath="$PROJECT_DIR$/build/classes/java/client/com/fugginbeenus/locationtooltip/client/RegionSelectionClient.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/build/classes/java/client/com/fugginbeenus/locationtooltip/client/WandUseHandler.class" beforeDir="false" afterPath="$PROJECT_DIR$/build/classes/java/client/com/fugginbeenus/locationtooltip/client/WandUseHandler.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/build/classes/java/main/com/fugginbeenus/locationtooltip/LocationTooltipMod.class" beforeDir="false" afterPath="$PROJECT_DIR$/build/classes/java/main/com/fugginbeenus/locationtooltip/LocationTooltipMod.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/build/classes/java/main/com/fugginbeenus/locationtooltip/data/Region$Bounds.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/build/classes/java/main/com/fugginbeenus/locationtooltip/data/Region.class" beforeDir="false" afterPath="$PROJECT_DIR$/build/classes/java/main/com/fugginbeenus/locationtooltip/data/Region.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/build/classes/java/main/com/fugginbeenus/locationtooltip/data/RegionManager.class" beforeDir="false" afterPath="$PROJECT_DIR$/build/classes/java/main/com/fugginbeenus/locationtooltip/data/RegionManager.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/build/devlibs/locationtooltip-0.1.0-dev.jar" beforeDir="false" afterPath="$PROJECT_DIR$/build/devlibs/locationtooltip-0.1.0-dev.jar" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/build/devlibs/locationtooltip-0.1.0-sources.jar" beforeDir="false" afterPath="$PROJECT_DIR$/build/devlibs/locationtooltip-0.1.0-sources.jar" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/build/libs/locationtooltip-0.1.0-sources.jar" beforeDir="false" afterPath="$PROJECT_DIR$/build/libs/locationtooltip-0.1.0-sources.jar" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/build/libs/locationtooltip-0.1.0.jar" beforeDir="false" afterPath="$PROJECT_DIR$/build/libs/locationtooltip-0.1.0.jar" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/build/resources/main/assets/locationtooltip/textures/gui/icon_clock.png" beforeDir="false" afterPath="$PROJECT_DIR$/build/resources/main/assets/locationtooltip/textures/gui/icon_clock.png" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/build/resources/main/assets/locationtooltip/textures/gui/icon_location.png" beforeDir="false" afterPath="$PROJECT_DIR$/build/resources/main/assets/locationtooltip/textures/gui/icon_location.png" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/build/resources/main/fabric.mod.json" beforeDir="false" afterPath="$PROJECT_DIR$/build/resources/main/fabric.mod.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/build/tmp/compileClientJava/previous-compilation-data.bin" beforeDir="false" afterPath="$PROJECT_DIR$/build/tmp/compileClientJava/previous-compilation-data.bin" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/build/tmp/compileJava/previous-compilation-data.bin" beforeDir="false" afterPath="$PROJECT_DIR$/build/tmp/compileJava/previous-compilation-data.bin" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/run/config/fabric/indigo-renderer.properties" beforeDir="false" afterPath="$PROJECT_DIR$/run/config/fabric/indigo-renderer.properties" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/run/config/locationtooltip/config.json" beforeDir="false" afterPath="$PROJECT_DIR$/run/config/locationtooltip/config.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/run/config/locationtooltip/regions.json" beforeDir="false" afterPath="$PROJECT_DIR$/run/config/locationtooltip/regions.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/run/logs/2025-10-14-1.log.gz" beforeDir="false" afterPath="$PROJECT_DIR$/run/logs/2025-10-14-1.log.gz" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/run/logs/debug-1.log.gz" beforeDir="false" afterPath="$PROJECT_DIR$/run/logs/debug-1.log.gz" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/run/logs/debug-2.log.gz" beforeDir="false" afterPath="$PROJECT_DIR$/run/logs/debug-2.log.gz" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/run/logs/debug-3.log.gz" beforeDir="false" afterPath="$PROJECT_DIR$/run/logs/debug-3.log.gz" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/run/logs/debug-4.log.gz" beforeDir="false" afterPath="$PROJECT_DIR$/run/logs/debug-4.log.gz" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/run/logs/debug-5.log.gz" beforeDir="false" afterPath="$PROJECT_DIR$/run/logs/debug-5.log.gz" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/run/logs/debug.log" beforeDir="false" afterPath="$PROJECT_DIR$/run/logs/debug.log" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/run/logs/latest.log" beforeDir="false" afterPath="$PROJECT_DIR$/run/logs/latest.log" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/run/options.txt" beforeDir="false" afterPath="$PROJECT_DIR$/run/options.txt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/run/saves/New World/DIM-1/data/raids.dat" beforeDir="false" afterPath="$PROJECT_DIR$/run/saves/New World/DIM-1/data/raids.dat" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/run/saves/New World/DIM1/data/raids_end.dat" beforeDir="false" afterPath="$PROJECT_DIR$/run/saves/New World/DIM1/data/raids_end.dat" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/run/saves/New World/data/raids.dat" beforeDir="false" afterPath="$PROJECT_DIR$/run/saves/New World/data/raids.dat" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/run/saves/New World/entities/r.0.-1.mca" beforeDir="false" afterPath="$PROJECT_DIR$/run/saves/New World/entities/r.0.-1.mca" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/run/saves/New World/entities/r.0.0.mca" beforeDir="false" afterPath="$PROJECT_DIR$/run/saves/New World/entities/r.0.0.mca" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/run/saves/New World/level.dat" beforeDir="false" afterPath="$PROJECT_DIR$/run/saves/New World/level.dat" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/run/saves/New World/level.dat_old" beforeDir="false" afterPath="$PROJECT_DIR$/run/saves/New World/level.dat_old" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/run/saves/New World/poi/r.0.0.mca" beforeDir="false" afterPath="$PROJECT_DIR$/run/saves/New World/poi/r.0.0.mca" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/run/saves/New World/region/r.-1.-1.mca" beforeDir="false" afterPath="$PROJECT_DIR$/run/saves/New World/region/r.-1.-1.mca" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/run/saves/New World/region/r.-1.0.mca" beforeDir="false" afterPath="$PROJECT_DIR$/run/saves/New World/region/r.-1.0.mca" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/run/saves/New World/region/r.0.-1.mca" beforeDir="false" afterPath="$PROJECT_DIR$/run/saves/New World/region/r.0.-1.mca" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/run/saves/New World/region/r.0.0.mca" beforeDir="false" afterPath="$PROJECT_DIR$/run/saves/New World/region/r.0.0.mca" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/run/usercache.json" beforeDir="false" afterPath="$PROJECT_DIR$/run/usercache.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/client/java/com/fugginbeenus/locationtooltip/client/ClientReloadCommand.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/client/java/com/fugginbeenus/locationtooltip/client/ClientReloadCommand.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/client/java/com/fugginbeenus/locationtooltip/client/ClientState.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/client/java/com/fugginbeenus/locationtooltip/client/ClientState.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/client/java/com/fugginbeenus/locationtooltip/client/LTConfig.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/client/java/com/fugginbeenus/locationtooltip/client/LTConfig.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/client/java/com/fugginbeenus/locationtooltip/client/LocationTooltipClient.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/client/java/com/fugginbeenus/locationtooltip/client/LocationTooltipClient.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/client/java/com/fugginbeenus/locationtooltip/client/NameRegionScreen.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/client/java/com/fugginbeenus/locationtooltip/client/NameRegionScreen.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/client/java/com/fugginbeenus/locationtooltip/client/RegionAdminScreen.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/client/java/com/fugginbeenus/locationtooltip/client/RegionAdminScreen.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/client/java/com/fugginbeenus/locationtooltip/client/RegionSelectionClient.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/client/java/com/fugginbeenus/locationtooltip/client/RegionSelectionClient.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/client/java/com/fugginbeenus/locationtooltip/client/WandUseHandler.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/client/java/com/fugginbeenus/locationtooltip/client/WandUseHandler.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/fugginbeenus/locationtooltip/LocationTooltipMod.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/fugginbeenus/locationtooltip/LocationTooltipMod.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/fugginbeenus/locationtooltip/data/Region.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/fugginbeenus/locationtooltip/data/Region.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/fugginbeenus/locationtooltip/data/RegionManager.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/fugginbeenus/locationtooltip/data/RegionManager.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/resources/assets/locationtooltip/textures/gui/icon_clock.png" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/resources/assets/locationtooltip/textures/gui/icon_clock.png" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/resources/assets/locationtooltip/textures/gui/icon_location.png" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/resources/assets/locationtooltip/textures/gui/icon_location.png" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/resources/fabric.mod.json" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/resources/fabric.mod.json" afterDir="false" />
+    </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -39,6 +126,9 @@
       </list>
     </option>
   </component>
+  <component name="Git.Settings">
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
+  </component>
   <component name="ProjectColorInfo">{
   &quot;associatedIndex&quot;: 1
 }</component>
@@ -52,6 +142,8 @@
     &quot;ModuleVcsDetector.initialDetectionPerformed&quot;: &quot;true&quot;,
     &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
     &quot;RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.git.unshallow&quot;: &quot;true&quot;,
+    &quot;git-widget-placeholder&quot;: &quot;main&quot;,
     &quot;kotlin-language-version-configured&quot;: &quot;true&quot;,
     &quot;last_opened_file_path&quot;: &quot;/Users/bjpelicano/Desktop/NEW MODS/locationtooltip/src/main/resources/assets/locationtooltip/textures/gui&quot;,
     &quot;project.structure.last.edited&quot;: &quot;Project&quot;,
