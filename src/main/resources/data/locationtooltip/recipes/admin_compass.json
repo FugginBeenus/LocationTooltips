@@ -1,0 +1,17 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    " M ",
+    " C ",
+    " S "
+  ],
+  "key": {
+    "S": { "item": "minecraft:stick" },
+    "M": { "item": "minecraft:map" },
+    "C": { "item": "minecraft:compass" }
+  },
+  "result": {
+    "item": "locationtooltip:admin_compass",
+    "count": 1
+  }
+}

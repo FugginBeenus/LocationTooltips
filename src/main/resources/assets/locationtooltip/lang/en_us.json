@@ -1,0 +1,5 @@
+{
+  "item.locationtooltip.region_wand": "Region Wand",
+  "item.locationtooltip.admin_compass": "Master Compass",
+  "modmenu.descriptionTranslation.locationtooltip": "Configure the Location Tooltip HUD"
+}

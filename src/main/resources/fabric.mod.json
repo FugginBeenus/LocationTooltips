@@ -1,0 +1,41 @@
+{
+  "schemaVersion": 1,
+  "id": "locationtooltip",
+  "version": "1.0.0",
+
+  "name": "Location Tooltip",
+  "description": "Displays region names and in-game time with sleek HUD pills. Includes admin tools for region creation and management.",
+  "authors": ["fugginbeenus"],
+  "contact": {
+    "sources": "https://github.com/fugginbeenus/locationtooltip"
+  },
+
+  "license": "MIT",
+  "environment": "*",
+
+  "entrypoints": {
+    "main": [
+      "com.fugginbeenus.locationtooltip.LocationTooltip"
+    ],
+    "client": [
+      "com.fugginbeenus.locationtooltip.LocationTooltipClient"
+    ],
+    "modmenu": [
+      "com.fugginbeenus.locationtooltip.modmenu.ModMenuCompat"
+    ]
+
+  },
+
+  "depends": {
+    "fabricloader": ">=0.15.0",
+    "fabric": "*",
+    "minecraft": "1.20.1",
+    "java": ">=17"
+  },
+
+  "mixins": [
+    "locationtooltip.mixins.json"
+  ],
+
+  "icon": "assets/locationtooltip/icon.png"
+}
