@@ -1,0 +1,17 @@
+{
+  "parent": "minecraft:adventure/root",
+  "display": {
+    "icon": { "item": "minecraft:compass" },
+    "title": { "text": "Where the heck am I?", "color": "aqua" },
+    "description": { "text": "Name your first region." },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "named": {
+      "trigger": "minecraft:impossible"
+    }
+  }
+}

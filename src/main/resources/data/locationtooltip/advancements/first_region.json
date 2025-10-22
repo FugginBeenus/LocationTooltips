@@ -1,0 +1,18 @@
+{
+  "parent": "locationtooltip:root",
+  "display": {
+    "icon": { "item": "minecraft:name_tag" },
+    "title": { "text": "Where the hell am I?" },
+    "description": { "text": "Create and name your first region." },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "named": { "trigger": "minecraft:impossible" }
+  },
+  "requirements": [
+    [ "named" ]
+  ]
+}

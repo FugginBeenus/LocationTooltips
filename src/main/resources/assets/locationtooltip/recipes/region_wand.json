@@ -1,0 +1,14 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    " MC",
+    " S ",
+    "S  "
+  ],
+  "key": {
+    "M": { "item": "minecraft:map" },
+    "C": { "item": "minecraft:compass" },
+    "S": { "item": "minecraft:stick" }
+  },
+  "result": { "item": "locationtooltip:region_wand", "count": 1 }
+}

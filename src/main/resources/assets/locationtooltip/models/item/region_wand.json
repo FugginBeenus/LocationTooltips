@@ -1,0 +1,2 @@
+{ "parent": "item/handheld",
+  "textures": { "layer0": "locationtooltip:item/region_wand" } }

@@ -1,0 +1,31 @@
+cat > .gitignore << 'EOF'
+# macOS
+.DS_Store
+
+# IntelliJ / VSCode
+.idea/
+*.iml
+.vscode/
+
+# Gradle
+.gradle/
+build/
+out/
+!gradle/wrapper/gradle-wrapper.jar
+
+# Loom / run data
+run/
+.classpath
+.project
+.settings/
+.fabric/
+.loom/
+
+# Logs
+logs/
+*.log
+
+# Misc
+*.tmp
+*.swp
+EOF
