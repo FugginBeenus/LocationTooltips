@@ -14,14 +14,14 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Vanilla-looking admin panel with:
+ * Vanilla-looking admin panel:
  * - scrolling list
  * - instant local row removal on delete
  * - periodic refresh while open
  */
 public class AdminPanelScreen extends Screen {
 
-    // === data model ===
+    // ===== data model =====
     public static class RegionRow {
         public final String id;
         public String name;
@@ -35,7 +35,7 @@ public class AdminPanelScreen extends Screen {
     private static AdminPanelScreen instance;
     private final List<RegionRow> regions = new ArrayList<>();
 
-    // === UI chrome ===
+    // ===== UI chrome =====
     private TextFieldWidget radiusField;
     private ButtonWidget refreshBtn, closeBtn;
 
@@ -44,7 +44,7 @@ public class AdminPanelScreen extends Screen {
     private int listX, listY, listW, listH;
     private int scroll;                // pixel scroll offset
     private final List<ButtonWidget> rowButtons = new ArrayList<>();
-    private int lastFirst = -1, lastCount = -1; // to avoid rebuilding buttons every frame
+    private int lastFirst = -1, lastCount = -1; // avoid rebuilding buttons every frame
 
     // periodic refresh
     private int ticks; // 20 ticks ~ 1s
@@ -54,7 +54,7 @@ public class AdminPanelScreen extends Screen {
         instance = this;
     }
 
-    // Called from LTPacketsClient when new data arrives
+    /** Called from LTPacketsClient when new data arrives. */
     public static void receiveList(RegionRow[] rows) {
         if (instance != null) {
             instance.regions.clear();
@@ -81,8 +81,10 @@ public class AdminPanelScreen extends Screen {
         }).dimensions(x + 110, y - 25, 80, 20).build();
         addDrawableChild(refreshBtn);
 
-        closeBtn = ButtonWidget.builder(Text.literal("Close"), b -> closeScreen())
-                .dimensions(x + 200, y - 25, 80, 20).build();
+        closeBtn = ButtonWidget.builder(Text.literal("Close"), b -> {
+            MinecraftClient mc = MinecraftClient.getInstance();
+            if (mc != null) mc.setScreen(null);
+        }).dimensions(x + 200, y - 25, 80, 20).build();
         addDrawableChild(closeBtn);
 
         // list viewport
@@ -91,15 +93,9 @@ public class AdminPanelScreen extends Screen {
         listW = panelW - 16;
         listH = this.height - y - 30;
 
-        // start with top
         scroll = 0;
         clearRowButtons();
         rebuildRowButtonsIfNeeded(true);
-    }
-
-    private void closeScreen() {
-        MinecraftClient mc = MinecraftClient.getInstance();
-        if (mc != null) mc.setScreen(null);
     }
 
     @Override
@@ -114,7 +110,6 @@ public class AdminPanelScreen extends Screen {
 
     @Override
     public boolean mouseScrolled(double mouseX, double mouseY, double amount) {
-        // scroll only when mouse is over the list
         if (mouseX >= listX && mouseX < listX + listW && mouseY >= listY && mouseY < listY + listH) {
             int maxContentH = regions.size() * ROW_H;
             int maxScroll = Math.max(0, maxContentH - listH);
@@ -132,15 +127,9 @@ public class AdminPanelScreen extends Screen {
         // dim backdrop
         ctx.fill(0, 0, this.width, this.height, 0xA0000000);
 
-        // title
-        //String title = "Nearby Regions";
-        //int tw = this.textRenderer.getWidth(title);
-       // ctx.drawText(this.textRenderer, title, (this.width - tw) / 2, 10, 0xFFFFFF, false);
-
         // list frame
         ctx.fill(listX - 2, listY - 2, listX + listW + 2, listY + listH + 2, 0x60000000);
 
-        // scissor (clip) viewport
         var matrices = ctx.getMatrices();
         matrices.push();
         ctx.enableScissor(listX, listY, listX + listW, listY + listH);
@@ -163,8 +152,7 @@ public class AdminPanelScreen extends Screen {
         super.render(ctx, mouseX, mouseY, delta);
     }
 
-    // ======= row button lifecycle =======
-
+    // ===== row button lifecycle =====
     private void clearRowButtons() {
         for (var b : rowButtons) remove(b);
         rowButtons.clear();
@@ -180,7 +168,6 @@ public class AdminPanelScreen extends Screen {
 
         clearRowButtons();
 
-        // build buttons for visible slice only
         for (int idx = 0; idx < count; idx++) {
             int modelIndex = first + idx;
             if (modelIndex >= regions.size()) break;
@@ -192,15 +179,17 @@ public class AdminPanelScreen extends Screen {
             RegionRow rr = regions.get(modelIndex);
 
             ButtonWidget renameBtn = ButtonWidget.builder(Text.literal("Rename"), b -> {
-                MinecraftClient.getInstance().setScreen(new RenameRegionScreen(rr, this));
+                try {
+                    MinecraftClient.getInstance().setScreen(new RenameRegionScreen(rr, this));
+                } catch (Throwable t) {
+                    t.printStackTrace();
+                }
             }).dimensions(renameX, y + 2, 72, 20).build();
 
             ButtonWidget deleteBtn = ButtonWidget.builder(Text.literal("Delete"), b -> {
-                // optimistic local removal + server call
                 int removeAt = regions.indexOf(rr);
                 if (removeAt >= 0) {
                     regions.remove(removeAt);
-                    // clamp scroll if needed
                     int maxScroll = Math.max(0, regions.size() * ROW_H - listH);
                     if (scroll > maxScroll) scroll = maxScroll;
                     rebuildRowButtonsIfNeeded(true);
@@ -218,8 +207,7 @@ public class AdminPanelScreen extends Screen {
         lastCount = count;
     }
 
-    // ======= rename subscreen =======
-
+    // ===== rename subscreen =====
     public static class RenameRegionScreen extends Screen {
         private final RegionRow row;
         private final Screen returnTo;
@@ -259,8 +247,7 @@ public class AdminPanelScreen extends Screen {
             addDrawableChild(cancelBtn);
         }
 
-        @Override
-        public boolean shouldCloseOnEsc() { return true; }
+        @Override public boolean shouldCloseOnEsc() { return true; }
 
         @Override
         public void render(DrawContext ctx, int mouseX, int mouseY, float delta) {

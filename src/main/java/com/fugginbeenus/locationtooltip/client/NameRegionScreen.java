@@ -14,24 +14,20 @@ import org.lwjgl.glfw.GLFW;
 public class NameRegionScreen extends Screen {
     private static final Identifier TEX = new Identifier("locationtooltip", "textures/gui/name_panel.png");
 
-    // Panel draws at native size for crisp edges
     private static final int PANEL_W = 256;
     private static final int PANEL_H = 256;
     private static final int PANEL_NUDGE_X = 0;
     private static final int PANEL_NUDGE_Y = 25;
 
-    // Input bar geometry (relative to texture)
     private static final int INPUT_X = 20;
     private static final int INPUT_Y = 75;
-    private static final int INPUT_W = 216; // give a tad more room
+    private static final int INPUT_W = 216;
     private static final int INPUT_H = 18;
 
-    // Buttons lane (relative to texture)
     private static final int BTN_W = 85;
     private static final int BTN_H = 20;
     private static final int BTN_Y = 130;
 
-    // Horizontal placement controls
     private static final boolean CENTER_BUTTONS = false;
     private static final int CENTER_GAP = 20;
     private static final int BTN_LEFT_X = 20;
@@ -56,7 +52,6 @@ public class NameRegionScreen extends Screen {
         int panelX = (this.width  - PANEL_W) / 2 + PANEL_NUDGE_X;
         int panelY = (this.height - PANEL_H) / 2 + PANEL_NUDGE_Y;
 
-        // --- Text field ---
         int fx = panelX + INPUT_X;
         int fy = panelY + INPUT_Y;
         int fw = INPUT_W;
@@ -64,14 +59,13 @@ public class NameRegionScreen extends Screen {
 
         nameField = new TextFieldWidget(this.textRenderer, fx, fy, fw, fh, Text.literal("Region Name"));
         nameField.setMaxLength(48);
-        nameField.setDrawsBackground(false);   // let the texture show through
+        nameField.setDrawsBackground(false);
         nameField.setEditableColor(0xFFFFFF);
         nameField.setUneditableColor(0xFFFFFF);
         nameField.setText("");
         this.addDrawableChild(nameField);
         setInitialFocus(nameField);
 
-        // --- Buttons ---
         int btnY = panelY + BTN_Y;
         int leftX, rightX;
         if (CENTER_BUTTONS) {
@@ -110,13 +104,8 @@ public class NameRegionScreen extends Screen {
         return super.keyPressed(keyCode, scanCode, modifiers);
     }
 
-    @Override
-    public void close() {
-        MinecraftClient.getInstance().setScreen(null);
-    }
-
-    @Override
-    public boolean shouldCloseOnEsc() { return true; }
+    @Override public void close() { MinecraftClient.getInstance().setScreen(null); }
+    @Override public boolean shouldCloseOnEsc() { return true; }
 
     @Override
     public void render(DrawContext ctx, int mouseX, int mouseY, float delta) {
@@ -124,8 +113,7 @@ public class NameRegionScreen extends Screen {
         int px = (this.width - PANEL_W) / 2 + PANEL_NUDGE_X;
         int py = (this.height - PANEL_H) / 2 + PANEL_NUDGE_Y;
         ctx.drawTexture(TEX, px, py, 0, 0, PANEL_W, PANEL_H, 256, 256);
-
-        super.render(ctx, mouseX, mouseY, delta); // draws children (nameField, buttons)
+        super.render(ctx, mouseX, mouseY, delta);
     }
 
     @Override

@@ -17,6 +17,14 @@ public class LocationHudOverlay implements HudRenderCallback {
     private static String currentTitle = "Wilderness";
     private static long   regionChangedAt = 0L;
 
+    public static void applyLiveConfig(int yOffset, float textScale, boolean showRegion, boolean showClock) {
+        com.fugginbeenus.locationtooltip.config.LTConfig cfg = com.fugginbeenus.locationtooltip.config.LTConfig.get();
+        cfg.verticalNudge = yOffset;
+        cfg.textScale = textScale;
+        cfg.showRegionName = showRegion;
+        cfg.showClock = showClock;
+    }
+
     /** Preferred API used by client packets. */
     public static void setRegionTitle(String title) {
         currentTitle = (title == null || title.isEmpty()) ? "Wilderness" : title;

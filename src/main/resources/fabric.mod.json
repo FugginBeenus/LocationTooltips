@@ -1,23 +1,24 @@
 {
   "schemaVersion": 1,
-  "id": "${mod_id}",
-  "version": "${version}",
+  "id": "locationtooltip",
+  "version": "0.1.13",
   "name": "Location Tooltip",
   "description": "Pretty region HUD + admin tools.",
   "authors": ["fugginbeenus"],
   "license": "MIT",
   "environment": "*",
   "entrypoints": {
-    "main": ["com.fugginbeenus.locationtooltip.LocationTooltip"],
+    "main":   ["com.fugginbeenus.locationtooltip.LocationTooltip"],
     "client": ["com.fugginbeenus.locationtooltip.LocationTooltipClient"],
-    "modmenu": ["com.fugginbeenus.locationtooltip.modmenu.ModMenuCompat"
-    ]
+    "modmenu": ["com.fugginbeenus.locationtooltip.config.ui.LocationTooltipModMenu"]
   },
   "depends": {
-    "fabricloader": ">=0.14.0",
-    "fabric": "*",
-    "minecraft": ">=1.20.1",
-    "cloth-config2": ">=11.0.99",
-    "modmenu": ">=7.2.2"
+    "fabricloader": ">=0.17.2",
+    "minecraft": "1.20.1",
+    "fabric": "*"
+  },
+  "suggests": {
+    "cloth-config2": "*",
+    "modmenu": "*"
   }
 }
