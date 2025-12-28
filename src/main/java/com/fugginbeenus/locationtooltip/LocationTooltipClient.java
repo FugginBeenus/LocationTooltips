@@ -84,7 +84,7 @@ public final class LocationTooltipClient implements ClientModInitializer {
             }
 
             // Holding compass - request region list every second
-            if ((client.world.getTime() % 20L) == 0L) {
+            if (!(client.currentScreen instanceof AdminPanelScreen) && (client.world.getTime() % 20L) == 0L) {
                 LTPacketsClient.requestAdminList(256);
             }
 
