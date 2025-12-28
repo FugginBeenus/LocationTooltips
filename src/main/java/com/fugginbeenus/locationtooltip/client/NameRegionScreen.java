@@ -5,6 +5,7 @@ import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.client.gui.widget.ButtonWidget;
+import net.minecraft.client.gui.widget.CheckboxWidget;
 import net.minecraft.client.gui.widget.TextFieldWidget;
 import net.minecraft.text.Text;
 import net.minecraft.util.Identifier;
@@ -20,13 +21,13 @@ public class NameRegionScreen extends Screen {
     private static final int PANEL_NUDGE_Y = 25;
 
     private static final int INPUT_X = 20;
-    private static final int INPUT_Y = 75;
+    private static final int INPUT_Y = 51;  // Moved up 24px (was 75)
     private static final int INPUT_W = 216;
     private static final int INPUT_H = 18;
 
     private static final int BTN_W = 85;
     private static final int BTN_H = 20;
-    private static final int BTN_Y = 130;
+    private static final int BTN_Y = 145;  // Moved up (was 155)
 
     private static final boolean CENTER_BUTTONS = false;
     private static final int CENTER_GAP = 20;
@@ -40,6 +41,11 @@ public class NameRegionScreen extends Screen {
 
     private TextFieldWidget nameField;
     private ButtonWidget createBtn, cancelBtn;
+    private CheckboxWidget pvpCheckbox, mobSpawnCheckbox;
+
+    // Custom checkbox rendering positions
+    private int pvpCheckboxX, pvpCheckboxY;
+    private int mobCheckboxX, mobCheckboxY;
 
     public NameRegionScreen(BlockPos a, BlockPos b) {
         super(Text.literal("Region Name"));
@@ -66,7 +72,34 @@ public class NameRegionScreen extends Screen {
         this.addDrawableChild(nameField);
         setInitialFocus(nameField);
 
-        int btnY = panelY + BTN_Y;
+        // Add checkboxes for PvP and Mob Spawning - better spacing
+        int checkboxY = panelY + INPUT_Y + INPUT_H + 20;  // More space below name field
+        int checkboxX = panelX + INPUT_X + 2;  // Slight indent for alignment
+
+        // Store positions for custom text rendering
+        pvpCheckboxX = checkboxX;
+        pvpCheckboxY = checkboxY;
+        mobCheckboxX = checkboxX;
+        mobCheckboxY = checkboxY + 24;
+
+        // Create checkboxes with EMPTY text (we'll draw custom white text in render)
+        pvpCheckbox = new CheckboxWidget(
+                checkboxX, checkboxY,
+                200, 20,
+                Text.literal(""),  // Empty text - we'll draw our own
+                true  // Default: enabled
+        );
+        this.addDrawableChild(pvpCheckbox);
+
+        mobSpawnCheckbox = new CheckboxWidget(
+                checkboxX, checkboxY + 24,  // Better spacing between checkboxes
+                200, 20,
+                Text.literal(""),  // Empty text - we'll draw our own
+                true  // Default: enabled
+        );
+        this.addDrawableChild(mobSpawnCheckbox);
+
+        int btnY = panelY + BTN_Y;  // Use the adjusted BTN_Y constant
         int leftX, rightX;
         if (CENTER_BUTTONS) {
             int total = BTN_W * 2 + CENTER_GAP;
@@ -90,7 +123,9 @@ public class NameRegionScreen extends Screen {
         if (nameField == null) return;
         String name = nameField.getText().trim();
         if (!name.isEmpty()) {
-            LTPacketsClient.sendCreate(name, a, b);
+            boolean allowPvP = pvpCheckbox.isChecked();
+            boolean allowMobSpawning = mobSpawnCheckbox.isChecked();
+            LTPacketsClient.sendCreate(name, a, b, allowPvP, allowMobSpawning);
             close();
         }
     }
@@ -113,7 +148,24 @@ public class NameRegionScreen extends Screen {
         int px = (this.width - PANEL_W) / 2 + PANEL_NUDGE_X;
         int py = (this.height - PANEL_H) / 2 + PANEL_NUDGE_Y;
         ctx.drawTexture(TEX, px, py, 0, 0, PANEL_W, PANEL_H, 256, 256);
+
+        // Draw "Settings:" label above checkboxes
+        int labelX = px + INPUT_X + 2;
+        int labelY = py + INPUT_Y + INPUT_H + 7;
+        ctx.drawText(this.textRenderer, Text.literal("Settings:"), labelX, labelY, 0xA0A0A0, false);
+
+        // Render widgets first (this includes checkboxes)
         super.render(ctx, mouseX, mouseY, delta);
+
+        // Draw white text with shadow over checkbox labels
+        if (pvpCheckbox != null) {
+            ctx.drawTextWithShadow(this.textRenderer, Text.literal("Allow PvP"),
+                    pvpCheckboxX + 24, pvpCheckboxY + 6, 0xFFFFFF);
+        }
+        if (mobSpawnCheckbox != null) {
+            ctx.drawTextWithShadow(this.textRenderer, Text.literal("Allow Mob Spawning"),
+                    mobCheckboxX + 24, mobCheckboxY + 6, 0xFFFFFF);
+        }
     }
 
     @Override

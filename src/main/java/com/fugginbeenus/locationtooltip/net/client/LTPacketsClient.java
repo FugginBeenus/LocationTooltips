@@ -21,8 +21,28 @@ public final class LTPacketsClient {
     private static final Identifier REGION_UPDATE        = LTPackets.REGION_UPDATE;
     private static final Identifier REGION_CREATED_TOAST = LTPackets.REGION_CREATED_TOAST;
     private static final Identifier OPEN_ADMIN_PANEL     = LTPackets.OPEN_ADMIN_PANEL;
+    private static final Identifier SELECTION_UPDATE     = LTPackets.SELECTION_UPDATE;
+    private static final Identifier SELECTION_CLEAR      = LTPackets.SELECTION_CLEAR;
 
     public static void initClient() {
+        // Register selection renderers
+        com.fugginbeenus.locationtooltip.client.SelectionRenderer.register();
+        com.fugginbeenus.locationtooltip.client.AdminRegionRenderer.register();
+
+        ClientPlayNetworking.registerGlobalReceiver(SELECTION_UPDATE, (client, handler, buf, rs) -> {
+            BlockPos a = buf.readBlockPos();
+            BlockPos b = buf.readBlockPos();
+            client.execute(() -> {
+                com.fugginbeenus.locationtooltip.client.SelectionRenderer.setCorners(a, b);
+            });
+        });
+
+        ClientPlayNetworking.registerGlobalReceiver(SELECTION_CLEAR, (client, handler, buf, rs) -> {
+            client.execute(() -> {
+                com.fugginbeenus.locationtooltip.client.SelectionRenderer.clear();
+            });
+        });
+
         ClientPlayNetworking.registerGlobalReceiver(OPEN_ADMIN_PANEL, (client, handler, buf, rs) ->
                 client.execute(() -> {
                     var mc = MinecraftClient.getInstance();
@@ -85,10 +105,12 @@ public final class LTPacketsClient {
         ClientPlayNetworking.send(LTPackets.REQUEST_ADMIN_LIST, buf);
     }
 
-    public static void sendAdminRename(String id, String newName) {
+    public static void sendAdminRename(String id, String newName, boolean allowPvP, boolean allowMobSpawning) {
         PacketByteBuf out = new PacketByteBuf(Unpooled.buffer());
         out.writeString(id);
         out.writeString(newName);
+        out.writeBoolean(allowPvP);
+        out.writeBoolean(allowMobSpawning);
         ClientPlayNetworking.send(LTPackets.ADMIN_RENAME, out);
     }
 
@@ -98,11 +120,13 @@ public final class LTPacketsClient {
         ClientPlayNetworking.send(LTPackets.ADMIN_DELETE, out);
     }
 
-    public static void sendCreate(String name, BlockPos a, BlockPos b) {
+    public static void sendCreate(String name, BlockPos a, BlockPos b, boolean allowPvP, boolean allowMobSpawning) {
         PacketByteBuf out = new PacketByteBuf(Unpooled.buffer());
         out.writeString(name);
         out.writeBlockPos(a);
         out.writeBlockPos(b);
+        out.writeBoolean(allowPvP);
+        out.writeBoolean(allowMobSpawning);
         ClientPlayNetworking.send(LTPackets.CREATE_REGION, out);
     }
 
@@ -116,7 +140,9 @@ public final class LTPacketsClient {
             Identifier dim = buf.readIdentifier();
             BlockPos min = buf.readBlockPos();
             BlockPos max = buf.readBlockPos();
-            out[i] = new AdminPanelScreen.RegionRow(id, name, dim, min, max);
+            boolean allowPvP = buf.readBoolean();
+            boolean allowMobSpawning = buf.readBoolean();
+            out[i] = new AdminPanelScreen.RegionRow(id, name, dim, min, max, allowPvP, allowMobSpawning);
         }
         return out;
     }

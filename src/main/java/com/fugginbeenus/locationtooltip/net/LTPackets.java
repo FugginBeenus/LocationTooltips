@@ -29,6 +29,9 @@ public final class LTPackets {
 
     public static final Identifier OPEN_ADMIN_PANEL     = id("open_admin_panel");
 
+    public static final Identifier SELECTION_UPDATE     = id("selection_update");
+    public static final Identifier SELECTION_CLEAR      = id("selection_clear");
+
     private static Identifier id(String path) { return new Identifier(MOD_ID, path); }
 
     public static void register() { init(); }
@@ -38,7 +41,9 @@ public final class LTPackets {
             String name = buf.readString(32767);
             BlockPos a  = buf.readBlockPos();
             BlockPos b  = buf.readBlockPos();
-            server.execute(() -> RegionManager.of(server).createRegion(player, name, a, b));
+            boolean allowPvP = buf.readBoolean();
+            boolean allowMobSpawning = buf.readBoolean();
+            server.execute(() -> RegionManager.of(server).createRegion(player, name, a, b, allowPvP, allowMobSpawning));
         });
 
         ServerPlayNetworking.registerGlobalReceiver(REQUEST_ADMIN_LIST, (server, player, handler, buf, rs) -> {
@@ -49,7 +54,9 @@ public final class LTPackets {
         ServerPlayNetworking.registerGlobalReceiver(ADMIN_RENAME, (server, player, handler, buf, rs) -> {
             String id  = buf.readString(32767);
             String newName = buf.readString(32767);
-            server.execute(() -> RegionManager.of(server).renameRegion(player, id, newName));
+            boolean allowPvP = buf.readBoolean();
+            boolean allowMobSpawning = buf.readBoolean();
+            server.execute(() -> RegionManager.of(server).renameRegion(player, id, newName, allowPvP, allowMobSpawning));
         });
 
         ServerPlayNetworking.registerGlobalReceiver(ADMIN_DELETE, (server, player, handler, buf, rs) -> {
@@ -84,6 +91,8 @@ public final class LTPackets {
             out.writeIdentifier(r.dim);
             out.writeBlockPos(r.min);
             out.writeBlockPos(r.max);
+            out.writeBoolean(r.allowPvP);
+            out.writeBoolean(r.allowMobSpawning);
         }
         ServerPlayNetworking.send(player, ADMIN_LIST, out);
     }
@@ -94,5 +103,17 @@ public final class LTPackets {
         out.writeBlockPos(min);
         out.writeBlockPos(max);
         ServerPlayNetworking.send(player, REGION_CREATED_TOAST, out);
+    }
+
+    public static void sendSelectionUpdate(ServerPlayerEntity player, BlockPos a, BlockPos b) {
+        PacketByteBuf out = PacketByteBufs.create();
+        out.writeBlockPos(a);
+        out.writeBlockPos(b);
+        ServerPlayNetworking.send(player, SELECTION_UPDATE, out);
+    }
+
+    public static void sendSelectionClear(ServerPlayerEntity player) {
+        PacketByteBuf out = PacketByteBufs.create();
+        ServerPlayNetworking.send(player, SELECTION_CLEAR, out);
     }
 }

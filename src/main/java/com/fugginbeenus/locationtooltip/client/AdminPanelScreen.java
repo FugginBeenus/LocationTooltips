@@ -5,6 +5,7 @@ import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.client.gui.widget.ButtonWidget;
+import net.minecraft.client.gui.widget.CheckboxWidget;
 import net.minecraft.client.gui.widget.TextFieldWidget;
 import net.minecraft.text.Text;
 import net.minecraft.util.Identifier;
@@ -27,8 +28,17 @@ public class AdminPanelScreen extends Screen {
         public String name;
         public final Identifier dim;
         public final BlockPos a, b;
-        public RegionRow(String id, String name, Identifier dim, BlockPos a, BlockPos b) {
-            this.id = id; this.name = name; this.dim = dim; this.a = a; this.b = b;
+        public boolean allowPvP;
+        public boolean allowMobSpawning;
+
+        public RegionRow(String id, String name, Identifier dim, BlockPos a, BlockPos b, boolean allowPvP, boolean allowMobSpawning) {
+            this.id = id;
+            this.name = name;
+            this.dim = dim;
+            this.a = a;
+            this.b = b;
+            this.allowPvP = allowPvP;
+            this.allowMobSpawning = allowMobSpawning;
         }
     }
 
@@ -101,7 +111,8 @@ public class AdminPanelScreen extends Screen {
     @Override
     public void tick() {
         super.tick();
-        if (++ticks % 20 == 0) { // every ~1s
+        // OPTIMIZATION: Reduced from 20 (1s) to 100 (5s) to reduce network traffic
+        if (++ticks % 100 == 0) { // every ~5s
             int r = 256;
             try { r = Integer.parseInt(radiusField.getText().trim()); } catch (Exception ignored) {}
             LTPacketsClient.requestAdminList(r);
@@ -213,6 +224,11 @@ public class AdminPanelScreen extends Screen {
         private final Screen returnTo;
         private TextFieldWidget field;
         private ButtonWidget saveBtn, cancelBtn;
+        private CheckboxWidget pvpCheckbox, mobSpawnCheckbox;
+
+        // Store checkbox positions for custom text rendering
+        private int pvpCheckboxX, pvpCheckboxY;
+        private int mobCheckboxX, mobCheckboxY;
 
         public RenameRegionScreen(RegionRow row, Screen returnTo) {
             super(Text.literal("Rename Region"));
@@ -224,24 +240,49 @@ public class AdminPanelScreen extends Screen {
         protected void init() {
             int w = 240;
             int x = (this.width - w) / 2;
-            int y = this.height / 2 - 20;
+            int y = this.height / 2 - 50;  // Move up to make room for checkboxes
 
             field = new TextFieldWidget(this.textRenderer, x, y, w, 20, Text.literal("Name"));
             field.setText(row.name);
             addDrawableChild(field);
 
+            // Add checkboxes below name field
+            int checkboxY = y + 35;
+            pvpCheckboxX = x;
+            pvpCheckboxY = checkboxY;
+            mobCheckboxX = x;
+            mobCheckboxY = checkboxY + 24;
+
+            pvpCheckbox = new CheckboxWidget(
+                    x, checkboxY,
+                    200, 20,
+                    Text.literal(""),  // Empty - we'll draw custom white text
+                    row.allowPvP
+            );
+            addDrawableChild(pvpCheckbox);
+
+            mobSpawnCheckbox = new CheckboxWidget(
+                    x, checkboxY + 24,
+                    200, 20,
+                    Text.literal(""),  // Empty - we'll draw custom white text
+                    row.allowMobSpawning
+            );
+            addDrawableChild(mobSpawnCheckbox);
+
             saveBtn = ButtonWidget.builder(Text.literal("Save"), b -> {
                 String newName = field.getText().trim();
                 if (!newName.isEmpty()) {
                     row.name = newName; // reflect locally
-                    LTPacketsClient.sendAdminRename(row.id, newName);
+                    row.allowPvP = pvpCheckbox.isChecked();
+                    row.allowMobSpawning = mobSpawnCheckbox.isChecked();
+                    LTPacketsClient.sendAdminRename(row.id, newName, row.allowPvP, row.allowMobSpawning);
                     MinecraftClient.getInstance().setScreen(returnTo);
                 }
-            }).dimensions(x, y + 30, 110, 20).build();
+            }).dimensions(x, y + 90, 110, 20).build();  // Move buttons down
 
             cancelBtn = ButtonWidget.builder(Text.literal("Cancel"), b -> {
                 MinecraftClient.getInstance().setScreen(returnTo);
-            }).dimensions(x + 130, y + 30, 110, 20).build();
+            }).dimensions(x + 130, y + 90, 110, 20).build();
 
             addDrawableChild(saveBtn);
             addDrawableChild(cancelBtn);
@@ -253,10 +294,26 @@ public class AdminPanelScreen extends Screen {
         public void render(DrawContext ctx, int mouseX, int mouseY, float delta) {
             ctx.fill(0, 0, this.width, this.height, 0xB0000000);
             super.render(ctx, mouseX, mouseY, delta);
-            String title = "Rename Region";
+
+            String title = "Edit Region";
             int tw = this.textRenderer.getWidth(title);
-            ctx.drawText(this.textRenderer, title, (this.width - tw) / 2, this.height / 2 - 45, 0xFFFFFF, false);
+            ctx.drawText(this.textRenderer, title, (this.width - tw) / 2, this.height / 2 - 75, 0xFFFFFF, false);
+
+            // Draw "Settings:" label
+            ctx.drawText(this.textRenderer, Text.literal("Settings:"),
+                    (this.width - 240) / 2, this.height / 2 - 23, 0xA0A0A0, false);
+
             field.render(ctx, mouseX, mouseY, delta);
+
+            // Draw white checkbox text
+            if (pvpCheckbox != null) {
+                ctx.drawTextWithShadow(this.textRenderer, Text.literal("Allow PvP"),
+                        pvpCheckboxX + 24, pvpCheckboxY + 6, 0xFFFFFF);
+            }
+            if (mobSpawnCheckbox != null) {
+                ctx.drawTextWithShadow(this.textRenderer, Text.literal("Allow Mob Spawning"),
+                        mobCheckboxX + 24, mobCheckboxY + 6, 0xFFFFFF);
+            }
         }
     }
 }

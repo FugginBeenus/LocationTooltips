@@ -68,6 +68,7 @@ public final class LocationTooltipClient implements ClientModInitializer {
 
             if (client.player == null || client.world == null) return;
 
+            // Check if holding admin compass
             boolean holding = false;
             var main = client.player.getMainHandStack();
             if (!main.isEmpty() && main.isOf(LTItems.ADMIN_COMPASS)) holding = true;
@@ -75,48 +76,24 @@ public final class LocationTooltipClient implements ClientModInitializer {
                 var off = client.player.getOffHandStack();
                 if (!off.isEmpty() && off.isOf(LTItems.ADMIN_COMPASS)) holding = true;
             }
-            if (!holding) return;
 
+            if (!holding) {
+                // Not holding compass - clear regions
+                com.fugginbeenus.locationtooltip.client.AdminRegionRenderer.clearAll();
+                return;
+            }
+
+            // Holding compass - request region list every second
             if ((client.world.getTime() % 20L) == 0L) {
                 LTPacketsClient.requestAdminList(256);
             }
 
+            // Update renderer with current regions
             var world = client.world;
             var hereDim = world.getRegistryKey().getValue();
-            var effect = new DustParticleEffect(new Vector3f(0.2f, 0.9f, 0.9f), 1.0f);
-            int step = 2;
-
             var rows = AdminClientCache.current();
-            if (rows == null || rows.length == 0) return;
-
-            for (var r : rows) {
-                if (!r.dim.equals(hereDim)) continue;
-
-                int minX = Math.min(r.min.getX(), r.max.getX());
-                int minY = Math.min(r.min.getY(), r.max.getY());
-                int minZ = Math.min(r.min.getZ(), r.max.getZ());
-                int maxX = Math.max(r.min.getX(), r.max.getX());
-                int maxY = Math.max(r.min.getY(), r.max.getY());
-                int maxZ = Math.max(r.min.getZ(), r.max.getZ());
-
-                for (int y = minY; y <= maxY; y += step) {
-                    world.addParticle(effect, minX + 0.5, y + 0.1, minZ + 0.5, 0, 0, 0);
-                    world.addParticle(effect, minX + 0.5, y + 0.1, maxZ + 0.5, 0, 0, 0);
-                    world.addParticle(effect, maxX + 0.5, y + 0.1, minZ + 0.5, 0, 0, 0);
-                    world.addParticle(effect, maxX + 0.5, y + 0.1, maxZ + 0.5, 0, 0, 0);
-                }
-                for (int x = minX; x <= maxX; x += step) {
-                    world.addParticle(effect, x + 0.5, minY + 0.1, minZ + 0.5, 0, 0, 0);
-                    world.addParticle(effect, x + 0.5, minY + 0.1, maxZ + 0.5, 0, 0, 0);
-                    world.addParticle(effect, x + 0.5, maxY + 0.1, minZ + 0.5, 0, 0, 0);
-                    world.addParticle(effect, x + 0.5, maxY + 0.1, maxZ + 0.5, 0, 0, 0);
-                }
-                for (int z = minZ; z <= maxZ; z += step) {
-                    world.addParticle(effect, minX + 0.5, minY + 0.1, z + 0.5, 0, 0, 0);
-                    world.addParticle(effect, maxX + 0.5, minY + 0.1, z + 0.5, 0, 0, 0);
-                    world.addParticle(effect, minX + 0.5, maxY + 0.1, z + 0.5, 0, 0, 0);
-                    world.addParticle(effect, maxX + 0.5, maxY + 0.1, z + 0.5, 0, 0, 0);
-                }
+            if (rows != null && rows.length > 0) {
+                com.fugginbeenus.locationtooltip.client.AdminRegionRenderer.updateRegions(rows, hereDim);
             }
         });
     }

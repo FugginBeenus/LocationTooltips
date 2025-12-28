@@ -54,6 +54,12 @@ final class RegionStorage {
                 } else {
                     rgn = new Region(name, d, min, max); // new id
                 }
+
+                // Load protection flags with backward compatibility
+                // Default to true (allow everything) for old regions without these fields
+                rgn.allowPvP = o.has("allowPvP") ? o.get("allowPvP").getAsBoolean() : true;
+                rgn.allowMobSpawning = o.has("allowMobSpawning") ? o.get("allowMobSpawning").getAsBoolean() : true;
+
                 list.add(rgn);
             }
             return list;
@@ -77,6 +83,11 @@ final class RegionStorage {
             // dimension is implied by file name; we don’t redundantly store it
             o.add("min", toObj(r.min));
             o.add("max", toObj(r.max));
+
+            // Save protection flags
+            o.addProperty("allowPvP", r.allowPvP);
+            o.addProperty("allowMobSpawning", r.allowMobSpawning);
+
             arr.add(o);
         }
 

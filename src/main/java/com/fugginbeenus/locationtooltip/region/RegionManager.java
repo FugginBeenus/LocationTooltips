@@ -7,17 +7,22 @@ import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Box;
+import net.minecraft.util.math.ChunkPos;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
 import static com.fugginbeenus.locationtooltip.LocationTooltip.MOD_ID;
-import com.fugginbeenus.locationtooltip.adv.AdvancementUtil;
 
 /**
  * Region manager (per server). Stores regions per-dimension, provides CRUD and queries.
- * Compatible with Region having fields { id, name, dim, min, max } and a contains() method.
+ *
+ * OPTIMIZED with spatial indexing:
+ * - Chunk-based spatial index for O(1) region candidate selection
+ * - Reduced linear searches from O(n) to O(k) where k = regions per chunk
+ * - Performance monitoring capabilities
+ * - Proper cleanup to prevent memory leaks
  */
 public final class RegionManager {
 
@@ -30,9 +35,29 @@ public final class RegionManager {
         return BY_SERVER.computeIfAbsent(key, k -> new RegionManager(server));
     }
 
+    /**
+     * Clean up when server stops to prevent memory leaks.
+     * Call from ServerLifecycleEvents.SERVER_STOPPING
+     */
+    public static void cleanup(MinecraftServer server) {
+        UUID key = new UUID(0L, System.identityHashCode(server));
+        RegionManager mgr = BY_SERVER.remove(key);
+        if (mgr != null) {
+            mgr.spatialIndex.clear();
+            mgr.byDim.clear();
+        }
+    }
+
     // ----- state -----
     private final MinecraftServer server;
     private final Map<Identifier, List<Region>> byDim = new HashMap<>();
+
+    // OPTIMIZATION: Spatial index - maps chunks to regions that intersect them
+    private final Map<Identifier, Map<ChunkPos, List<Region>>> spatialIndex = new HashMap<>();
+
+    // Performance tracking
+    private long lookupCount = 0;
+    private long lookupTimeNanos = 0;
 
     private RegionManager(MinecraftServer server) {
         this.server = server;
@@ -43,10 +68,12 @@ public final class RegionManager {
 
     private void loadAll() {
         byDim.clear();
+        spatialIndex.clear();
         server.getWorlds().forEach(sw -> {
             Identifier dim = sw.getRegistryKey().getValue();
             List<Region> list = RegionStorage.load(server, dim);
             byDim.put(dim, new ArrayList<>(list));
+            rebuildSpatialIndex(dim);
         });
     }
 
@@ -54,6 +81,36 @@ public final class RegionManager {
         List<Region> list = byDim.get(dim);
         if (list == null) list = Collections.emptyList();
         RegionStorage.save(server, dim, list);
+        rebuildSpatialIndex(dim); // Rebuild index after save
+    }
+
+    /**
+     * OPTIMIZATION: Rebuild spatial index for a dimension.
+     * Called after loading or modifying regions.
+     */
+    private void rebuildSpatialIndex(Identifier dim) {
+        Map<ChunkPos, List<Region>> index = new HashMap<>();
+        List<Region> regions = byDim.get(dim);
+
+        if (regions != null) {
+            for (Region r : regions) {
+                // Calculate which chunks this region spans
+                int minChunkX = r.min.getX() >> 4;
+                int maxChunkX = r.max.getX() >> 4;
+                int minChunkZ = r.min.getZ() >> 4;
+                int maxChunkZ = r.max.getZ() >> 4;
+
+                // Register region in all chunks it overlaps
+                for (int cx = minChunkX; cx <= maxChunkX; cx++) {
+                    for (int cz = minChunkZ; cz <= maxChunkZ; cz++) {
+                        ChunkPos cp = new ChunkPos(cx, cz);
+                        index.computeIfAbsent(cp, k -> new ArrayList<>()).add(r);
+                    }
+                }
+            }
+        }
+
+        spatialIndex.put(dim, index);
     }
 
     // ===== helpers =====
@@ -90,10 +147,7 @@ public final class RegionManager {
     }
 
     private static long volume(Region r) {
-        long dx = (long) (r.max.getX() - r.min.getX() + 1);
-        long dy = (long) (r.max.getY() - r.min.getY() + 1);
-        long dz = (long) (r.max.getZ() - r.min.getZ() + 1);
-        return Math.max(1L, dx) * Math.max(1L, dy) * Math.max(1L, dz);
+        return r.volume(); // Delegate to Region's optimized method
     }
 
     // ===== API =====
@@ -123,7 +177,7 @@ public final class RegionManager {
     }
 
     /** Create a new region in the player's current dimension. */
-    public void createRegion(ServerPlayerEntity player, String name, BlockPos a, BlockPos b) {
+    public void createRegion(ServerPlayerEntity player, String name, BlockPos a, BlockPos b, boolean allowPvP, boolean allowMobSpawning) {
         Identifier dim = player.getWorld().getRegistryKey().getValue();
 
         // Expand Y so regions always “catch” the player (see section 3 below)
@@ -143,6 +197,11 @@ public final class RegionManager {
         BlockPos nb = new BlockPos(maxX, maxY, maxZ);
 
         Region region = new Region(java.util.UUID.randomUUID().toString(), name, dim, na, nb);
+
+        // Set protection flags from GUI
+        region.allowPvP = allowPvP;
+        region.allowMobSpawning = allowMobSpawning;
+
         listFor(dim).add(region);
         saveDim(dim);
 
@@ -165,10 +224,12 @@ public final class RegionManager {
     }
 
     /** Rename by id; persists and refreshes the caller's list and HUD. */
-    public void renameRegion(ServerPlayerEntity player, String id, String newName) {
+    public void renameRegion(ServerPlayerEntity player, String id, String newName, boolean allowPvP, boolean allowMobSpawning) {
         Region r = findById(id);
         if (r == null) return;
         r.name = newName;
+        r.allowPvP = allowPvP;
+        r.allowMobSpawning = allowMobSpawning;
         saveDim(r.dim);
         sendNearbyTo(player, 512);
         pushNameTo(player);
@@ -185,18 +246,39 @@ public final class RegionManager {
         pushNameTo(player);
     }
 
-    /** Smallest-volume region containing pos in dim (nested → inner wins). */
+    /**
+     * OPTIMIZED: Smallest-volume region containing pos in dim (nested → inner wins).
+     * Uses spatial index for fast lookup - O(k) instead of O(n) where k = regions per chunk.
+     */
     public @Nullable Region smallestContaining(Identifier dim, BlockPos pos) {
-        var list = byDim.get(dim);
-        if (list == null || list.isEmpty()) return null;
-        Region best = null;
-        long bestVol = Long.MAX_VALUE;
-        for (Region r : list) {
-            if (!r.contains(pos)) continue;
-            long vol = volume(r);
-            if (vol < bestVol) { bestVol = vol; best = r; }
+        long startTime = System.nanoTime();
+        lookupCount++;
+
+        try {
+            Map<ChunkPos, List<Region>> index = spatialIndex.get(dim);
+            if (index == null) return null;
+
+            // Get candidate regions from the chunk containing this position
+            ChunkPos cp = new ChunkPos(pos);
+            List<Region> candidates = index.get(cp);
+            if (candidates == null || candidates.isEmpty()) return null;
+
+            // Find smallest containing region among candidates
+            Region best = null;
+            long bestVol = Long.MAX_VALUE;
+
+            for (Region r : candidates) {
+                if (!r.contains(pos)) continue;
+                long vol = volume(r);
+                if (vol < bestVol) {
+                    bestVol = vol;
+                    best = r;
+                }
+            }
+            return best;
+        } finally {
+            lookupTimeNanos += System.nanoTime() - startTime;
         }
-        return best;
     }
 
     /** Best region name at a position in a dimension — smallest-volume match wins; “Wilderness” if none. */
@@ -230,5 +312,50 @@ public final class RegionManager {
                 tracker.grantCriterion(adv, crit);
             }
         }
+    }
+
+    // ===== Performance Monitoring =====
+
+    /**
+     * Get performance statistics for debugging and optimization
+     */
+    public Map<String, Object> getPerformanceStats() {
+        Map<String, Object> stats = new HashMap<>();
+
+        // Count total regions across all dimensions
+        int totalRegions = byDim.values().stream().mapToInt(List::size).sum();
+        stats.put("total_regions", totalRegions);
+
+        // Calculate average regions per dimension
+        stats.put("dimensions", byDim.size());
+        stats.put("avg_regions_per_dim", byDim.isEmpty() ? 0 : totalRegions / (double) byDim.size());
+
+        // Lookup performance
+        stats.put("lookup_count", lookupCount);
+        if (lookupCount > 0) {
+            stats.put("avg_lookup_micros", lookupTimeNanos / lookupCount / 1000.0);
+        }
+
+        // Spatial index stats
+        long totalChunks = spatialIndex.values().stream().mapToLong(Map::size).sum();
+        stats.put("indexed_chunks", totalChunks);
+
+        if (totalChunks > 0) {
+            long totalEntries = spatialIndex.values().stream()
+                    .flatMap(map -> map.values().stream())
+                    .mapToLong(List::size)
+                    .sum();
+            stats.put("avg_regions_per_chunk", totalEntries / (double) totalChunks);
+        }
+
+        return stats;
+    }
+
+    /**
+     * Reset performance counters
+     */
+    public void resetStats() {
+        lookupCount = 0;
+        lookupTimeNanos = 0;
     }
 }
