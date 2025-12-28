@@ -48,7 +48,16 @@ public final class LTPackets {
 
         ServerPlayNetworking.registerGlobalReceiver(REQUEST_ADMIN_LIST, (server, player, handler, buf, rs) -> {
             int radius = buf.readVarInt();
-            server.execute(() -> RegionManager.of(server).sendNearbyTo(player, radius));
+            // Added to allow querying all regions that exist [GambaPVP]
+            server.execute(() -> {
+                if (radius < 0) {
+                    // Negative radius means "send all regions"
+                    RegionManager.of(server).sendAllTo(player, null); //null dimension means all dimensions
+                } else {
+                    // Positive radius means "send nearby regions"
+                    RegionManager.of(server).sendNearbyTo(player, radius);
+                }
+            });
         });
 
         ServerPlayNetworking.registerGlobalReceiver(ADMIN_RENAME, (server, player, handler, buf, rs) -> {

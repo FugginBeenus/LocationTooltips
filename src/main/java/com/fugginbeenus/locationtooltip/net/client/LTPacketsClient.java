@@ -105,6 +105,13 @@ public final class LTPacketsClient {
         ClientPlayNetworking.send(LTPackets.REQUEST_ADMIN_LIST, buf);
     }
 
+    /** Convenience callback for querying all existing regions [GambaPVP] */
+    public static void requestAllAdminList() {
+        PacketByteBuf buf = new PacketByteBuf(Unpooled.buffer());
+        buf.writeVarInt(-1); // -1 means "all regions"
+        ClientPlayNetworking.send(LTPackets.REQUEST_ADMIN_LIST, buf);
+    }
+
     public static void sendAdminRename(String id, String newName, boolean allowPvP, boolean allowMobSpawning) {
         PacketByteBuf out = new PacketByteBuf(Unpooled.buffer());
         out.writeString(id);

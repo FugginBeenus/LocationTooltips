@@ -115,7 +115,16 @@ public final class RegionManager {
 
     // ===== helpers =====
 
-    private List<Region> listFor(Identifier dim) {
+    private List<Region> listFor(@Nullable Identifier dim) {
+        if (dim == null) {
+            // flatten all regions across all dimensions
+            List<Region> result = new ArrayList<>();
+            for (List<Region> list : byDim.values()) {
+                result.addAll(list);
+            }
+            return result;
+        }
+
         return byDim.computeIfAbsent(dim, d -> new ArrayList<>());
     }
 
@@ -174,6 +183,19 @@ public final class RegionManager {
 
         // LTPackets send method should accept List<Region> (client builds rows)
         LTPackets.sendAdminList(player, near);
+    }
+
+    /** Send all regions to a player (no distance filtering) [GambaPVP] */
+    public void sendAllTo(ServerPlayerEntity player, @Nullable Identifier dim) {
+        List<Region> all = listFor(dim);
+
+        all.sort(Comparator.comparing(
+                (Region r) -> r.name,
+                String.CASE_INSENSITIVE_ORDER
+        ));
+
+        System.out.println("[LocationTooltip] Sending all " + all.size() + " regions to " + player.getName().getString());
+        LTPackets.sendAdminList(player, all);
     }
 
     /** Create a new region in the player's current dimension. */
