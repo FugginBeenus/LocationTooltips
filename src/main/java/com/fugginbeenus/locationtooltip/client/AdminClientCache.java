@@ -30,7 +30,10 @@ public final class AdminClientCache {
         public final BlockPos a;
         public final BlockPos b;
 
-        public Row(String id, String name, Identifier dim, BlockPos min, BlockPos max) {
+        //Allow PVP
+        public final Boolean allowPvP;
+
+        public Row(String id, String name, Identifier dim, BlockPos min, BlockPos max, Boolean allowPvP) {
             this.id = id;
             this.name = name;
             this.dim = dim;
@@ -39,6 +42,7 @@ public final class AdminClientCache {
             // aliases so code using r.a / r.b compiles:
             this.a = min;
             this.b = max;
+            this.allowPvP = allowPvP;
         }
     }
 }
