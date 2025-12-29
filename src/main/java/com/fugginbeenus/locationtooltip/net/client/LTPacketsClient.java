@@ -158,7 +158,7 @@ public final class LTPacketsClient {
         var out = new AdminClientCache.Row[in.length];
         for (int i = 0; i < in.length; i++) {
             var r = in[i];
-            out[i] = new AdminClientCache.Row(r.id, r.name, r.dim, r.a, r.b);
+            out[i] = new AdminClientCache.Row(r.id, r.name, r.dim, r.a, r.b, r.allowPvP);
         }
         return out;
     }
