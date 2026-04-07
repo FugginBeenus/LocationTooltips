@@ -1,80 +1,56 @@
-# 📍 Location Display Mod
+# Location Display Mod
 
 [![Minecraft](https://img.shields.io/badge/Minecraft-1.20.1-green.svg)](https://www.minecraft.net/)
 [![Fabric](https://img.shields.io/badge/Fabric-0.92.6-blue.svg)](https://fabricmc.net/)
 [![License](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Server-Side](https://img.shields.io/badge/Type-Server%20%26%20Client-purple.svg)](https://fabricmc.net/)
 
-A clean, immersive location display system for Minecraft that shows players their current area at the top of their screen. Perfect for servers with shopping districts, themed areas, player shops, and points of interest.
+A location display system for Minecraft that shows players their current area at the top of their screen. Works well for servers with shopping districts, themed areas, player shops, and points of interest.
 
-**THIS MOD IS HEAVILY INSPIRED BY THE ORIGIN REALMS LOCATION SYSTEM. THE BASE CONCEPTS ARE NOT MY IDEA, HOWEVER I AM CODING AND CREATING ALL THE ASSESTS.**
+> Heavily inspired by the Origin Realms location system. The core concept isn't mine, but all the code and assets are written from scratch. I'm still pretty new to modding so development may be slow — open to collaboration if anyone's interested.
 
-I have very little coding knowledge so I am relying on ChatGPT a lot for the basic coding. I would be very open to collaberation, otherwise development will be slow.
+**All releases on [Modrinth](https://modrinth.com/mod/location-tooltip).**
 
-**ALL RELEASES FOUND ON [MODRINTH.](https://modrinth.com/mod/location-tooltip)**
+## Overview
 
-## 🎯 Overview
+Adds a location indicator to the HUD that automatically updates as you move between defined regions — from "Wilderness" to "Shopping District" to individual shop names.
 
-Ever wondered where you are on a large server? This mod adds an elegant location indicator that automatically updates as you move between different areas. From "Wilderness" to "Shopping District" to individual shop names - players always know exactly where they are!
+## Features
 
-## ✨ Key Features
+### Location Display
+- HUD element at the top of the screen showing your current area
+- Fade transitions when crossing region boundaries
+- Adjustable color, size, position, and style
 
-### 🗺️ Dynamic Location Display
-- **Auto-updating HUD** - Shows current location at the top of the screen
-- **Hierarchical Regions** - Support for nested areas (District → Shop → Department)
-- **Smooth Transitions** - Fade effects when moving between areas
-- **Customizable Appearance** - Adjust colors, size, position, and style
+### Region Management
+- Click-and-drag visual editor for defining region boundaries
+- Full XYZ boundary support (not just 2D)
+- Nested/hierarchical regions with priority-based display
+- Region type categories (city, shop, wilderness, dungeon, etc.)
 
-### 🏗️ Region Management
-- **Visual Region Editor** - Click and drag to define area boundaries
-- **3D Region Support** - Set full XYZ boundaries, not just 2D areas
-- **Region Priorities** - Overlapping regions show the highest priority name
-- **Region Types** - Different categories (city, shop, wilderness, dungeon, etc.)
+### Permissions
+- Players can create and name their own regions
+- Admin controls for full region management and overrides
+- Region ownership tracking
 
-### 👥 Permissions System
-- **Player Regions** - Players can create their own named areas
-- **Admin Controls** - Full region management and override capabilities
-- **Protected Regions** - Prevent unauthorized region modifications
-- **Region Ownership** - Track who created each region
-
-### Nested Regions Example
-```
+### Nested Region Example
 Shopping District (Priority: 1)
-  ├── Bob's Emporium (Priority: 2)
-  │   ├── Weapons Section (Priority: 3)
-  │   └── Armor Section (Priority: 3)
-  └── Alice's Bakery (Priority: 2)
-```
+├── Bob's Emporium (Priority: 2)
+│   ├── Weapons Section (Priority: 3)
+│   └── Armor Section (Priority: 3)
+└── Alice's Bakery (Priority: 2)
 
-## 📸 Screenshots
+## Links
 
-![Location Display](https://via.placeholder.com/800x100?text=Location+Display+HUD)
-*Clean location display at the top of the screen*
-
-![Region Editor](https://via.placeholder.com/600x400?text=Visual+Region+Editor)
-*Intuitive visual region creation interface*
-
-![Nested Regions](https://via.placeholder.com/600x400?text=Nested+Region+Example)
-*Hierarchical regions in a shopping district*
-
-## 🔗 Links
-
-- [CurseForge](https://www.curseforge.com/minecraft/mc-mods/location-tooltip)
 - [Modrinth](https://modrinth.com/mod/location-tooltip)
-- [Discord Support](https://discord.gg/fMpb6retYA)
+- [CurseForge](https://www.curseforge.com/minecraft/mc-mods/location-tooltip)
+- [Discord](https://discord.gg/fMpb6retYA)
 
-## 🌟 Roadmap
+## Roadmap
 
 - [ ] Waypoint system integration
 - [ ] Minimap compatibility
 
-## 💖 Support
+## Support
 
-- ⭐ Star this repository
-- 🐛 Report bugs and suggest features
-- 📢 Share with friends
-- ☕ [Buy me a coffee](https://ko-fi.com/yourname)
-
----
-
-*Never get lost again!* 📍✨
+If you find a bug or have a feature request, open an issue. If you want to contribute, PRs are welcome.
