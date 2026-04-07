@@ -35,11 +35,11 @@ Adds a location indicator to the HUD that automatically updates as you move betw
 
 ### Nested Region Example
 
-Shopping District (Priority: 1)
-  ├── Bob's Emporium (Priority: 2)
-  │   ├── Weapons Section (Priority: 3)
-  │   └── Armor Section (Priority: 3)
-  └── Alice's Bakery (Priority: 2)
+    Shopping District (Priority: 1)
+      ├── Bob's Emporium (Priority: 2)
+      │   ├── Weapons Section (Priority: 3)
+      │   └── Armor Section (Priority: 3)
+      └── Alice's Bakery (Priority: 2)
 
 ## Links
 
