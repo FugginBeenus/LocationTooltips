@@ -1,0 +1,68 @@
+name: Publish to Modrinth
+
+# Publishes the mod to Modrinth automatically when a version tag (vX.Y.Z) is pushed,
+# or on demand via the "Run workflow" button (Actions tab).
+#
+# Setup required once: add a repository secret named MODRINTH_TOKEN
+# (Settings -> Secrets and variables -> Actions -> New repository secret) holding a
+# Modrinth personal access token with the "Create versions" scope.
+#
+# Release flow for future versions:
+#   1. bump `version=` in gradle.properties
+#   2. add CHANGELOG-<version>.md with the release notes
+#   3. git commit, then: git tag vX.Y.Z && git push origin vX.Y.Z
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Resolve version and changelog
+        run: |
+          VERSION=$(grep '^version=' gradle.properties | cut -d= -f2)
+          echo "Publishing version: $VERSION"
+
+          # On a tag push, make sure the tag matches the project version.
+          if [ "${GITHUB_REF_TYPE}" = "tag" ]; then
+            TAG="${GITHUB_REF_NAME#v}"
+            if [ "$TAG" != "$VERSION" ]; then
+              echo "::error::Tag ${GITHUB_REF_NAME} does not match gradle.properties version ${VERSION}. Bump gradle.properties first."
+              exit 1
+            fi
+          fi
+
+          # Use CHANGELOG-<version>.md if present, otherwise a simple default.
+          if [ -f "CHANGELOG-${VERSION}.md" ]; then
+            {
+              echo "CHANGELOG<<__LT_EOF__"
+              cat "CHANGELOG-${VERSION}.md"
+              echo "__LT_EOF__"
+            } >> "$GITHUB_ENV"
+          else
+            echo "CHANGELOG=Release ${VERSION}" >> "$GITHUB_ENV"
+          fi
+
+      - name: Publish to Modrinth
+        env:
+          MODRINTH_TOKEN: ${{ secrets.MODRINTH_TOKEN }}
+        run: ./gradlew modrinth --no-daemon --stacktrace
