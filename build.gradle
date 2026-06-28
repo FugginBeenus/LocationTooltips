@@ -130,5 +130,6 @@ modrinth {
         required.project "fabric-api"
         optional.project "modmenu"
         optional.project "cloth-config"
+        optional.project "waystones"
     }
 }
