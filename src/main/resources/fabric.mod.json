@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "id": "locationtooltip",
-  "version": "0.1.13",
+  "version": "${version}",
   "name": "Location Tooltip",
   "description": "Pretty region HUD + admin tools.",
   "authors": ["fugginbeenus"],
@@ -19,6 +19,10 @@
   },
   "suggests": {
     "cloth-config2": "*",
-    "modmenu": "*"
-  }
+    "modmenu": "*",
+    "waystones": "*"
+  },
+  "mixins": [
+    "locationtooltip.mixins.json"
+  ]
 }

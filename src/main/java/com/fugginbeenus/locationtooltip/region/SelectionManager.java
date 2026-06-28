@@ -36,6 +36,11 @@ public final class SelectionManager {
         return s == null ? null : s.a;
     }
 
+    public static BlockPos getSecond(ServerPlayerEntity p) {
+        var s = CURRENT.get(p.getUuid());
+        return s == null ? null : s.b;
+    }
+
     public static boolean hasBoth(ServerPlayerEntity p) {
         var s = CURRENT.get(p.getUuid());
         return s != null && s.ready();

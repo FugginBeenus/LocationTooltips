@@ -2,15 +2,8 @@ package com.fugginbeenus.locationtooltip.config.ui;
 
 import com.fugginbeenus.locationtooltip.config.LTConfig;
 import me.shedaniel.clothconfig2.api.ConfigBuilder;
-import me.shedaniel.clothconfig2.api.ConfigCategory;
-import me.shedaniel.clothconfig2.api.ConfigEntryBuilder;
-import me.shedaniel.clothconfig2.api.AbstractConfigListEntry;
 import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.text.Text;
-import me.shedaniel.clothconfig2.api.AbstractConfigListEntry;
-import com.fugginbeenus.locationtooltip.config.ui.ConfigLiveBridge;
-import java.util.ArrayList;
-import java.util.List;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -142,18 +135,11 @@ public final class LTClothConfig {
             tracked.add(new ConfigLiveBridge.Tracked<>(eNudge, v -> cfg.verticalNudge = clamp(v, -16, 16)));
 
             var eStyle = eb.startEnumSelector(Text.literal("Corner Style"), LTConfig.CornerStyle.class, cfg.cornerStyle)
+                    .setTooltip(Text.literal("ROUND = corner radius below; PILL = fully rounded ends; SQUIRCLE = soft square"))
                     .setSaveConsumer(v -> { cfg.cornerStyle = v; cfg.save(); })
                     .build();
             cat.addEntry(eStyle);
             tracked.add(new ConfigLiveBridge.Tracked<>(eStyle, v -> cfg.cornerStyle = v));
-
-            var eExponent = eb.startIntSlider(Text.literal("Corner Exponent (squircle)"),
-                            toSteps(cfg.cornerExponent, 1.5f, 12.0f, 0.1f), 0, stepsRange(1.5f, 12.0f, 0.1f))
-                    .setTextGetter(s -> Text.literal(String.format("%.1f", fromSteps(s, 1.5f, 0.1f))))
-                    .setSaveConsumer(s -> { cfg.cornerExponent = clampF(fromSteps(s, 1.5f, 0.1f), 1.5f, 12.0f); cfg.save(); })
-                    .build();
-            cat.addEntry(eExponent);
-            tracked.add(new ConfigLiveBridge.Tracked<>(eExponent, s -> cfg.cornerExponent = clampF(fromSteps(s, 1.5f, 0.1f), 1.5f, 12.0f)));
 
             var eBorder = eb.startIntSlider(Text.literal("Border Width (px)"), cfg.borderWidth, 0, 6)
                     .setSaveConsumer(v -> { cfg.borderWidth = clamp(v, 0, 6); cfg.save(); })
@@ -185,82 +171,13 @@ public final class LTClothConfig {
             tracked.add(new ConfigLiveBridge.Tracked<>(eY, v -> cfg.yOffset = v));
         }
 
-        // ---- Optional Textures ----
-        {
-            var cat = builder.getOrCreateCategory(Text.literal("Textures (Optional 9-slice)"));
-
-            var eUse = eb.startBooleanToggle(Text.literal("Use Textured Pills"), cfg.useTexturedPills)
-                    .setSaveConsumer(v -> { cfg.useTexturedPills = v; cfg.save(); })
-                    .build();
-            cat.addEntry(eUse);
-            tracked.add(new ConfigLiveBridge.Tracked<>(eUse, v -> cfg.useTexturedPills = v));
-
-            var eTexW = eb.startIntField(Text.literal("Texture Width (texW)"), cfg.texW)
-                    .setSaveConsumer(v -> { cfg.texW = Math.max(1, v); cfg.save(); })
-                    .build();
-            cat.addEntry(eTexW);
-            tracked.add(new ConfigLiveBridge.Tracked<>(eTexW, v -> cfg.texW = Math.max(1, v)));
-
-            var eTexH = eb.startIntField(Text.literal("Texture Height (texH)"), cfg.texH)
-                    .setSaveConsumer(v -> { cfg.texH = Math.max(1, v); cfg.save(); })
-                    .build();
-            cat.addEntry(eTexH);
-            tracked.add(new ConfigLiveBridge.Tracked<>(eTexH, v -> cfg.texH = Math.max(1, v)));
-
-            var eSL = eb.startIntField(Text.literal("Slice Left"), cfg.sliceLeft)
-                    .setSaveConsumer(v -> { cfg.sliceLeft = Math.max(0, v); cfg.save(); })
-                    .build();
-            cat.addEntry(eSL);
-            tracked.add(new ConfigLiveBridge.Tracked<>(eSL, v -> cfg.sliceLeft = Math.max(0, v)));
-
-            var eSR = eb.startIntField(Text.literal("Slice Right"), cfg.sliceRight)
-                    .setSaveConsumer(v -> { cfg.sliceRight = Math.max(0, v); cfg.save(); })
-                    .build();
-            cat.addEntry(eSR);
-            tracked.add(new ConfigLiveBridge.Tracked<>(eSR, v -> cfg.sliceRight = Math.max(0, v)));
-
-            var eST = eb.startIntField(Text.literal("Slice Top"), cfg.sliceTop)
-                    .setSaveConsumer(v -> { cfg.sliceTop = Math.max(0, v); cfg.save(); })
-                    .build();
-            cat.addEntry(eST);
-            tracked.add(new ConfigLiveBridge.Tracked<>(eST, v -> cfg.sliceTop = Math.max(0, v)));
-
-            var eSB = eb.startIntField(Text.literal("Slice Bottom"), cfg.sliceBottom)
-                    .setSaveConsumer(v -> { cfg.sliceBottom = Math.max(0, v); cfg.save(); })
-                    .build();
-            cat.addEntry(eSB);
-            tracked.add(new ConfigLiveBridge.Tracked<>(eSB, v -> cfg.sliceBottom = Math.max(0, v)));
-        }
+        // (9-slice "Textured Pills" options removed — the vector HUD renderer doesn't use them.
+        //  The fields remain in LTConfig for back-compat so old config files still load cleanly.)
 
         // Build the screen and start the live session
         Screen screen = builder.build();
         ConfigLiveBridge.beginSession(screen, tracked);
         return screen;
-    }
-
-    /* ---------------- helpers: read entry values safely ---------------- */
-    @SuppressWarnings("unchecked")
-    private static boolean getBool(AbstractConfigListEntry<?> e, boolean def) {
-        Object v = e.getValue();
-        return (v instanceof Boolean b) ? b : def;
-    }
-    @SuppressWarnings("unchecked")
-    private static int getInt(AbstractConfigListEntry<?> e, int def) {
-        Object v = e.getValue();
-        return (v instanceof Integer i) ? i : def;
-    }
-    @SuppressWarnings("unchecked")
-    private static String getStr(AbstractConfigListEntry<?> e, String def) {
-        Object v = e.getValue();
-        return (v instanceof String s) ? s : def;
-    }
-    @SuppressWarnings("unchecked")
-    private static <E extends Enum<E>> E getEnum(AbstractConfigListEntry<?> e, E def) {
-        Object v = e.getValue();
-        return (v != null && v.getClass().isEnum()) ? (E) v : def;
-    }
-    private static String nonEmpty(String s, String fallback) {
-        return (s == null || s.isEmpty()) ? fallback : s;
     }
 
     /* ---------------- numeric helpers ---------------- */

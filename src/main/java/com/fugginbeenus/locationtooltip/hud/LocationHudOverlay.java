@@ -93,8 +93,8 @@ public class LocationHudOverlay implements HudRenderCallback {
             int[] xy = anchor(cfg.position, mc.getWindow(), totalW, totalH, cfg.xOffset, cfg.yOffset);
             final int x = xy[0], y = xy[1];
 
-            // Vector pill with crisp corners
-            fillRound(ctx, x, y, totalW, totalH, cfg.cornerRadius, bg);
+            // Vector pill (honours corner style + optional border)
+            drawPill(ctx, cfg, x, y, totalW, totalH, bg);
 
             int cx = x + pad;
             int cy = y + pad + cfg.verticalNudge;
@@ -133,7 +133,7 @@ public class LocationHudOverlay implements HudRenderCallback {
 
             // Region pill
             if (hasRegion) {
-                fillRound(ctx, rx, ry, regW, totalH, cfg.cornerRadius, bg);
+                drawPill(ctx, cfg, rx, ry, regW, totalH, bg);
                 int cx = rx + pad;
                 int cy = ry + pad + cfg.verticalNudge;
 
@@ -149,7 +149,7 @@ public class LocationHudOverlay implements HudRenderCallback {
 
             // Time pill
             if (hasTime) {
-                fillRound(ctx, tx, ty, timW, totalH, cfg.cornerRadius, bg);
+                drawPill(ctx, cfg, tx, ty, timW, totalH, bg);
                 int cx = tx + pad;
                 int cy = ty + pad + cfg.verticalNudge;
 
@@ -182,6 +182,28 @@ public class LocationHudOverlay implements HudRenderCallback {
             case BOTTOM_LEFT, BOTTOM_CENTER, BOTTOM_RIGHT -> sh - h + dy;
         };
         return new int[]{x, y};
+    }
+
+    /** Effective corner radius for the configured corner style. */
+    private static int effectiveRadius(LTConfig cfg, int w, int h) {
+        int max = Math.min(w, h) / 2;
+        return switch (cfg.cornerStyle) {
+            case PILL -> max;
+            case SQUIRCLE -> Math.min(max, Math.max(cfg.cornerRadius, Math.min(w, h) / 4));
+            default -> Math.min(Math.max(0, cfg.cornerRadius), max); // ROUND
+        };
+    }
+
+    /** Draw a pill: optional border frame, then the background, honouring the corner style. */
+    private static void drawPill(DrawContext ctx, LTConfig cfg, int x, int y, int w, int h, int bg) {
+        int bw = Math.max(0, cfg.borderWidth);
+        if (bw > 0) {
+            int a = (bg >>> 24) & 0xFF;
+            int borderColor = (a << 24) | 0x00FFFFFF; // white frame at the pill's opacity
+            fillRound(ctx, x - bw, y - bw, w + bw * 2, h + bw * 2,
+                    effectiveRadius(cfg, w + bw * 2, h + bw * 2), borderColor);
+        }
+        fillRound(ctx, x, y, w, h, effectiveRadius(cfg, w, h), bg);
     }
 
     private static void fillRound1px(DrawContext ctx, int x, int y, int w, int h, int argb) {

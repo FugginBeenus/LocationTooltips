@@ -25,6 +25,7 @@ public final class LocationTooltip implements ModInitializer {
         RegionTicker.register();
         SelectionManager.registerServerTicker();
         RegionProtection.register();  // NEW: Register protection handlers
+        com.fugginbeenus.locationtooltip.region.structure.StructureRegionTagger.register();  // auto-tag world structures
 
         // OPTIMIZATION: Register cleanup events to prevent memory leaks
         ServerPlayConnectionEvents.DISCONNECT.register((handler, server) -> {

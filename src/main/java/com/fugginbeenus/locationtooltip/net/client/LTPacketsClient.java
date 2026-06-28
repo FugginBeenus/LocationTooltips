@@ -48,7 +48,7 @@ public final class LTPacketsClient {
                     var mc = MinecraftClient.getInstance();
                     if (mc == null) return;
                     mc.setScreen(new AdminPanelScreen());
-                    requestAdminList(256);
+                    requestAllAdminList();
                 })
         );
 
@@ -72,7 +72,6 @@ public final class LTPacketsClient {
 
         ClientPlayNetworking.registerGlobalReceiver(REGION_UPDATE, (client, handler, buf, rs) -> {
             String name = buf.readString(32767);
-            client.execute(() -> updateHudTitle(name));
             client.execute(() -> com.fugginbeenus.locationtooltip.hud.LocationHudOverlay.setRegionTitle(name));
         });
 
@@ -105,12 +104,18 @@ public final class LTPacketsClient {
         ClientPlayNetworking.send(LTPackets.REQUEST_ADMIN_LIST, buf);
     }
 
-    public static void sendAdminRename(String id, String newName, boolean allowPvP, boolean allowMobSpawning) {
+    /** Request every region (all dimensions), not just nearby ones. Contributed by GambaPVP. */
+    public static void requestAllAdminList() {
+        PacketByteBuf buf = new PacketByteBuf(Unpooled.buffer());
+        buf.writeVarInt(-1); // negative radius = all regions
+        ClientPlayNetworking.send(LTPackets.REQUEST_ADMIN_LIST, buf);
+    }
+
+    public static void sendAdminRename(String id, String newName, java.util.Map<String, Boolean> flags) {
         PacketByteBuf out = new PacketByteBuf(Unpooled.buffer());
         out.writeString(id);
         out.writeString(newName);
-        out.writeBoolean(allowPvP);
-        out.writeBoolean(allowMobSpawning);
+        LTPackets.writeFlags(out, flags);
         ClientPlayNetworking.send(LTPackets.ADMIN_RENAME, out);
     }
 
@@ -120,13 +125,12 @@ public final class LTPacketsClient {
         ClientPlayNetworking.send(LTPackets.ADMIN_DELETE, out);
     }
 
-    public static void sendCreate(String name, BlockPos a, BlockPos b, boolean allowPvP, boolean allowMobSpawning) {
+    public static void sendCreate(String name, BlockPos a, BlockPos b, java.util.Map<String, Boolean> flags) {
         PacketByteBuf out = new PacketByteBuf(Unpooled.buffer());
         out.writeString(name);
         out.writeBlockPos(a);
         out.writeBlockPos(b);
-        out.writeBoolean(allowPvP);
-        out.writeBoolean(allowMobSpawning);
+        LTPackets.writeFlags(out, flags);
         ClientPlayNetworking.send(LTPackets.CREATE_REGION, out);
     }
 
@@ -140,9 +144,10 @@ public final class LTPacketsClient {
             Identifier dim = buf.readIdentifier();
             BlockPos min = buf.readBlockPos();
             BlockPos max = buf.readBlockPos();
-            boolean allowPvP = buf.readBoolean();
-            boolean allowMobSpawning = buf.readBoolean();
-            out[i] = new AdminPanelScreen.RegionRow(id, name, dim, min, max, allowPvP, allowMobSpawning);
+            java.util.Map<String, Boolean> flags = LTPackets.readFlags(buf);
+            String ownerName = buf.readString(32767);  // Owner name (admins only)
+            String source = buf.readString(32767);     // PLAYER / SERVER / STRUCTURE
+            out[i] = new AdminPanelScreen.RegionRow(id, name, dim, min, max, flags, ownerName, source);
         }
         return out;
     }
@@ -151,27 +156,9 @@ public final class LTPacketsClient {
         var out = new AdminClientCache.Row[in.length];
         for (int i = 0; i < in.length; i++) {
             var r = in[i];
-            out[i] = new AdminClientCache.Row(r.id, r.name, r.dim, r.a, r.b);
+            out[i] = new AdminClientCache.Row(r.id, r.name, r.dim, r.a, r.b, r.flags, r.ownerName, r.source);
         }
         return out;
     }
 
-    private static void updateHudTitle(String name) {
-        try {
-            Class<?> cls = Class.forName("com.fugginbeenus.locationtooltip.hud.LocationHudOverlay");
-            for (String mname : new String[]{"setRegionTitle","setTitle","updateTitle","setText","setName"}) {
-                try {
-                    var m = cls.getMethod(mname, String.class);
-                    m.invoke(null, name);
-                    return;
-                } catch (NoSuchMethodException ignored) {}
-            }
-            for (String fname : new String[]{"CURRENT","TITLE","currentTitle","current"}) {
-                try {
-                    var f = cls.getField(fname);
-                    if (f.getType() == String.class) { f.set(null, name); return; }
-                } catch (NoSuchFieldException ignored) {}
-            }
-        } catch (Throwable ignored) {}
-    }
 }

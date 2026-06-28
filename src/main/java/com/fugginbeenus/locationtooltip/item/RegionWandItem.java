@@ -1,6 +1,7 @@
 package com.fugginbeenus.locationtooltip.item;
 
 import com.fugginbeenus.locationtooltip.region.SelectionManager;
+import net.minecraft.client.item.TooltipContext;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemUsageContext;
 import net.minecraft.item.ItemStack;
@@ -9,10 +10,13 @@ import net.minecraft.sound.SoundCategory;
 import net.minecraft.sound.SoundEvents;
 import net.minecraft.text.Text;
 import net.minecraft.util.ActionResult;
+import net.minecraft.util.Formatting;
 import net.minecraft.util.Hand;
 import net.minecraft.util.TypedActionResult;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
+
+import java.util.List;
 
 /**
  * A special admin/player tool used to select region corners and name regions.
@@ -73,5 +77,15 @@ public class RegionWandItem extends Item {
             }
         }
         return TypedActionResult.pass(player.getStackInHand(hand));
+    }
+
+    @Override
+    public void appendTooltip(ItemStack stack, World world, List<Text> tooltip, TooltipContext context) {
+        tooltip.add(Text.literal("Select corners to create regions").formatted(Formatting.GRAY));
+        tooltip.add(Text.literal(""));
+        tooltip.add(Text.literal("Right-click: ").formatted(Formatting.YELLOW)
+                .append(Text.literal("Set corner").formatted(Formatting.WHITE)));
+        tooltip.add(Text.literal("Shift + Right-click: ").formatted(Formatting.YELLOW)
+                .append(Text.literal("Create region").formatted(Formatting.WHITE)));
     }
 }
