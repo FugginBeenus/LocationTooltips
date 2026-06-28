@@ -1,8 +1,12 @@
 package com.fugginbeenus.locationtooltip.region;
 
+import com.fugginbeenus.locationtooltip.region.flag.RegionFlag;
+import com.fugginbeenus.locationtooltip.region.flag.RegionFlags;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.math.BlockPos;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
 
@@ -22,9 +26,19 @@ public final class Region {
     private final int minX, minY, minZ;
     private final int maxX, maxY, maxZ;
 
-    // Functional flags
-    public boolean allowPvP = true;           // Can players damage each other?
-    public boolean allowMobSpawning = true;   // Can mobs naturally spawn?
+    // Per-region flag OVERRIDES (sparse): a present entry is an explicit allow/deny;
+    // an absent entry means "inherit from a containing region, else the flag's default".
+    // See RegionFlags for the registry of known flags and their defaults.
+    private final Map<String, Boolean> flagOverrides = new HashMap<>();
+
+    // Where this region came from (player, server/admin, or auto-generated structure).
+    public RegionSource source = RegionSource.PLAYER;
+
+    // Optional category/type tag (e.g. "village", "shop"); used for HUD styling + structure tagging.
+    public String category = null;
+
+    // Owner system
+    public UUID owner;  // Player UUID who created this region (null = admin-created)
 
     /** Create a new region with a fresh id, auto-normalizing a/b into min/max. */
     public Region(String name, Identifier dim, BlockPos a, BlockPos b) {
@@ -33,6 +47,11 @@ public final class Region {
 
     /** Create a region with explicit id, auto-normalizing a/b into min/max. */
     public Region(String id, String name, Identifier dim, BlockPos a, BlockPos b) {
+        this(id, name, dim, a, b, null);  // null owner by default
+    }
+
+    /** Create a region with explicit id and owner, auto-normalizing a/b into min/max. */
+    public Region(String id, String name, Identifier dim, BlockPos a, BlockPos b, UUID owner) {
         Objects.requireNonNull(id, "id");
         Objects.requireNonNull(name, "name");
         Objects.requireNonNull(dim, "dim");
@@ -51,6 +70,7 @@ public final class Region {
         this.dim = dim;
         this.min = new BlockPos(minX, minY, minZ);
         this.max = new BlockPos(maxX, maxY, maxZ);
+        this.owner = owner;
 
         // Cache bounds for faster contains() checks
         this.minX = minX;
@@ -87,5 +107,60 @@ public final class Region {
         long dy = (long) (maxY - minY + 1);
         long dz = (long) (maxZ - minZ + 1);
         return Math.max(1L, dx) * Math.max(1L, dy) * Math.max(1L, dz);
+    }
+
+    /**
+     * Check if a player owns this region
+     */
+    public boolean isOwnedBy(UUID playerUuid) {
+        if (owner == null) return false;  // Admin-created regions have no owner
+        return owner.equals(playerUuid);
+    }
+
+    /**
+     * Check if this region can be edited by a player
+     */
+    public boolean canBeEditedBy(UUID playerUuid, boolean isOp) {
+        if (isOp) return true;  // Admins can edit anything
+        return isOwnedBy(playerUuid);  // Players can only edit their own
+    }
+
+    // ===== Flags =====
+
+    /** This region's explicit override for a flag, or null if it doesn't set one (inherits). */
+    public Boolean getFlagOverride(String flagId) {
+        return flagOverrides.get(flagId);
+    }
+
+    /** True if this region explicitly sets the flag (vs. inheriting it). */
+    public boolean hasFlagOverride(String flagId) {
+        return flagOverrides.containsKey(flagId);
+    }
+
+    /** Set an explicit allow/deny for a flag on this region. */
+    public void setFlag(String flagId, boolean value) {
+        flagOverrides.put(flagId, value);
+    }
+
+    /** Remove this region's override so the flag inherits / falls back to its default. */
+    public void clearFlag(String flagId) {
+        flagOverrides.remove(flagId);
+    }
+
+    /**
+     * Effective value for THIS region alone: its override if set, otherwise the flag's
+     * registered default. Note this ignores nested-region inheritance — for the value
+     * that actually applies at a position, use {@code RegionManager.resolveFlag(...)}.
+     */
+    public boolean flagOrDefault(String flagId) {
+        Boolean v = flagOverrides.get(flagId);
+        if (v != null) return v;
+        RegionFlag f = RegionFlags.byId(flagId);
+        return f != null ? f.defaultValue : true;
+    }
+
+    /** Live view of this region's overrides (used by storage + networking). */
+    public Map<String, Boolean> flagOverrides() {
+        return flagOverrides;
     }
 }

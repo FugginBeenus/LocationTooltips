@@ -3,7 +3,9 @@
   "package": "com.fugginbeenus.locationtooltip.mixin",
   "compatibilityLevel": "JAVA_17",
   "mixins": [
-    "MobEntityMixin"
+    "MobEntityMixin",
+    "ExplosionMixin",
+    "FireBlockMixin"
   ],
   "client": [],
   "injectors": {

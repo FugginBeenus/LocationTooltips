@@ -18,7 +18,8 @@ public class AdminRegionRenderer {
 
     private static class RegionBox {
         BlockPos min, max;
-        RegionBox(BlockPos a, BlockPos b) {
+        final boolean structure; // auto-tagged structure region → rendered in a distinct color
+        RegionBox(BlockPos a, BlockPos b, boolean structure) {
             int minX = Math.min(a.getX(), b.getX());
             int minY = Math.min(a.getY(), b.getY());
             int minZ = Math.min(a.getZ(), b.getZ());
@@ -27,6 +28,7 @@ public class AdminRegionRenderer {
             int maxZ = Math.max(a.getZ(), b.getZ()) + 1;
             this.min = new BlockPos(minX, minY, minZ);
             this.max = new BlockPos(maxX, maxY, maxZ);
+            this.structure = structure;
         }
     }
 
@@ -38,7 +40,7 @@ public class AdminRegionRenderer {
         regions.clear();
         for (var row : rows) {
             if (row.dim.equals(currentDim)) {
-                regions.add(new RegionBox(row.a, row.b));
+                regions.add(new RegionBox(row.a, row.b, row.isStructure()));
             }
         }
         lastUpdateTime = System.currentTimeMillis();
@@ -74,14 +76,15 @@ public class AdminRegionRenderer {
         float time = (System.currentTimeMillis() - lastUpdateTime) / 1000.0f;
         float pulse = (float) (0.8 + 0.2 * Math.sin(time * 2.0));
 
-        float r = 1.0f;
-        float g = 0.65f * pulse;
-        float b = 0.15f;
-
         float w = 0.07f;
         buffer.begin(VertexFormat.DrawMode.QUADS, VertexFormats.POSITION_COLOR);
 
         for (RegionBox box : regions) {
+            // Auto-tagged structures render cyan; player/admin regions render orange.
+            float r = box.structure ? 0.25f : 1.0f;
+            float g = box.structure ? (0.75f * pulse) : (0.65f * pulse);
+            float b = box.structure ? 1.0f : 0.15f;
+
             int minX = box.min.getX();
             int minY = box.min.getY();
             int minZ = box.min.getZ();
@@ -116,6 +119,10 @@ public class AdminRegionRenderer {
         float sideFaceAlpha = 0.06f * pulse;
 
         for (RegionBox box : regions) {
+            float r = box.structure ? 0.25f : 1.0f;
+            float g = box.structure ? (0.75f * pulse) : (0.65f * pulse);
+            float b = box.structure ? 1.0f : 0.15f;
+
             int minX = box.min.getX();
             int minY = box.min.getY();
             int minZ = box.min.getZ();

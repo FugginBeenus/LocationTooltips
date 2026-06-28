@@ -30,15 +30,32 @@ public final class AdminClientCache {
         public final BlockPos a;
         public final BlockPos b;
 
-        public Row(String id, String name, Identifier dim, BlockPos min, BlockPos max) {
+        // Per-region flag overrides (id -> allow/deny). Absent flags inherit / use defaults.
+        public final java.util.Map<String, Boolean> flags;
+
+        // Owner information (for admins)
+        public final String ownerName;  // Player name or "Server" for admin regions
+
+        // Region source: PLAYER / SERVER / STRUCTURE — drives the render color.
+        public final String source;
+
+        public Row(String id, String name, Identifier dim, BlockPos min, BlockPos max,
+                   java.util.Map<String, Boolean> flags, String ownerName, String source) {
             this.id = id;
             this.name = name;
             this.dim = dim;
             this.min = min;
             this.max = max;
+            this.flags = flags;
+            this.ownerName = ownerName;
+            this.source = source;
             // aliases so code using r.a / r.b compiles:
             this.a = min;
             this.b = max;
+        }
+
+        public boolean isStructure() {
+            return "STRUCTURE".equals(source);
         }
     }
 }

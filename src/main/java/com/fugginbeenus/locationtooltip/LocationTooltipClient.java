@@ -62,7 +62,7 @@ public final class LocationTooltipClient implements ClientModInitializer {
                 MinecraftClient mc = MinecraftClient.getInstance();
                 if (mc != null) {
                     mc.setScreen(new AdminPanelScreen());
-                    LTPacketsClient.requestAdminList(256);
+                    LTPacketsClient.requestAllAdminList();
                 }
             }
 
@@ -83,8 +83,9 @@ public final class LocationTooltipClient implements ClientModInitializer {
                 return;
             }
 
-            // Holding compass - request region list every second
-            if ((client.world.getTime() % 20L) == 0L) {
+            // Holding compass - refresh the in-world region boxes (nearby only).
+            // Skip while the panel is open; it does its own (all-regions) refresh. [GambaPVP]
+            if (!(client.currentScreen instanceof AdminPanelScreen) && (client.world.getTime() % 20L) == 0L) {
                 LTPacketsClient.requestAdminList(256);
             }
 

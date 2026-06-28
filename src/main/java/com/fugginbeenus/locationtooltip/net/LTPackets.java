@@ -10,7 +10,9 @@ import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.math.BlockPos;
 
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 import static com.fugginbeenus.locationtooltip.LocationTooltip.MOD_ID;
 
@@ -41,22 +43,26 @@ public final class LTPackets {
             String name = buf.readString(32767);
             BlockPos a  = buf.readBlockPos();
             BlockPos b  = buf.readBlockPos();
-            boolean allowPvP = buf.readBoolean();
-            boolean allowMobSpawning = buf.readBoolean();
-            server.execute(() -> RegionManager.of(server).createRegion(player, name, a, b, allowPvP, allowMobSpawning));
+            Map<String, Boolean> flags = readFlags(buf);
+            server.execute(() -> RegionManager.of(server).createRegion(player, name, a, b, flags));
         });
 
         ServerPlayNetworking.registerGlobalReceiver(REQUEST_ADMIN_LIST, (server, player, handler, buf, rs) -> {
             int radius = buf.readVarInt();
-            server.execute(() -> RegionManager.of(server).sendNearbyTo(player, radius));
+            server.execute(() -> {
+                if (radius < 0) {
+                    RegionManager.of(server).sendAllTo(player, null); // negative radius = all regions, all dims
+                } else {
+                    RegionManager.of(server).sendNearbyTo(player, radius);
+                }
+            });
         });
 
         ServerPlayNetworking.registerGlobalReceiver(ADMIN_RENAME, (server, player, handler, buf, rs) -> {
             String id  = buf.readString(32767);
             String newName = buf.readString(32767);
-            boolean allowPvP = buf.readBoolean();
-            boolean allowMobSpawning = buf.readBoolean();
-            server.execute(() -> RegionManager.of(server).renameRegion(player, id, newName, allowPvP, allowMobSpawning));
+            Map<String, Boolean> flags = readFlags(buf);
+            server.execute(() -> RegionManager.of(server).renameRegion(player, id, newName, flags));
         });
 
         ServerPlayNetworking.registerGlobalReceiver(ADMIN_DELETE, (server, player, handler, buf, rs) -> {
@@ -82,7 +88,7 @@ public final class LTPackets {
         ServerPlayNetworking.send(player, REGION_UPDATE, out);
     }
 
-    public static void sendAdminList(ServerPlayerEntity player, List<Region> regions) {
+    public static void sendAdminList(ServerPlayerEntity player, List<Region> regions, boolean isOp) {
         PacketByteBuf out = new PacketByteBuf(Unpooled.buffer());
         out.writeVarInt(regions.size());
         for (Region r : regions) {
@@ -91,10 +97,26 @@ public final class LTPackets {
             out.writeIdentifier(r.dim);
             out.writeBlockPos(r.min);
             out.writeBlockPos(r.max);
-            out.writeBoolean(r.allowPvP);
-            out.writeBoolean(r.allowMobSpawning);
+            writeFlags(out, r.flagOverrides());
+
+            // Send owner name (only for admins)
+            if (isOp && r.owner != null) {
+                String ownerName = getPlayerName(player.server, r.owner);
+                out.writeString(ownerName != null ? ownerName : "Unknown");
+            } else if (isOp && r.owner == null) {
+                out.writeString("Server");
+            } else {
+                out.writeString("");  // Players don't see owner names
+            }
+
+            out.writeString(r.source.name());  // PLAYER / SERVER / STRUCTURE — drives client render color
         }
         ServerPlayNetworking.send(player, ADMIN_LIST, out);
+    }
+
+    private static String getPlayerName(net.minecraft.server.MinecraftServer server, java.util.UUID uuid) {
+        com.mojang.authlib.GameProfile profile = server.getUserCache().getByUuid(uuid).orElse(null);
+        return profile != null ? profile.getName() : null;
     }
 
     public static void sendRegionCreatedCelebrate(ServerPlayerEntity player, String name, BlockPos min, BlockPos max) {
@@ -115,5 +137,26 @@ public final class LTPackets {
     public static void sendSelectionClear(ServerPlayerEntity player) {
         PacketByteBuf out = PacketByteBufs.create();
         ServerPlayNetworking.send(player, SELECTION_CLEAR, out);
+    }
+
+    // ===== flag (de)serialization (shared by client + server) =====
+
+    public static void writeFlags(PacketByteBuf buf, Map<String, Boolean> flags) {
+        buf.writeVarInt(flags.size());
+        for (Map.Entry<String, Boolean> e : flags.entrySet()) {
+            buf.writeString(e.getKey());
+            buf.writeBoolean(e.getValue());
+        }
+    }
+
+    public static Map<String, Boolean> readFlags(PacketByteBuf buf) {
+        int n = Math.max(0, buf.readVarInt());
+        Map<String, Boolean> flags = new LinkedHashMap<>();
+        for (int i = 0; i < n; i++) {
+            String id = buf.readString(32767);
+            boolean v = buf.readBoolean();
+            flags.put(id, v);
+        }
+        return flags;
     }
 }
