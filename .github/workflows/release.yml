@@ -1,11 +1,12 @@
-name: Publish to Modrinth
+name: Publish release
 
-# Publishes the mod to Modrinth automatically when a version tag (vX.Y.Z) is pushed,
-# or on demand via the "Run workflow" button (Actions tab).
+# Publishes the mod to Modrinth AND creates a GitHub Release when a version tag (vX.Y.Z)
+# is pushed, or on demand via the "Run workflow" button (Actions tab).
 #
 # Setup required once: add a repository secret named MODRINTH_TOKEN
 # (Settings -> Secrets and variables -> Actions -> New repository secret) holding a
-# Modrinth personal access token with the "Create versions" scope.
+# Modrinth personal access token. For the Modrinth upload it needs the "Create versions"
+# scope; to also auto-set the project environment it needs "Write projects".
 #
 # Release flow for future versions:
 #   1. bump `version=` in gradle.properties
@@ -19,7 +20,10 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write   # needed to create the GitHub Release
+
+env:
+  MODRINTH_PROJECT_ID: EEaD8a3s
 
 jobs:
   publish:
@@ -41,8 +45,9 @@ jobs:
         run: |
           VERSION=$(grep '^version=' gradle.properties | cut -d= -f2)
           echo "Publishing version: $VERSION"
+          echo "VERSION=$VERSION" >> "$GITHUB_ENV"
 
-          # On a tag push, make sure the tag matches the project version.
+          # On a tag push, ensure the tag matches the project version.
           if [ "${GITHUB_REF_TYPE}" = "tag" ]; then
             TAG="${GITHUB_REF_NAME#v}"
             if [ "$TAG" != "$VERSION" ]; then
@@ -66,3 +71,29 @@ jobs:
         env:
           MODRINTH_TOKEN: ${{ secrets.MODRINTH_TOKEN }}
         run: ./gradlew modrinth --no-daemon --stacktrace
+
+      - name: Set Modrinth project environment (client required, server optional)
+        continue-on-error: true   # don't fail the release if the token lacks "Write projects"
+        env:
+          MODRINTH_TOKEN: ${{ secrets.MODRINTH_TOKEN }}
+        run: |
+          code=$(curl -sS -o /tmp/mr.txt -w '%{http_code}' -X PATCH \
+            "https://api.modrinth.com/v2/project/${MODRINTH_PROJECT_ID}" \
+            -H "Authorization: ${MODRINTH_TOKEN}" \
+            -H "Content-Type: application/json" \
+            -d '{"client_side":"required","server_side":"optional"}')
+          echo "Modrinth PATCH status: $code"
+          if [ "$code" = "204" ]; then
+            echo "Environment set: client required, server optional."
+          else
+            echo "::warning::Could not set environment (HTTP $code). Set it manually on the project page. Response: $(cat /tmp/mr.txt)"
+          fi
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ env.VERSION }}
+          name: Location Tooltip ${{ env.VERSION }}
+          body_path: CHANGELOG-${{ env.VERSION }}.md
+          files: build/libs/locationtooltip-${{ env.VERSION }}.jar
+          fail_on_unmatched_files: false
