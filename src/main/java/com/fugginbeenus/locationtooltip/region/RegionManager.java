@@ -388,6 +388,14 @@ public final class RegionManager {
         return findById(id) != null;
     }
 
+    /** Smallest auto-generated STRUCTURE region containing pos, or null. */
+    public @Nullable Region smallestStructureContaining(Identifier dim, BlockPos pos) {
+        for (Region r : allContaining(dim, pos)) {          // already innermost-first
+            if (r.source == RegionSource.STRUCTURE) return r;
+        }
+        return null;
+    }
+
     /**
      * Add an auto-generated structure region: updates memory + the spatial index immediately
      * (so the HUD reflects it right away) and marks the dimension dirty for a debounced save.
@@ -500,10 +508,14 @@ public final class RegionManager {
         return f != null ? f.defaultValue : true;
     }
 
-    /** Best region name at a position in a dimension — smallest-volume match wins; “Wilderness” if none. */
+    /**
+     * Best region name at a position in a dimension — smallest-volume match wins. With no
+     * region, falls back to the dimension's default name ("Wilderness", "The Nether",
+     * "The End", or a prettified modded dimension name).
+     */
     public String currentRegionName(Identifier dim, BlockPos pos) {
         Region r = smallestContaining(dim, pos);
-        return (r != null) ? r.name : "Wilderness";
+        return (r != null) ? r.name : DimensionNames.wilderness(dim);
     }
 
     /** Push the active region name to the client HUD for this player. */

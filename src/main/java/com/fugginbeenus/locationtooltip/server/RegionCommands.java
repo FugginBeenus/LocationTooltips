@@ -175,7 +175,11 @@ public class RegionCommands {
                                             ServerCommandSource src = ctx.getSource();
                                             int count = RegionManager.of(src.getServer()).countBySource(RegionSource.STRUCTURE);
                                             boolean on = StructureRegionTagger.isEnabled();
-                                            src.sendFeedback(() -> Text.literal("Structure tagging: " + (on ? "ON" : "OFF")
+                                            StructureConfig cfg = StructureConfig.get();
+                                            src.sendFeedback(() -> Text.literal("Structure tagging: " + (on ? "§aON" : "§cOFF")
+                                                    + "§r | auto-tag modded: " + (cfg.tagModdedStructures ? "§aON" : "§cOFF")
+                                                    + "§r | vanilla listed: " + cfg.structures.size()
+                                                    + " | excluded: " + cfg.denied.size()
                                                     + " | auto regions: " + count), false);
                                             return 1;
                                         })
@@ -196,6 +200,24 @@ public class RegionCommands {
                                             return 1;
                                         })
                                 )
+                                .then(CommandManager.literal("modded")
+                                        .then(CommandManager.literal("on")
+                                                .executes(ctx -> {
+                                                    StructureConfig.get().setTagModdedStructures(true);
+                                                    ctx.getSource().sendFeedback(() -> Text.literal(
+                                                            "§aAuto-tagging modded structures enabled. Use rescan + revisit to apply to existing chunks."), false);
+                                                    return 1;
+                                                })
+                                        )
+                                        .then(CommandManager.literal("off")
+                                                .executes(ctx -> {
+                                                    StructureConfig.get().setTagModdedStructures(false);
+                                                    ctx.getSource().sendFeedback(() -> Text.literal(
+                                                            "§eAuto-tagging modded structures disabled. Only listed structures will be tagged."), false);
+                                                    return 1;
+                                                })
+                                        )
+                                )
                                 .then(CommandManager.literal("rescan")
                                         .executes(ctx -> {
                                             RegionManager.of(ctx.getSource().getServer()).rescanStructures();
@@ -206,9 +228,16 @@ public class RegionCommands {
                                 )
                                 .then(CommandManager.literal("list")
                                         .executes(ctx -> {
-                                            var ids = StructureConfig.get().structures;
+                                            StructureConfig cfg = StructureConfig.get();
                                             ctx.getSource().sendFeedback(() -> Text.literal(
-                                                    "§6Tagged structures (" + ids.size() + "): §f" + String.join(", ", ids)), false);
+                                                    "§6Vanilla tagged (" + cfg.structures.size() + "): §f" + String.join(", ", cfg.structures)), false);
+                                            ctx.getSource().sendFeedback(() -> Text.literal(
+                                                    "§6Auto-tag modded: §f" + (cfg.tagModdedStructures
+                                                            ? "on (any non-minecraft structure)" : "off")), false);
+                                            if (!cfg.denied.isEmpty()) {
+                                                ctx.getSource().sendFeedback(() -> Text.literal(
+                                                        "§6Excluded (" + cfg.denied.size() + "): §f" + String.join(", ", cfg.denied)), false);
+                                            }
                                             return 1;
                                         })
                                 )
@@ -217,7 +246,7 @@ public class RegionCommands {
                                                 .suggests(ALL_STRUCTURE_IDS)
                                                 .executes(ctx -> {
                                                     Identifier id = IdentifierArgumentType.getIdentifier(ctx, "id");
-                                                    boolean added = StructureConfig.get().add(id.toString());
+                                                    boolean added = StructureConfig.get().allow(id.toString());
                                                     ctx.getSource().sendFeedback(() -> Text.literal(added
                                                             ? "§aNow tagging " + id + ". Use rescan + revisit to apply to existing chunks."
                                                             : "§e" + id + " is already tagged."), false);
@@ -230,10 +259,10 @@ public class RegionCommands {
                                                 .suggests(ENABLED_STRUCTURE_IDS)
                                                 .executes(ctx -> {
                                                     Identifier id = IdentifierArgumentType.getIdentifier(ctx, "id");
-                                                    boolean removed = StructureConfig.get().remove(id.toString());
+                                                    boolean removed = StructureConfig.get().deny(id.toString());
                                                     ctx.getSource().sendFeedback(() -> Text.literal(removed
                                                             ? "§aNo longer tagging " + id + ". Use rescan to remove existing ones."
-                                                            : "§e" + id + " wasn't in the list."), false);
+                                                            : "§e" + id + " was already excluded."), false);
                                                     return 1;
                                                 })
                                         )

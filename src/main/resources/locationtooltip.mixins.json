@@ -7,7 +7,10 @@
     "ExplosionMixin",
     "FireBlockMixin"
   ],
-  "client": [],
+  "client": [
+    "BossBarHudAccessor",
+    "ModelPredicateRegistryInvoker"
+  ],
   "injectors": {
     "defaultRequire": 1
   }

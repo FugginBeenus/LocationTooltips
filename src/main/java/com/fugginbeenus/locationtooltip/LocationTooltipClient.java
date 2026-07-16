@@ -33,6 +33,9 @@ public final class LocationTooltipClient implements ClientModInitializer {
         LTItems.init();
         LTPacketsClient.initClient();
 
+        // Admin Compass needle (points at the nearest known region)
+        com.fugginbeenus.locationtooltip.client.AdminCompassModel.register();
+
 
         // Initialize live bridge once (idempotent now)
         com.fugginbeenus.locationtooltip.config.ui.ConfigLiveBridge.init();

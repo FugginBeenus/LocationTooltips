@@ -37,6 +37,10 @@ public final class Region {
     // Optional category/type tag (e.g. "village", "shop"); used for HUD styling + structure tagging.
     public String category = null;
 
+    // UUID (as string) of the waystone that named this region, if any. Lets a waystone keep
+    // its claim (so its later renames follow) while stopping other waystones stealing it.
+    public String waystoneUid = null;
+
     // Owner system
     public UUID owner;  // Player UUID who created this region (null = admin-created)
 

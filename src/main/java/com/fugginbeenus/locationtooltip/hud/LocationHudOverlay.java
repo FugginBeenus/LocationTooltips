@@ -60,6 +60,9 @@ public class LocationHudOverlay implements HudRenderCallback {
 
         LTConfig cfg = LTConfig.get();
 
+        // Boss bars render at the top-centre — hide there rather than covering them.
+        if (!preview && cfg.position == LTConfig.Position.TOP_CENTER && bossBarVisible(mc)) return;
+
         // What to show?
         String region = cfg.showRegionName ? currentTitle : null;
         String time   = (cfg.showClock && mc.world != null) ? formatTime(mc.world.getTimeOfDay(), cfg.time24h) : null;
@@ -166,6 +169,19 @@ public class LocationHudOverlay implements HudRenderCallback {
     }
 
     /* ------------------------------- helpers ------------------------------- */
+
+    /** True while any boss bar is on screen (vanilla draws them at the top-centre). */
+    private static boolean bossBarVisible(MinecraftClient mc) {
+        try {
+            if (mc.inGameHud == null) return false;
+            var bossBarHud = mc.inGameHud.getBossBarHud();
+            if (bossBarHud == null) return false;
+            return !((com.fugginbeenus.locationtooltip.mixin.BossBarHudAccessor) (Object) bossBarHud)
+                    .getBossBars().isEmpty();
+        } catch (Throwable ignored) {
+            return false; // never let the HUD crash over this
+        }
+    }
 
     private static int[] anchor(LTConfig.Position pos, Window win, int w, int h, int dx, int dy) {
         int sw = win.getScaledWidth(), sh = win.getScaledHeight();

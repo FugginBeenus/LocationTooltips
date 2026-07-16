@@ -50,7 +50,12 @@ public final class StructureRegionTagger {
         // Optional integrations (reflection-based; only active if the mod is present).
         if (FabricLoader.getInstance().isModLoaded("waystones")) {
             WaystonesNaming waystones = new WaystonesNaming();
-            if (waystones.isReady()) StructureNaming.addProvider(waystones);
+            if (waystones.isReady()) {
+                StructureNaming.addProvider(waystones);
+                // Generated waystones only register once activated, and players can place or
+                // rename one at any time — so keep structure names in sync continuously.
+                WaystonesSync.register(waystones);
+            }
         }
 
         ServerChunkEvents.CHUNK_LOAD.register(StructureRegionTagger::onChunkLoad);

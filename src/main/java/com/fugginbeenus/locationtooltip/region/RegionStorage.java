@@ -87,6 +87,9 @@ final class RegionStorage {
                 if (o.has("category") && !o.get("category").isJsonNull()) {
                     rgn.category = o.get("category").getAsString();
                 }
+                if (o.has("waystoneUid") && !o.get("waystoneUid").isJsonNull()) {
+                    rgn.waystoneUid = o.get("waystoneUid").getAsString();
+                }
 
                 list.add(rgn);
             }
@@ -123,6 +126,9 @@ final class RegionStorage {
             o.addProperty("source", r.source.name());
             if (r.category != null) {
                 o.addProperty("category", r.category);
+            }
+            if (r.waystoneUid != null) {
+                o.addProperty("waystoneUid", r.waystoneUid);
             }
 
             // Save owner UUID
