@@ -28,16 +28,20 @@ import java.util.stream.Stream;
  */
 public final class WaystonesNaming implements StructureNameProvider {
 
+    /** A waystone's data, pulled out of the reflective API into something plain. */
+    public record WaystoneInfo(String uid, String name, Identifier dim, BlockPos pos, boolean generated) {}
+
     private final Method getAllWaystones; // static WaystonesAPI.getAllWaystones(MinecraftServer)
     private final Method getName;         // IWaystone.getName() -> String
     private final Method getPos;          // IWaystone.getPos() -> BlockPos
     private final Method getDimension;    // IWaystone.getDimension() -> RegistryKey<World>
     private final Method hasName;         // IWaystone.hasName() -> boolean
     private final Method wasGenerated;    // IWaystone.wasGenerated() -> boolean
+    private final Method getWaystoneUid;  // IWaystone.getWaystoneUid() -> UUID
     private final boolean ready;
 
     public WaystonesNaming() {
-        Method all = null, name = null, pos = null, dim = null, named = null, gen = null;
+        Method all = null, name = null, pos = null, dim = null, named = null, gen = null, uid = null;
         boolean ok = false;
         try {
             Class<?> api = Class.forName("net.blay09.mods.waystones.api.WaystonesAPI");
@@ -48,6 +52,7 @@ public final class WaystonesNaming implements StructureNameProvider {
             dim = iWaystone.getMethod("getDimension");
             named = iWaystone.getMethod("hasName");
             gen = iWaystone.getMethod("wasGenerated");
+            uid = iWaystone.getMethod("getWaystoneUid");
             ok = true;
         } catch (Throwable t) {
             // Waystones absent or API changed → provider stays inert.
@@ -58,7 +63,43 @@ public final class WaystonesNaming implements StructureNameProvider {
         this.getDimension = dim;
         this.hasName = named;
         this.wasGenerated = gen;
+        this.getWaystoneUid = uid;
         this.ready = ok;
+    }
+
+    /**
+     * Every currently-known named waystone. Note Waystones only registers a naturally
+     * generated waystone once a player activates it, which is why region naming is synced
+     * periodically rather than only when the structure is first tagged.
+     */
+    @SuppressWarnings("unchecked")
+    public List<WaystoneInfo> listNamedWaystones(MinecraftServer server) {
+        if (!ready) return List.of();
+        try {
+            Stream<Object> all = (Stream<Object>) getAllWaystones.invoke(null, server);
+            if (all == null) return List.of();
+
+            List<WaystoneInfo> out = new ArrayList<>();
+            all.forEach(w -> {
+                try {
+                    if (!(boolean) hasName.invoke(w)) return;
+                    String name = (String) getName.invoke(w);
+                    if (name == null || name.isBlank()) return;
+
+                    RegistryKey<World> wDim = (RegistryKey<World>) getDimension.invoke(w);
+                    BlockPos pos = (BlockPos) getPos.invoke(w);
+                    Object uid = getWaystoneUid.invoke(w);
+                    if (wDim == null || pos == null || uid == null) return;
+
+                    out.add(new WaystoneInfo(uid.toString(), name, wDim.getValue(), pos,
+                            (boolean) wasGenerated.invoke(w)));
+                } catch (Throwable ignored) {
+                }
+            });
+            return out;
+        } catch (Throwable t) {
+            return List.of();
+        }
     }
 
     public boolean isReady() {

@@ -30,8 +30,19 @@ public final class StructureConfig {
     /** Master switch for the whole structure-tagging system. */
     public boolean enabled = true;
 
+    /**
+     * Auto-tag every structure that comes from a mod (any non-"minecraft" namespace) without
+     * having to list it. Vanilla stays curated via {@link #structures} so the world isn't
+     * flooded with mineshafts/ruined portals, while modded structures — including modded
+     * versions of vanilla ones — work out of the box.
+     */
+    public boolean tagModdedStructures = true;
+
     /** Registry ids of structures to tag (as strings, e.g. "minecraft:village_plains"). */
     public Set<String> structures = defaultStructures();
+
+    /** Explicit exclusions, checked first — works for vanilla and modded ids alike. */
+    public Set<String> denied = new LinkedHashSet<>();
 
     private static Set<String> defaultStructures() {
         return new LinkedHashSet<>(List.of(
@@ -59,6 +70,7 @@ public final class StructureConfig {
                 StructureConfig c = GSON.fromJson(r, StructureConfig.class);
                 if (c != null) {
                     if (c.structures == null) c.structures = defaultStructures();
+                    if (c.denied == null) c.denied = new LinkedHashSet<>(); // added after 0.3.0
                     return c;
                 }
             } catch (Exception e) {
@@ -84,24 +96,38 @@ public final class StructureConfig {
     }
 
     // ---- API ----
+
+    /** Deny list wins; then the explicit list; then modded structures if auto-tagging is on. */
     public boolean isAllowed(Identifier id) {
-        return structures.contains(id.toString());
+        String key = id.toString();
+        if (denied.contains(key)) return false;
+        if (structures.contains(key)) return true;
+        return tagModdedStructures && !"minecraft".equals(id.getNamespace());
     }
 
-    public boolean add(String id) {
-        boolean changed = structures.add(id);
+    /** Tag this structure (also clears any deny entry). */
+    public boolean allow(String id) {
+        boolean changed = denied.remove(id);
+        changed |= structures.add(id);
         if (changed) save();
         return changed;
     }
 
-    public boolean remove(String id) {
+    /** Stop tagging this structure — works for modded ids that were auto-tagged. */
+    public boolean deny(String id) {
         boolean changed = structures.remove(id);
+        changed |= denied.add(id);
         if (changed) save();
         return changed;
     }
 
     public void setEnabled(boolean value) {
         enabled = value;
+        save();
+    }
+
+    public void setTagModdedStructures(boolean value) {
+        tagModdedStructures = value;
         save();
     }
 }
