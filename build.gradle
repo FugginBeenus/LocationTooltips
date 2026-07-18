@@ -1,32 +1,34 @@
 plugins {
     id "java"
-    id "fabric-loom" version "1.5.7"
-    id "com.modrinth.minotaur" version "2.8.7"
+    id "fabric-loom" version "1.17.14"
+    id "com.modrinth.minotaur" version "2.+"
 }
 
-/* ----- Coordinates ----- */
-group   = (findProperty("group") ?: "com.fugginbeenus.locationtooltip")
-version = (findProperty("version") ?: "0.1.10")
-base { archivesName.set((findProperty("archives_base_name") ?: "locationtooltip").toString()) }
+group = findProperty("group") ?: "com.fugginbeenus.locationtooltip"
+version = findProperty("version") ?: "0.0.0"
 
-/* ----- Java ----- */
+base {
+    archivesName = (findProperty("archives_base_name") ?: "locationtooltip").toString()
+}
+
+// Per-version: Minecraft is Java 17 through 1.20.4 and Java 21 from 1.20.5 on.
+def javaVersion = Integer.parseInt(property('java_version').toString())
+
 java {
-    toolchain { languageVersion = JavaLanguageVersion.of(17) }
+    toolchain { languageVersion = JavaLanguageVersion.of(javaVersion) }
     withSourcesJar()
 }
 
-/* ----- Repos ----- */
 repositories {
     mavenCentral()
-    maven { url "https://maven.fabricmc.net/" }
-    maven { url "https://maven.terraformersmc.com/releases/" } // Mod Menu
-    maven { url "https://maven.shedaniel.me/" }                // Cloth Config
+    maven { url = "https://maven.fabricmc.net/" }
+    maven { url = "https://maven.terraformersmc.com/releases/" } // Mod Menu
+    maven { url = "https://maven.shedaniel.me/" }                // Cloth Config
 }
 
-/* ----- Deps (MC 1.20.1 line) ----- */
 dependencies {
-    minecraft    "com.mojang:minecraft:${property('minecraft_version')}"
-    mappings     "net.fabricmc:yarn:${property('yarn_mappings')}:v2"
+    minecraft "com.mojang:minecraft:${property('minecraft_version')}"
+    mappings "net.fabricmc:yarn:${property('yarn_mappings')}:v2"
     modImplementation "net.fabricmc:fabric-loader:${property('loader_version')}"
     modImplementation "net.fabricmc.fabric-api:fabric-api:${property('fabric_api_version')}"
 
@@ -36,95 +38,56 @@ dependencies {
     }
 }
 
-/* ----- Loom defaults (don’t split env) ----- */
 loom {}
 
-/* ----- Resource expansion (fabric.mod.json) ----- */
-tasks.named("processResources").configure {
-    inputs.property "version", project.version
-    inputs.property "mod_id", (findProperty("mod_id") ?: "locationtooltip").toString()
-    filesMatching("fabric.mod.json") {
-        expand(
-                "version": project.version,
-                "mod_id" : (findProperty("mod_id") ?: "locationtooltip").toString()
-        )
-    }
-}
-
-/* ----- Compile opts ----- */
 tasks.withType(JavaCompile).configureEach {
     options.encoding = "UTF-8"
-    options.release  = 17
+    options.release = javaVersion
 }
 
-/* ===========================================================
-   Build a PLAIN jar containing classes + resources
-   =========================================================== */
-tasks.register("plainJar", Jar) {
-    group = "build"
-    archiveBaseName.set(base.archivesName)
-    archiveVersion.set(project.version.toString())
-    archiveClassifier.set("plain")
+def mcVersion = property('minecraft_version').toString()
+def packFormat = Integer.parseInt(property('pack_format').toString())
 
-    from(sourceSets.main.output) // includes classes + resources
-    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
-}
-
-/* ===========================================================
-   Remap using the PLAIN jar as input
-   =========================================================== */
-import net.fabricmc.loom.task.RemapJarTask
-
-tasks.named("remapJar", RemapJarTask).configure { remap ->
-    dependsOn("plainJar")
-
-    // FEED the plain jar to remapper (this is the key fix)
-    remap.inputFile.set(tasks.named("plainJar").flatMap { it.archiveFile })
-
-    // Make sure TR has a real classpath
-    remap.classpath.from(configurations.named("compileClasspath"))
-
-    // Log sizes so we can see what it's actually using
-    remap.doFirst {
-        def inFile = remap.inputFile.get().asFile
-        println "REMAPPING input=${inFile} (size=${inFile.exists() ? inFile.length() : -1} bytes)"
+tasks.processResources {
+    inputs.property "version", project.version
+    inputs.property "minecraft_dep", mcVersion
+    filesMatching("fabric.mod.json") {
+        expand("version": project.version, "minecraft_dep": mcVersion)
     }
-    remap.doLast {
-        def outFile = remap.archiveFile.get().asFile
-        println "REMAPPED out=${outFile} (size=${outFile.exists() ? outFile.length() : -1} bytes)"
+    // 1.21 renamed the datapack folders to singular; the source tree keeps the 1.20 names.
+    if (packFormat >= 34) {
+        eachFile { f ->
+            f.path = f.path
+                    .replace("data/locationtooltip/advancements/", "data/locationtooltip/advancement/")
+                    .replace("data/locationtooltip/recipes/", "data/locationtooltip/recipe/")
+        }
+        includeEmptyDirs = false
     }
 }
 
-/* ===========================================================
-   Modrinth publishing
-   =========================================================== */
+// Jars are named locationtooltip-<version>+<minecraft>.jar so per-version builds don't collide.
+tasks.remapJar {
+    archiveVersion = "${project.version}+${mcVersion}"
+}
 
-// Make sure Modrinth uploads the remapped JAR, not the dev/plain one
-tasks.named("modrinth").configure {
-    dependsOn(tasks.remapJar)
+tasks.remapSourcesJar {
+    archiveVersion = "${project.version}+${mcVersion}"
 }
 
 modrinth {
-    // Set this in your shell/env: export MODRINTH_TOKEN=xxxxxxxx
-    token = System.getenv("MODRINTH_TOKEN")
-
-    // Use your real Modrinth project slug or ID
+    token = findProperty("modrinthToken") ?: System.getenv("MODRINTH_TOKEN")
     projectId = "EEaD8a3s"
 
-    versionNumber = project.version.toString()
-    versionName   = "Location Tooltip ${project.version}"
-    versionType   = "release"
-
-    // ✅ Provider form (fixes your error)
+    // Each Minecraft version publishes as its own Modrinth version (0.4.0+1.20.1, 0.4.0+1.21.1).
+    versionNumber = "${version}+${mcVersion}"
+    versionName = "Location Tooltip ${version} for ${mcVersion}"
+    versionType = "release"
     uploadFile = tasks.named("remapJar").flatMap { it.archiveFile }
+    gameVersions = [mcVersion]
+    loaders = ["fabric"]
 
-    // Optional: sources (Provider form too)
-    additionalFiles = [tasks.named("sourcesJar").flatMap { it.archiveFile }]
-
-    gameVersions = ["1.20.1"]
-    loaders      = ["fabric"]
-
-    changelog = (System.getenv("CHANGELOG") ?: "Bug fixes and improvements.")
+    def changelogFile = rootProject.file("CHANGELOG-${version}.md")
+    changelog = System.getenv("CHANGELOG") ?: (changelogFile.exists() ? changelogFile.text : "Bug fixes and improvements.")
 
     dependencies {
         required.project "fabric-api"
@@ -132,4 +95,8 @@ modrinth {
         optional.project "cloth-config"
         optional.project "waystones"
     }
+}
+
+tasks.modrinth {
+    dependsOn(tasks.remapJar)
 }
