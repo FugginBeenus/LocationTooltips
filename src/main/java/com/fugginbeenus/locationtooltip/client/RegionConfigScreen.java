@@ -79,14 +79,25 @@ public abstract class RegionConfigScreen extends Screen {
         onConfirm(name, flags.overrides());
     }
 
+    //? if >=1.21 {
+    /*@Override
+    public boolean mouseScrolled(double mx, double my, double horizontalAmount, double amount) {
+        return ltScroll(mx, my, amount) || super.mouseScrolled(mx, my, horizontalAmount, amount);
+    }
+    *///?} else {
     @Override
     public boolean mouseScrolled(double mx, double my, double amount) {
+        return ltScroll(mx, my, amount) || super.mouseScrolled(mx, my, amount);
+    }
+    //?}
+
+    private boolean ltScroll(double mx, double my, double amount) {
         if (maxScroll() > 0 && LTGui.hovered(mx, my, panelX + PAD, gridTop, innerW, gridViewH)) {
             gridScroll -= (int) Math.signum(amount) * 16;
             gridScroll = Math.max(0, Math.min(maxScroll(), gridScroll));
             return true;
         }
-        return super.mouseScrolled(mx, my, amount);
+        return false;
     }
 
     @Override

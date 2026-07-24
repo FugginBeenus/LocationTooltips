@@ -80,7 +80,11 @@ public class RegionWandItem extends Item {
     }
 
     @Override
+    //? if >=1.21 {
+    /*public void appendTooltip(ItemStack stack, net.minecraft.item.Item.TooltipContext context, List<Text> tooltip, net.minecraft.item.tooltip.TooltipType type) {
+    *///?} else {
     public void appendTooltip(ItemStack stack, World world, List<Text> tooltip, TooltipContext context) {
+    //?}
         tooltip.add(Text.literal("Select corners to create regions").formatted(Formatting.GRAY));
         tooltip.add(Text.literal(""));
         tooltip.add(Text.literal("Right-click: ").formatted(Formatting.YELLOW)

@@ -108,14 +108,25 @@ public class AdminPanelScreen extends Screen {
     }
 
     // ===== input =====
+    //? if >=1.21 {
+    /*@Override
+    public boolean mouseScrolled(double mx, double my, double horizontalAmount, double amount) {
+        return ltScroll(mx, my, amount) || super.mouseScrolled(mx, my, horizontalAmount, amount);
+    }
+    *///?} else {
     @Override
     public boolean mouseScrolled(double mx, double my, double amount) {
+        return ltScroll(mx, my, amount) || super.mouseScrolled(mx, my, amount);
+    }
+    //?}
+
+    private boolean ltScroll(double mx, double my, double amount) {
         if (LTGui.hovered(mx, my, listX, listY, listW, listH)) {
             scroll -= (int) Math.signum(amount) * (ROW_H / 2);
             clampScroll();
             return true;
         }
-        return super.mouseScrolled(mx, my, amount);
+        return false;
     }
 
     @Override

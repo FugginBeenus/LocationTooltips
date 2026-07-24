@@ -45,7 +45,11 @@ public class AdminCompassItem extends Item {
     }
 
     @Override
+    //? if >=1.21 {
+    /*public void appendTooltip(ItemStack stack, net.minecraft.item.Item.TooltipContext context, List<Text> tooltip, net.minecraft.item.tooltip.TooltipType type) {
+    *///?} else {
     public void appendTooltip(ItemStack stack, World world, List<Text> tooltip, TooltipContext context) {
+    //?}
         tooltip.add(Text.literal("Manage your regions").formatted(Formatting.GRAY));
         tooltip.add(Text.literal(""));
         tooltip.add(Text.literal("Players: ").formatted(Formatting.YELLOW)
