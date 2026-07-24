@@ -1,11 +1,9 @@
 package com.fugginbeenus.locationtooltip.item;
 
 import com.fugginbeenus.locationtooltip.net.LTPackets;
-import net.minecraft.client.item.TooltipContext;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
-import net.minecraft.sound.SoundCategory;
 import net.minecraft.sound.SoundEvents;
 import net.minecraft.text.Text;
 import net.minecraft.util.Formatting;
@@ -36,7 +34,7 @@ public class AdminCompassItem extends Item {
             LTPackets.openAdminPanel(sp);
 
             // feedback
-            player.playSound(SoundEvents.UI_BUTTON_CLICK.value(), SoundCategory.PLAYERS, 1.0f, 1.2f);
+            player.playSound(SoundEvents.UI_BUTTON_CLICK.value(), 1.0f, 1.2f);
             player.sendMessage(Text.literal("Opening Admin Panel..."), true);
             return TypedActionResult.success(stack);
         }
@@ -48,7 +46,7 @@ public class AdminCompassItem extends Item {
     //? if >=1.21 {
     /*public void appendTooltip(ItemStack stack, net.minecraft.item.Item.TooltipContext context, List<Text> tooltip, net.minecraft.item.tooltip.TooltipType type) {
     *///?} else {
-    public void appendTooltip(ItemStack stack, World world, List<Text> tooltip, TooltipContext context) {
+    public void appendTooltip(ItemStack stack, World world, List<Text> tooltip, net.minecraft.client.item.TooltipContext context) {
     //?}
         tooltip.add(Text.literal("Manage your regions").formatted(Formatting.GRAY));
         tooltip.add(Text.literal(""));

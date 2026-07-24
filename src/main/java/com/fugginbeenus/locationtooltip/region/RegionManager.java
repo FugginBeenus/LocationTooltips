@@ -529,7 +529,7 @@ public final class RegionManager {
     private static void grantFirstRegion(ServerPlayerEntity player) {
         // Grant: locationtooltip:first_region
         final net.minecraft.util.Identifier advId =
-                new net.minecraft.util.Identifier("locationtooltip", "first_region");
+                net.minecraft.util.Identifier.of("locationtooltip", "first_region");
         var adv = player.server.getAdvancementLoader().get(advId);
         if (adv == null) {
             // If you ever see this in logs, your JSON path/namespace is wrong.

@@ -1,12 +1,10 @@
 package com.fugginbeenus.locationtooltip.item;
 
 import com.fugginbeenus.locationtooltip.region.SelectionManager;
-import net.minecraft.client.item.TooltipContext;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemUsageContext;
 import net.minecraft.item.ItemStack;
 import net.minecraft.server.network.ServerPlayerEntity;
-import net.minecraft.sound.SoundCategory;
 import net.minecraft.sound.SoundEvents;
 import net.minecraft.text.Text;
 import net.minecraft.util.ActionResult;
@@ -43,7 +41,7 @@ public class RegionWandItem extends Item {
 
         if (sneaking && SelectionManager.hasBoth(player)) {
             SelectionManager.openNamingScreen(player);
-            player.playSound(SoundEvents.UI_BUTTON_CLICK.value(), SoundCategory.PLAYERS, 1.0f, 1.2f);
+            player.playSound(SoundEvents.UI_BUTTON_CLICK.value(), 1.0f, 1.2f);
             return ActionResult.SUCCESS;
         }
 
@@ -51,17 +49,17 @@ public class RegionWandItem extends Item {
             if (SelectionManager.getFirst(player) == null) {
                 SelectionManager.setFirst(player, pos);
                 player.sendMessage(Text.literal("First corner set at " + pos.toShortString()), true);
-                player.playSound(SoundEvents.BLOCK_NOTE_BLOCK_HAT.value(), SoundCategory.PLAYERS, 1.0f, 1.5f);
+                player.playSound(SoundEvents.BLOCK_NOTE_BLOCK_HAT.value(), 1.0f, 1.5f);
             } else {
                 SelectionManager.setSecond(player, pos);
                 player.sendMessage(Text.literal("Second corner set at " + pos.toShortString()), true);
-                player.playSound(SoundEvents.BLOCK_NOTE_BLOCK_PLING.value(), SoundCategory.PLAYERS, 1.0f, 1.3f);
+                player.playSound(SoundEvents.BLOCK_NOTE_BLOCK_PLING.value(), 1.0f, 1.3f);
             }
         } else {
             SelectionManager.clear(player);
             SelectionManager.setFirst(player, pos);
             player.sendMessage(Text.literal("Selection reset. First corner set at " + pos.toShortString()), true);
-            player.playSound(SoundEvents.BLOCK_NOTE_BLOCK_HAT.value(), SoundCategory.PLAYERS, 1.0f, 1.0f);
+            player.playSound(SoundEvents.BLOCK_NOTE_BLOCK_HAT.value(), 1.0f, 1.0f);
         }
 
         return ActionResult.SUCCESS;
@@ -72,7 +70,7 @@ public class RegionWandItem extends Item {
         if (!world.isClient && player.isSneaking() && player instanceof ServerPlayerEntity serverPlayer) {
             if (SelectionManager.hasBoth(serverPlayer)) {
                 SelectionManager.openNamingScreen(serverPlayer);
-                player.playSound(SoundEvents.UI_BUTTON_CLICK.value(), SoundCategory.PLAYERS, 1.0f, 1.0f);
+                player.playSound(SoundEvents.UI_BUTTON_CLICK.value(), 1.0f, 1.0f);
                 return TypedActionResult.success(player.getStackInHand(hand));
             }
         }
@@ -83,7 +81,7 @@ public class RegionWandItem extends Item {
     //? if >=1.21 {
     /*public void appendTooltip(ItemStack stack, net.minecraft.item.Item.TooltipContext context, List<Text> tooltip, net.minecraft.item.tooltip.TooltipType type) {
     *///?} else {
-    public void appendTooltip(ItemStack stack, World world, List<Text> tooltip, TooltipContext context) {
+    public void appendTooltip(ItemStack stack, World world, List<Text> tooltip, net.minecraft.client.item.TooltipContext context) {
     //?}
         tooltip.add(Text.literal("Select corners to create regions").formatted(Formatting.GRAY));
         tooltip.add(Text.literal(""));
