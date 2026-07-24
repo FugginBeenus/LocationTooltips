@@ -25,7 +25,7 @@ public final class AdminCompassModel {
     public static void register() {
         ModelPredicateRegistryInvoker.locationtooltip$register(
                 LTItems.ADMIN_COMPASS,
-                new Identifier("angle"),
+                Identifier.of("minecraft", "angle"),
                 new CompassAnglePredicateProvider((world, stack, entity) -> {
                     if (world == null || entity == null) return null;
                     BlockPos target = nearestRegionCenter(world.getRegistryKey().getValue(), entity.getBlockPos());

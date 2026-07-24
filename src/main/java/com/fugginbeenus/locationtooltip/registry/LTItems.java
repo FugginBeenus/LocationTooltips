@@ -23,12 +23,12 @@ public final class LTItems {
 
     // 1) Items
     public static final Item REGION_WAND = Registry.register(
-            Registries.ITEM, new Identifier(MODID, "region_wand"),
+            Registries.ITEM, Identifier.of(MODID, "region_wand"),
             new RegionWandItem(new FabricItemSettings().maxCount(1))
     );
 
     public static final Item ADMIN_COMPASS = Registry.register(
-            Registries.ITEM, new Identifier(MODID, "admin_compass"),
+            Registries.ITEM, Identifier.of(MODID, "admin_compass"),
             new AdminCompassItem(new FabricItemSettings().maxCount(1))
     );
 
@@ -36,7 +36,7 @@ public final class LTItems {
     //    Shows both items so you can grab them even if vanilla tabs change.
     @SuppressWarnings("unused")
     private static final net.minecraft.item.ItemGroup LT_GROUP = Registry.register(
-            Registries.ITEM_GROUP, new Identifier(MODID, "main"),
+            Registries.ITEM_GROUP, Identifier.of(MODID, "main"),
             FabricItemGroup.builder()
                     .icon(() -> new ItemStack(ADMIN_COMPASS))
                     .displayName(Text.literal("Location Tooltip"))

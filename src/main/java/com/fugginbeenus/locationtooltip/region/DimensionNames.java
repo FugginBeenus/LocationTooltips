@@ -12,9 +12,9 @@ import net.minecraft.util.Identifier;
 public final class DimensionNames {
     private DimensionNames() {}
 
-    private static final Identifier OVERWORLD = new Identifier("minecraft", "overworld");
-    private static final Identifier THE_NETHER = new Identifier("minecraft", "the_nether");
-    private static final Identifier THE_END = new Identifier("minecraft", "the_end");
+    private static final Identifier OVERWORLD = Identifier.of("minecraft", "overworld");
+    private static final Identifier THE_NETHER = Identifier.of("minecraft", "the_nether");
+    private static final Identifier THE_END = Identifier.of("minecraft", "the_end");
 
     /** Name to show when standing outside every region in this dimension. */
     public static String wilderness(Identifier dim) {

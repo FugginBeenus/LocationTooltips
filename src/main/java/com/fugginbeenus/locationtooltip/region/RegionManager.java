@@ -266,7 +266,7 @@ public final class RegionManager {
 
         // --- NEW: delay the advancement grant so the toast isn't hidden by the celebration ---
         final UUID who = player.getUuid();
-        final var advId = new Identifier(MOD_ID, "first_region");
+        final var advId = Identifier.of(MOD_ID, "first_region");
         // 60 ticks (~3 seconds) feels great; use 40 for ~2s if you prefer
         com.fugginbeenus.locationtooltip.server.RegionTicker.later(player.server, 250, () -> {
             ServerPlayerEntity again = player.server.getPlayerManager().getPlayer(who);

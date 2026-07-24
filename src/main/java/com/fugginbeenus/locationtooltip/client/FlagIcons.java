@@ -24,7 +24,7 @@ public final class FlagIcons {
 
     private static Identifier path(String flagId) {
         return PATHS.computeIfAbsent(flagId,
-                id -> new Identifier("locationtooltip", "textures/gui/flags/" + id + ".png"));
+                id -> Identifier.of("locationtooltip", "textures/gui/flags/" + id + ".png"));
     }
 
     /** True if an icon texture exists for this flag (cached). */
