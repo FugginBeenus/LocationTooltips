@@ -2,152 +2,100 @@ package com.fugginbeenus.locationtooltip.net.client;
 
 import com.fugginbeenus.locationtooltip.client.AdminClientCache;
 import com.fugginbeenus.locationtooltip.client.AdminPanelScreen;
+import com.fugginbeenus.locationtooltip.client.AdminRegionRenderer;
 import com.fugginbeenus.locationtooltip.client.NameRegionScreen;
-import com.fugginbeenus.locationtooltip.net.LTPackets;
-import io.netty.buffer.Unpooled;
-import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
+import com.fugginbeenus.locationtooltip.client.SelectionRenderer;
+import com.fugginbeenus.locationtooltip.hud.LocationHudOverlay;
+import com.fugginbeenus.locationtooltip.net.LTPayloads;
 import net.minecraft.client.MinecraftClient;
-import net.minecraft.network.PacketByteBuf;
 import net.minecraft.particle.ParticleTypes;
 import net.minecraft.sound.SoundEvents;
-import net.minecraft.util.Identifier;
 import net.minecraft.util.math.BlockPos;
+
+import java.util.List;
+import java.util.Map;
 
 public final class LTPacketsClient {
     private LTPacketsClient() {}
 
-    private static final Identifier OPEN_NAME            = LTPackets.OPEN_NAME;
-    private static final Identifier ADMIN_LIST           = LTPackets.ADMIN_LIST;
-    private static final Identifier REGION_UPDATE        = LTPackets.REGION_UPDATE;
-    private static final Identifier REGION_CREATED_TOAST = LTPackets.REGION_CREATED_TOAST;
-    private static final Identifier OPEN_ADMIN_PANEL     = LTPackets.OPEN_ADMIN_PANEL;
-    private static final Identifier SELECTION_UPDATE     = LTPackets.SELECTION_UPDATE;
-    private static final Identifier SELECTION_CLEAR      = LTPackets.SELECTION_CLEAR;
-
     public static void initClient() {
-        // Register selection renderers
-        com.fugginbeenus.locationtooltip.client.SelectionRenderer.register();
-        com.fugginbeenus.locationtooltip.client.AdminRegionRenderer.register();
+        LTNetClient.init();
+        SelectionRenderer.register();
+        AdminRegionRenderer.register();
 
-        ClientPlayNetworking.registerGlobalReceiver(SELECTION_UPDATE, (client, handler, buf, rs) -> {
-            BlockPos a = buf.readBlockPos();
-            BlockPos b = buf.readBlockPos();
-            client.execute(() -> {
-                com.fugginbeenus.locationtooltip.client.SelectionRenderer.setCorners(a, b);
-            });
+        LTNetClient.registerReceiver(LTPayloads.SELECTION_UPDATE, (client, p) ->
+                SelectionRenderer.setCorners(p.a(), p.b()));
+
+        LTNetClient.registerReceiver(LTPayloads.SELECTION_CLEAR, (client, p) ->
+                SelectionRenderer.clear());
+
+        LTNetClient.registerReceiver(LTPayloads.OPEN_ADMIN_PANEL, (client, p) -> {
+            if (client == null) return;
+            client.setScreen(new AdminPanelScreen());
+            requestAllAdminList();
         });
 
-        ClientPlayNetworking.registerGlobalReceiver(SELECTION_CLEAR, (client, handler, buf, rs) -> {
-            client.execute(() -> {
-                com.fugginbeenus.locationtooltip.client.SelectionRenderer.clear();
-            });
+        LTNetClient.registerReceiver(LTPayloads.OPEN_NAME, (client, p) -> {
+            if (client != null) client.setScreen(new NameRegionScreen(p.a(), p.b()));
         });
 
-        ClientPlayNetworking.registerGlobalReceiver(OPEN_ADMIN_PANEL, (client, handler, buf, rs) ->
-                client.execute(() -> {
-                    var mc = MinecraftClient.getInstance();
-                    if (mc == null) return;
-                    mc.setScreen(new AdminPanelScreen());
-                    requestAllAdminList();
-                })
-        );
-
-        ClientPlayNetworking.registerGlobalReceiver(OPEN_NAME, (client, handler, buf, rs) -> {
-            BlockPos a = buf.readBlockPos();
-            BlockPos b = buf.readBlockPos();
-            client.execute(() -> {
-                MinecraftClient mc = MinecraftClient.getInstance();
-                if (mc != null) mc.setScreen(new NameRegionScreen(a, b));
-            });
+        LTNetClient.registerReceiver(LTPayloads.ADMIN_LIST, (client, p) -> {
+            AdminPanelScreen.RegionRow[] rows = toPanelRows(p.entries());
+            AdminPanelScreen.receiveList(rows);
+            AdminClientCache.set(toCacheRows(rows));
         });
 
-        ClientPlayNetworking.registerGlobalReceiver(ADMIN_LIST, (client, handler, buf, rs) -> {
-            AdminPanelScreen.RegionRow[] panelRows = readPanelRows(buf);
-            AdminClientCache.Row[] cacheRows = toCacheRows(panelRows);
-            client.execute(() -> {
-                AdminPanelScreen.receiveList(panelRows);
-                AdminClientCache.set(cacheRows);
-            });
-        });
+        LTNetClient.registerReceiver(LTPayloads.REGION_UPDATE, (client, p) ->
+                LocationHudOverlay.setRegionTitle(p.name()));
 
-        ClientPlayNetworking.registerGlobalReceiver(REGION_UPDATE, (client, handler, buf, rs) -> {
-            String name = buf.readString(32767);
-            client.execute(() -> com.fugginbeenus.locationtooltip.hud.LocationHudOverlay.setRegionTitle(name));
-        });
-
-        ClientPlayNetworking.registerGlobalReceiver(REGION_CREATED_TOAST, (client, handler, buf, rs) ->
-                client.execute(() -> {
-                    var mc = MinecraftClient.getInstance();
-                    if (mc == null || mc.world == null || mc.player == null) return;
-
-                    var w = mc.world;
-                    var p = mc.player.getBlockPos();
-
-                    for (int i = 0; i < 60; i++) {
-                        w.addParticle(ParticleTypes.HAPPY_VILLAGER,
-                                p.getX() + 0.5 + (w.random.nextDouble() - 0.5) * 2.0,
-                                p.getY() + 1.2 + w.random.nextDouble(),
-                                p.getZ() + 0.5 + (w.random.nextDouble() - 0.5) * 2.0,
-                                0, 0.02, 0);
-                    }
-                    mc.player.playSound(SoundEvents.UI_TOAST_CHALLENGE_COMPLETE, 0.6f, 1.0f);
-
-                    // top outline flash omitted for brevity; keep yours if you like
-                })
-        );
+        LTNetClient.registerReceiver(LTPayloads.REGION_CREATED, (client, p) -> celebrate());
     }
 
     // -------- client → server --------
     public static void requestAdminList(int radius) {
-        PacketByteBuf buf = new PacketByteBuf(Unpooled.buffer());
-        buf.writeVarInt(radius);
-        ClientPlayNetworking.send(LTPackets.REQUEST_ADMIN_LIST, buf);
+        LTNetClient.send(LTPayloads.REQUEST_ADMIN_LIST, new LTPayloads.RequestAdminList(radius));
     }
 
     /** Request every region (all dimensions), not just nearby ones. Contributed by GambaPVP. */
     public static void requestAllAdminList() {
-        PacketByteBuf buf = new PacketByteBuf(Unpooled.buffer());
-        buf.writeVarInt(-1); // negative radius = all regions
-        ClientPlayNetworking.send(LTPackets.REQUEST_ADMIN_LIST, buf);
+        LTNetClient.send(LTPayloads.REQUEST_ADMIN_LIST, new LTPayloads.RequestAdminList(-1));
     }
 
-    public static void sendAdminRename(String id, String newName, java.util.Map<String, Boolean> flags) {
-        PacketByteBuf out = new PacketByteBuf(Unpooled.buffer());
-        out.writeString(id);
-        out.writeString(newName);
-        LTPackets.writeFlags(out, flags);
-        ClientPlayNetworking.send(LTPackets.ADMIN_RENAME, out);
+    public static void sendAdminRename(String id, String newName, Map<String, Boolean> flags) {
+        LTNetClient.send(LTPayloads.ADMIN_RENAME, new LTPayloads.AdminRename(id, newName, flags));
     }
 
     public static void sendAdminDelete(String id) {
-        PacketByteBuf out = new PacketByteBuf(Unpooled.buffer());
-        out.writeString(id);
-        ClientPlayNetworking.send(LTPackets.ADMIN_DELETE, out);
+        LTNetClient.send(LTPayloads.ADMIN_DELETE, new LTPayloads.AdminDelete(id));
     }
 
-    public static void sendCreate(String name, BlockPos a, BlockPos b, java.util.Map<String, Boolean> flags) {
-        PacketByteBuf out = new PacketByteBuf(Unpooled.buffer());
-        out.writeString(name);
-        out.writeBlockPos(a);
-        out.writeBlockPos(b);
-        LTPackets.writeFlags(out, flags);
-        ClientPlayNetworking.send(LTPackets.CREATE_REGION, out);
+    public static void sendCreate(String name, BlockPos a, BlockPos b, Map<String, Boolean> flags) {
+        LTNetClient.send(LTPayloads.CREATE_REGION, new LTPayloads.CreateRegion(name, a, b, flags));
     }
 
     // -------- helpers --------
-    private static AdminPanelScreen.RegionRow[] readPanelRows(PacketByteBuf buf) {
-        int n = Math.max(0, buf.readVarInt());
-        var out = new AdminPanelScreen.RegionRow[n];
-        for (int i = 0; i < n; i++) {
-            String id = buf.readString(32767);
-            String name = buf.readString(32767);
-            Identifier dim = buf.readIdentifier();
-            BlockPos min = buf.readBlockPos();
-            BlockPos max = buf.readBlockPos();
-            java.util.Map<String, Boolean> flags = LTPackets.readFlags(buf);
-            String ownerName = buf.readString(32767);  // Owner name (admins only)
-            String source = buf.readString(32767);     // PLAYER / SERVER / STRUCTURE
-            out[i] = new AdminPanelScreen.RegionRow(id, name, dim, min, max, flags, ownerName, source);
+    private static void celebrate() {
+        MinecraftClient mc = MinecraftClient.getInstance();
+        if (mc == null || mc.world == null || mc.player == null) return;
+
+        var w = mc.world;
+        BlockPos p = mc.player.getBlockPos();
+        for (int i = 0; i < 60; i++) {
+            w.addParticle(ParticleTypes.HAPPY_VILLAGER,
+                    p.getX() + 0.5 + (w.random.nextDouble() - 0.5) * 2.0,
+                    p.getY() + 1.2 + w.random.nextDouble(),
+                    p.getZ() + 0.5 + (w.random.nextDouble() - 0.5) * 2.0,
+                    0, 0.02, 0);
+        }
+        mc.player.playSound(SoundEvents.UI_TOAST_CHALLENGE_COMPLETE, 0.6f, 1.0f);
+    }
+
+    private static AdminPanelScreen.RegionRow[] toPanelRows(List<LTPayloads.RegionEntry> entries) {
+        var out = new AdminPanelScreen.RegionRow[entries.size()];
+        for (int i = 0; i < entries.size(); i++) {
+            LTPayloads.RegionEntry e = entries.get(i);
+            out[i] = new AdminPanelScreen.RegionRow(e.id(), e.name(), e.dim(), e.min(), e.max(),
+                    e.flags(), e.ownerName(), e.source());
         }
         return out;
     }
@@ -160,5 +108,4 @@ public final class LTPacketsClient {
         }
         return out;
     }
-
 }
