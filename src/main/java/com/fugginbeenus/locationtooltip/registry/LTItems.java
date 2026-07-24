@@ -15,7 +15,6 @@ import net.minecraft.registry.Registries;
 import net.minecraft.registry.Registry;
 import net.minecraft.text.Text;
 import net.minecraft.util.Identifier;
-import net.fabricmc.fabric.api.item.v1.FabricItemSettings;
 
 public final class LTItems {
 
@@ -24,12 +23,12 @@ public final class LTItems {
     // 1) Items
     public static final Item REGION_WAND = Registry.register(
             Registries.ITEM, Identifier.of(MODID, "region_wand"),
-            new RegionWandItem(new FabricItemSettings().maxCount(1))
+            new RegionWandItem(settings())
     );
 
     public static final Item ADMIN_COMPASS = Registry.register(
             Registries.ITEM, Identifier.of(MODID, "admin_compass"),
-            new AdminCompassItem(new FabricItemSettings().maxCount(1))
+            new AdminCompassItem(settings())
     );
 
     // 2) Our own always-present creative tab (no version-specific constants)
@@ -48,6 +47,15 @@ public final class LTItems {
     );
 
     private LTItems() {}
+
+    // Fabric folded its item settings into vanilla Item.Settings in 1.21; FabricItemSettings is gone.
+    private static Item.Settings settings() {
+        //? if >=1.21 {
+        /*return new Item.Settings().maxCount(1);
+        *///?} else {
+        return new net.fabricmc.fabric.api.item.v1.FabricItemSettings().maxCount(1);
+        //?}
+    }
 
     // Call this from your main mod initializer (onInitialize). Nothing else needed here.
     public static void init() {

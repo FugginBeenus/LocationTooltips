@@ -11,7 +11,8 @@ public final class AdvancementUtil {
     /** Grants all remaining criteria on the given advancement id (no-ops if missing or already done). */
     public static void grant(ServerPlayerEntity player, Identifier id) {
         if (player == null || player.server == null) return;
-        Advancement adv = player.server.getAdvancementLoader().get(id);
+        // 1.20.1: get(...) returns Advancement; 1.21: AdvancementEntry. var absorbs the difference.
+        var adv = player.server.getAdvancementLoader().get(id);
         if (adv == null) return;
 
         AdvancementProgress progress = player.getAdvancementTracker().getProgress(adv);

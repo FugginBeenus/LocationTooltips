@@ -12,23 +12,20 @@ import net.minecraft.client.util.math.MatrixStack;
 import org.joml.Matrix4f;
 
 /**
- * Version-isolated immediate-mode drawing for the world-space region boxes (wand selection +
- * admin-compass regions). Everything that changed in the 1.21 render rewrite —
- * {@code Tessellator}/{@code BufferBuilder} lifecycle, the {@code .vertex().color().next()}
- * chain, {@code RenderSystem} setup — lives here, so both renderers stay version-agnostic and
- * the two identical copies of the beam/quad helpers are now one.
+ * Version-isolated immediate-mode drawing for the world-space region boxes. Everything that
+ * changed in the 1.21 render rewrite — the {@code Tessellator}/{@code BufferBuilder} lifecycle
+ * and the vertex-chain terminator — is switched here, so both renderers stay version-agnostic.
  */
 public final class LTBoxRender {
     private final MatrixStack matrices;
     private final Matrix4f matrix;
     private final Tessellator tessellator;
-    private final BufferBuilder buffer;
+    private BufferBuilder buffer; // 1.21 recreates this each batch, so it isn't final
 
-    private LTBoxRender(MatrixStack matrices, Matrix4f matrix, Tessellator tessellator, BufferBuilder buffer) {
+    private LTBoxRender(MatrixStack matrices, Matrix4f matrix, Tessellator tessellator) {
         this.matrices = matrices;
         this.matrix = matrix;
         this.tessellator = tessellator;
-        this.buffer = buffer;
     }
 
     /** Set up blend/depth/shader, translate to camera-relative space, and begin a batch. */
@@ -45,16 +42,24 @@ public final class LTBoxRender {
         RenderSystem.depthMask(false);
         RenderSystem.setShader(GameRenderer::getPositionColorProgram);
 
-        Tessellator tessellator = Tessellator.getInstance();
-        return new LTBoxRender(matrices, matrices.peek().getPositionMatrix(), tessellator, tessellator.getBuffer());
+        return new LTBoxRender(matrices, matrices.peek().getPositionMatrix(), Tessellator.getInstance());
     }
 
     public void startQuads() {
+        //? if >=1.21 {
+        /*buffer = tessellator.begin(VertexFormat.DrawMode.QUADS, VertexFormats.POSITION_COLOR);
+        *///?} else {
+        buffer = tessellator.getBuffer();
         buffer.begin(VertexFormat.DrawMode.QUADS, VertexFormats.POSITION_COLOR);
+        //?}
     }
 
     public void drawQuads() {
+        //? if >=1.21 {
+        /*net.minecraft.client.render.BufferRenderer.drawWithGlobalProgram(buffer.end());
+        *///?} else {
         tessellator.draw();
+        //?}
     }
 
     /** Restore render state and pop the matrix. */
@@ -70,10 +75,17 @@ public final class LTBoxRender {
                       double x3, double y3, double z3,
                       double x4, double y4, double z4,
                       float r, float g, float b, float a) {
+        //? if >=1.21 {
+        /*buffer.vertex(matrix, (float) x1, (float) y1, (float) z1).color(r, g, b, a);
+        buffer.vertex(matrix, (float) x2, (float) y2, (float) z2).color(r, g, b, a);
+        buffer.vertex(matrix, (float) x3, (float) y3, (float) z3).color(r, g, b, a);
+        buffer.vertex(matrix, (float) x4, (float) y4, (float) z4).color(r, g, b, a);
+        *///?} else {
         buffer.vertex(matrix, (float) x1, (float) y1, (float) z1).color(r, g, b, a).next();
         buffer.vertex(matrix, (float) x2, (float) y2, (float) z2).color(r, g, b, a).next();
         buffer.vertex(matrix, (float) x3, (float) y3, (float) z3).color(r, g, b, a).next();
         buffer.vertex(matrix, (float) x4, (float) y4, (float) z4).color(r, g, b, a).next();
+        //?}
     }
 
     /** One flat quad in the current batch. */

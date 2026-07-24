@@ -46,7 +46,11 @@ public class LocationHudOverlay implements HudRenderCallback {
     private static final Identifier ICON_CLOCK  = Identifier.of("locationtooltip", "textures/gui/clock.png");
 
     @Override
+    //? if >=1.21 {
+    /*public void onHudRender(DrawContext ctx, net.minecraft.client.render.RenderTickCounter tickCounter) {
+    *///?} else {
     public void onHudRender(DrawContext ctx, float tickDelta) {
+    //?}
         render(ctx, false);
     }
 
@@ -104,7 +108,7 @@ public class LocationHudOverlay implements HudRenderCallback {
 
             if (hasRegion) {
                 // Icon (region) on left if region is present
-                ctx.drawTexture(ICON_REGION, cx, cy + ((contentH - icon) / 2), 0, 0, icon, icon, icon, icon);
+                ctx.drawTexture(ICON_REGION, cx, cy + ((contentH - icon) / 2), 0f, 0f, icon, icon, icon, icon);
                 cx += icon + 4;
             }
 
@@ -117,7 +121,7 @@ public class LocationHudOverlay implements HudRenderCallback {
             cx += textW + 4;
 
             if (hasTime) {
-                ctx.drawTexture(ICON_CLOCK, cx, cy + ((contentH - icon) / 2), 0, 0, icon, icon, icon, icon);
+                ctx.drawTexture(ICON_CLOCK, cx, cy + ((contentH - icon) / 2), 0f, 0f, icon, icon, icon, icon);
             }
 
         } else {
@@ -140,7 +144,7 @@ public class LocationHudOverlay implements HudRenderCallback {
                 int cx = rx + pad;
                 int cy = ry + pad + cfg.verticalNudge;
 
-                ctx.drawTexture(ICON_REGION, cx, cy + ((contentH - icon) / 2), 0, 0, icon, icon, icon, icon);
+                ctx.drawTexture(ICON_REGION, cx, cy + ((contentH - icon) / 2), 0f, 0f, icon, icon, icon, icon);
                 cx += icon + 4;
 
                 ctx.getMatrices().push();
@@ -156,7 +160,7 @@ public class LocationHudOverlay implements HudRenderCallback {
                 int cx = tx + pad;
                 int cy = ty + pad + cfg.verticalNudge;
 
-                ctx.drawTexture(ICON_CLOCK, cx, cy + ((contentH - icon) / 2), 0, 0, icon, icon, icon, icon);
+                ctx.drawTexture(ICON_CLOCK, cx, cy + ((contentH - icon) / 2), 0f, 0f, icon, icon, icon, icon);
                 cx += icon + 4;
 
                 ctx.getMatrices().push();
