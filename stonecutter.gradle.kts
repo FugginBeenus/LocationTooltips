@@ -3,9 +3,8 @@ plugins {
 }
 stonecutter active "1.20.1"
 
-// `./gradlew chiseledBuild` builds every version that currently compiles.
-// 1.21.1 joins this list once the port lands.
+// `./gradlew chiseledBuild` builds every supported version in one go.
 tasks.register("chiseledBuild") {
     group = "project"
-    dependsOn(":1.20.1:build")
+    dependsOn(":1.20.1:build", ":1.21.1:build")
 }
