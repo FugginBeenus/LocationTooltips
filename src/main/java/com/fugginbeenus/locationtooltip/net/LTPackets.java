@@ -2,161 +2,90 @@ package com.fugginbeenus.locationtooltip.net;
 
 import com.fugginbeenus.locationtooltip.region.Region;
 import com.fugginbeenus.locationtooltip.region.RegionManager;
-import io.netty.buffer.Unpooled;
-import net.fabricmc.fabric.api.networking.v1.PacketByteBufs;
-import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
-import net.minecraft.network.PacketByteBuf;
+import com.mojang.authlib.GameProfile;
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.network.ServerPlayerEntity;
-import net.minecraft.util.Identifier;
 import net.minecraft.util.math.BlockPos;
 
-import java.util.LinkedHashMap;
+import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
+import java.util.UUID;
 
-import static com.fugginbeenus.locationtooltip.LocationTooltip.MOD_ID;
-
+/**
+ * High-level server packet API: registers receivers (wiring them to {@link RegionManager})
+ * and exposes typed send methods. Transport lives in {@link LTNet}; wire layout in
+ * {@link LTPayloads}. Callers here don't touch buffers or the networking API.
+ */
 public final class LTPackets {
     private LTPackets() {}
-
-    public static final Identifier OPEN_NAME            = id("open_name");
-    public static final Identifier CREATE_REGION        = id("create_region");
-    public static final Identifier REGION_UPDATE        = id("region_update");
-    public static final Identifier REGION_CREATED_TOAST = id("region_created_celebrate");
-
-    public static final Identifier REQUEST_ADMIN_LIST   = id("request_admin_list");
-    public static final Identifier ADMIN_LIST           = id("admin_list");
-    public static final Identifier ADMIN_RENAME         = id("admin_rename");
-    public static final Identifier ADMIN_DELETE         = id("admin_delete");
-
-    public static final Identifier OPEN_ADMIN_PANEL     = id("open_admin_panel");
-
-    public static final Identifier SELECTION_UPDATE     = id("selection_update");
-    public static final Identifier SELECTION_CLEAR      = id("selection_clear");
-
-    private static Identifier id(String path) { return new Identifier(MOD_ID, path); }
 
     public static void register() { init(); }
 
     public static void init() {
-        ServerPlayNetworking.registerGlobalReceiver(CREATE_REGION, (server, player, handler, buf, rs) -> {
-            String name = buf.readString(32767);
-            BlockPos a  = buf.readBlockPos();
-            BlockPos b  = buf.readBlockPos();
-            Map<String, Boolean> flags = readFlags(buf);
-            server.execute(() -> RegionManager.of(server).createRegion(player, name, a, b, flags));
+        LTNet.init();
+
+        LTNet.registerReceiver(LTPayloads.CREATE_REGION, (server, player, p) ->
+                RegionManager.of(server).createRegion(player, p.name(), p.a(), p.b(), p.flags()));
+
+        LTNet.registerReceiver(LTPayloads.REQUEST_ADMIN_LIST, (server, player, p) -> {
+            if (p.radius() < 0) {
+                RegionManager.of(server).sendAllTo(player, null); // negative radius = all regions, all dims
+            } else {
+                RegionManager.of(server).sendNearbyTo(player, p.radius());
+            }
         });
 
-        ServerPlayNetworking.registerGlobalReceiver(REQUEST_ADMIN_LIST, (server, player, handler, buf, rs) -> {
-            int radius = buf.readVarInt();
-            server.execute(() -> {
-                if (radius < 0) {
-                    RegionManager.of(server).sendAllTo(player, null); // negative radius = all regions, all dims
-                } else {
-                    RegionManager.of(server).sendNearbyTo(player, radius);
-                }
-            });
-        });
+        LTNet.registerReceiver(LTPayloads.ADMIN_RENAME, (server, player, p) ->
+                RegionManager.of(server).renameRegion(player, p.id(), p.newName(), p.flags()));
 
-        ServerPlayNetworking.registerGlobalReceiver(ADMIN_RENAME, (server, player, handler, buf, rs) -> {
-            String id  = buf.readString(32767);
-            String newName = buf.readString(32767);
-            Map<String, Boolean> flags = readFlags(buf);
-            server.execute(() -> RegionManager.of(server).renameRegion(player, id, newName, flags));
-        });
-
-        ServerPlayNetworking.registerGlobalReceiver(ADMIN_DELETE, (server, player, handler, buf, rs) -> {
-            String id = buf.readString(32767);
-            server.execute(() -> RegionManager.of(server).deleteRegion(player, id));
-        });
+        LTNet.registerReceiver(LTPayloads.ADMIN_DELETE, (server, player, p) ->
+                RegionManager.of(server).deleteRegion(player, p.id()));
     }
 
     public static void openName(ServerPlayerEntity player, BlockPos a, BlockPos b) {
-        var out = PacketByteBufs.create();
-        out.writeBlockPos(a);
-        out.writeBlockPos(b);
-        ServerPlayNetworking.send(player, OPEN_NAME, out);
+        LTNet.send(player, LTPayloads.OPEN_NAME, new LTPayloads.OpenName(a, b));
     }
 
     public static void openAdminPanel(ServerPlayerEntity player) {
-        ServerPlayNetworking.send(player, OPEN_ADMIN_PANEL, PacketByteBufs.empty());
+        LTNet.send(player, LTPayloads.OPEN_ADMIN_PANEL, new LTPayloads.OpenAdminPanel());
     }
 
     public static void sendRegionUpdate(ServerPlayerEntity player, String name) {
-        PacketByteBuf out = PacketByteBufs.create();
-        out.writeString(name);
-        ServerPlayNetworking.send(player, REGION_UPDATE, out);
+        LTNet.send(player, LTPayloads.REGION_UPDATE, new LTPayloads.RegionUpdate(name));
     }
 
     public static void sendAdminList(ServerPlayerEntity player, List<Region> regions, boolean isOp) {
-        PacketByteBuf out = new PacketByteBuf(Unpooled.buffer());
-        out.writeVarInt(regions.size());
+        List<LTPayloads.RegionEntry> entries = new ArrayList<>(regions.size());
         for (Region r : regions) {
-            out.writeString(r.id);
-            out.writeString(r.name);
-            out.writeIdentifier(r.dim);
-            out.writeBlockPos(r.min);
-            out.writeBlockPos(r.max);
-            writeFlags(out, r.flagOverrides());
-
-            // Send owner name (only for admins)
+            String ownerName;
             if (isOp && r.owner != null) {
-                String ownerName = getPlayerName(player.server, r.owner);
-                out.writeString(ownerName != null ? ownerName : "Unknown");
-            } else if (isOp && r.owner == null) {
-                out.writeString("Server");
+                String name = getPlayerName(player.server, r.owner);
+                ownerName = (name != null) ? name : "Unknown";
+            } else if (isOp) {
+                ownerName = "Server";
             } else {
-                out.writeString("");  // Players don't see owner names
+                ownerName = ""; // players don't see owner names
             }
-
-            out.writeString(r.source.name());  // PLAYER / SERVER / STRUCTURE — drives client render color
+            entries.add(new LTPayloads.RegionEntry(
+                    r.id, r.name, r.dim, r.min, r.max, r.flagOverrides(), ownerName, r.source.name()));
         }
-        ServerPlayNetworking.send(player, ADMIN_LIST, out);
-    }
-
-    private static String getPlayerName(net.minecraft.server.MinecraftServer server, java.util.UUID uuid) {
-        com.mojang.authlib.GameProfile profile = server.getUserCache().getByUuid(uuid).orElse(null);
-        return profile != null ? profile.getName() : null;
+        LTNet.send(player, LTPayloads.ADMIN_LIST, new LTPayloads.AdminList(entries));
     }
 
     public static void sendRegionCreatedCelebrate(ServerPlayerEntity player, String name, BlockPos min, BlockPos max) {
-        PacketByteBuf out = PacketByteBufs.create();
-        out.writeString(name);
-        out.writeBlockPos(min);
-        out.writeBlockPos(max);
-        ServerPlayNetworking.send(player, REGION_CREATED_TOAST, out);
+        LTNet.send(player, LTPayloads.REGION_CREATED, new LTPayloads.RegionCreated(name, min, max));
     }
 
     public static void sendSelectionUpdate(ServerPlayerEntity player, BlockPos a, BlockPos b) {
-        PacketByteBuf out = PacketByteBufs.create();
-        out.writeBlockPos(a);
-        out.writeBlockPos(b);
-        ServerPlayNetworking.send(player, SELECTION_UPDATE, out);
+        LTNet.send(player, LTPayloads.SELECTION_UPDATE, new LTPayloads.SelectionUpdate(a, b));
     }
 
     public static void sendSelectionClear(ServerPlayerEntity player) {
-        PacketByteBuf out = PacketByteBufs.create();
-        ServerPlayNetworking.send(player, SELECTION_CLEAR, out);
+        LTNet.send(player, LTPayloads.SELECTION_CLEAR, new LTPayloads.SelectionClear());
     }
 
-    // ===== flag (de)serialization (shared by client + server) =====
-
-    public static void writeFlags(PacketByteBuf buf, Map<String, Boolean> flags) {
-        buf.writeVarInt(flags.size());
-        for (Map.Entry<String, Boolean> e : flags.entrySet()) {
-            buf.writeString(e.getKey());
-            buf.writeBoolean(e.getValue());
-        }
-    }
-
-    public static Map<String, Boolean> readFlags(PacketByteBuf buf) {
-        int n = Math.max(0, buf.readVarInt());
-        Map<String, Boolean> flags = new LinkedHashMap<>();
-        for (int i = 0; i < n; i++) {
-            String id = buf.readString(32767);
-            boolean v = buf.readBoolean();
-            flags.put(id, v);
-        }
-        return flags;
+    private static String getPlayerName(MinecraftServer server, UUID uuid) {
+        GameProfile profile = server.getUserCache().getByUuid(uuid).orElse(null);
+        return profile != null ? profile.getName() : null;
     }
 }
