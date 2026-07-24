@@ -42,8 +42,8 @@ public class LocationHudOverlay implements HudRenderCallback {
     }
 
     // Icons
-    private static final Identifier ICON_REGION = new Identifier("locationtooltip", "textures/gui/region.png");
-    private static final Identifier ICON_CLOCK  = new Identifier("locationtooltip", "textures/gui/clock.png");
+    private static final Identifier ICON_REGION = Identifier.of("locationtooltip", "textures/gui/region.png");
+    private static final Identifier ICON_CLOCK  = Identifier.of("locationtooltip", "textures/gui/clock.png");
 
     @Override
     public void onHudRender(DrawContext ctx, float tickDelta) {

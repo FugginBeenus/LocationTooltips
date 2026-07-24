@@ -23,7 +23,7 @@ public final class LTPayloads {
     private LTPayloads() {}
 
     private static Identifier id(String path) {
-        return new Identifier(MOD_ID, path);
+        return Identifier.of(MOD_ID, path);
     }
 
     /** A payload type: wire id + writer + reader. */
