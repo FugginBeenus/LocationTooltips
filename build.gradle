@@ -54,8 +54,15 @@ tasks.processResources {
     filesMatching("fabric.mod.json") {
         expand("version": project.version, "minecraft_dep": mcVersion)
     }
-    // 1.21 renamed the datapack folders to singular; the source tree keeps the 1.20 names.
+    // 1.21 uses singular datapack folders and "id" (not "item") in advancement icons and recipe
+    // results. Ingredients still use "item", so only our own result items get rewritten.
     if (packFormat >= 34) {
+        filesMatching("data/locationtooltip/advancements/*.json") {
+            filter { line -> line.replace('"item":', '"id":') }
+        }
+        filesMatching("data/locationtooltip/recipes/*.json") {
+            filter { line -> line.replace('"item": "locationtooltip:', '"id": "locationtooltip:') }
+        }
         eachFile { f ->
             f.path = f.path
                     .replace("data/locationtooltip/advancements/", "data/locationtooltip/advancement/")
