@@ -93,7 +93,7 @@ modrinth {
     gameVersions = [mcVersion]
     loaders = ["fabric"]
 
-    def changelogFile = rootProject.file("CHANGELOG-${version}.md")
+    def changelogFile = rootProject.file("changelogs/${version}.md")
     changelog = System.getenv("CHANGELOG") ?: (changelogFile.exists() ? changelogFile.text : "Bug fixes and improvements.")
 
     dependencies {

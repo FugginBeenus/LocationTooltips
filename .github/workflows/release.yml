@@ -11,7 +11,7 @@ name: Publish release
 #
 # Release flow for future versions:
 #   1. bump `version=` in gradle.properties
-#   2. add CHANGELOG-<version>.md with the release notes
+#   2. add changelogs/<version>.md with the release notes
 #   3. git commit, then: git tag vX.Y.Z && git push origin vX.Y.Z
 
 on:
@@ -72,11 +72,11 @@ jobs:
             fi
           fi
 
-          # Use CHANGELOG-<version>.md if present, otherwise a simple default.
-          if [ -f "CHANGELOG-${VERSION}.md" ]; then
+          # Use changelogs/<version>.md if present, otherwise a simple default.
+          if [ -f "changelogs/${VERSION}.md" ]; then
             {
               echo "CHANGELOG<<__LT_EOF__"
-              cat "CHANGELOG-${VERSION}.md"
+              cat "changelogs/${VERSION}.md"
               echo "__LT_EOF__"
             } >> "$GITHUB_ENV"
           else
@@ -118,7 +118,7 @@ jobs:
         with:
           tag_name: v${{ env.VERSION }}
           name: Location Tooltip ${{ env.VERSION }}
-          body_path: CHANGELOG-${{ env.VERSION }}.md
+          body_path: changelogs/${{ env.VERSION }}.md
           files: |
             versions/1.20.1/build/libs/locationtooltip-${{ env.VERSION }}+1.20.1.jar
             versions/1.21.1/build/libs/locationtooltip-${{ env.VERSION }}+1.21.1.jar
