@@ -196,6 +196,13 @@ public class AdminPanelScreen extends Screen {
         return new int[]{x, rowY + (ROW_H - h) / 2, w, h};
     }
 
+    // Skip 1.21's default screen blur; render() draws our own dim.
+    //? if >=1.21 {
+    /*@Override
+    public void renderBackground(DrawContext context, int mouseX, int mouseY, float delta) {
+    }
+    *///?}
+
     // ===== render =====
     @Override
     public void render(DrawContext ctx, int mouseX, int mouseY, float delta) {
