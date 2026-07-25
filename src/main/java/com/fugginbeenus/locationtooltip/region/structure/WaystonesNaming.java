@@ -22,9 +22,9 @@ import java.util.stream.Stream;
  * box, its themed name is used as the region's name — so a village shows its waystone name
  * (e.g. "Restful Hamlet") instead of the generic "Plains Village".
  *
- * <p>API verified against Waystones 14.1.x (1.20.1):
- * {@code WaystonesAPI.getAllWaystones(MinecraftServer) -> Stream<IWaystone>};
- * {@code IWaystone.getName()/getPos()/getDimension()/hasName()/wasGenerated()}.
+ * <p>Handles both API generations: 1.20.1 (Waystones 14.x, {@code IWaystone}, name is a String)
+ * and 1.21+ (Waystones 21.x, {@code Waystone}, name is a Text). {@code getAllWaystones} and
+ * {@code getPos/getDimension/getWaystoneUid/hasName/wasGenerated} are identical across both.
  */
 public final class WaystonesNaming implements StructureNameProvider {
 
@@ -32,7 +32,7 @@ public final class WaystonesNaming implements StructureNameProvider {
     public record WaystoneInfo(String uid, String name, Identifier dim, BlockPos pos, boolean generated) {}
 
     private final Method getAllWaystones; // static WaystonesAPI.getAllWaystones(MinecraftServer)
-    private final Method getName;         // IWaystone.getName() -> String
+    private final Method getName;         // getName() -> String (1.20.1) or Text (1.21+)
     private final Method getPos;          // IWaystone.getPos() -> BlockPos
     private final Method getDimension;    // IWaystone.getDimension() -> RegistryKey<World>
     private final Method hasName;         // IWaystone.hasName() -> boolean
@@ -45,14 +45,14 @@ public final class WaystonesNaming implements StructureNameProvider {
         boolean ok = false;
         try {
             Class<?> api = Class.forName("net.blay09.mods.waystones.api.WaystonesAPI");
-            Class<?> iWaystone = Class.forName("net.blay09.mods.waystones.api.IWaystone");
+            Class<?> waystone = waystoneClass();
             all = api.getMethod("getAllWaystones", MinecraftServer.class);
-            name = iWaystone.getMethod("getName");
-            pos = iWaystone.getMethod("getPos");
-            dim = iWaystone.getMethod("getDimension");
-            named = iWaystone.getMethod("hasName");
-            gen = iWaystone.getMethod("wasGenerated");
-            uid = iWaystone.getMethod("getWaystoneUid");
+            name = waystone.getMethod("getName");
+            pos = waystone.getMethod("getPos");
+            dim = waystone.getMethod("getDimension");
+            named = waystone.getMethod("hasName");
+            gen = waystone.getMethod("wasGenerated");
+            uid = waystone.getMethod("getWaystoneUid");
             ok = true;
         } catch (Throwable t) {
             // Waystones absent or API changed → provider stays inert.
@@ -83,7 +83,7 @@ public final class WaystonesNaming implements StructureNameProvider {
             all.forEach(w -> {
                 try {
                     if (!(boolean) hasName.invoke(w)) return;
-                    String name = (String) getName.invoke(w);
+                    String name = waystoneName(getName.invoke(w));
                     if (name == null || name.isBlank()) return;
 
                     RegistryKey<World> wDim = (RegistryKey<World>) getDimension.invoke(w);
@@ -141,11 +141,27 @@ public final class WaystonesNaming implements StructureNameProvider {
         for (Object w : matches) {
             try {
                 if (generatedOnly && !(boolean) wasGenerated.invoke(w)) continue;
-                String n = (String) getName.invoke(w);
+                String n = waystoneName(getName.invoke(w));
                 if (n != null && !n.isBlank()) return n;
             } catch (Throwable ignored) {
             }
         }
+        return null;
+    }
+
+    /** The waystone interface is Waystone on 1.21+ and IWaystone on 1.20.1. */
+    private static Class<?> waystoneClass() throws ClassNotFoundException {
+        try {
+            return Class.forName("net.blay09.mods.waystones.api.Waystone");
+        } catch (ClassNotFoundException e) {
+            return Class.forName("net.blay09.mods.waystones.api.IWaystone");
+        }
+    }
+
+    /** getName() is a String on 1.20.1 and a Text on 1.21+. */
+    private static String waystoneName(Object result) {
+        if (result instanceof String s) return s;
+        if (result instanceof net.minecraft.text.Text t) return t.getString();
         return null;
     }
 
