@@ -36,13 +36,13 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       # Stonecutter runs Gradle on 21; the 1.20.1 build compiles against a 17 toolchain and
       # the 1.21.1 build against 21, so both JDKs must be present. 21 is listed last so it is
       # the default JVM Gradle launches with.
       - name: Set up JDK 17 and 21
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v5
         with:
           distribution: temurin
           java-version: |
@@ -50,7 +50,7 @@ jobs:
             21
 
       - name: Set up Gradle
-        uses: gradle/actions/setup-gradle@v4
+        uses: gradle/actions/setup-gradle@v6
 
       - name: Register both JDK toolchains for Gradle
         run: |
@@ -114,7 +114,7 @@ jobs:
 
       - name: Create GitHub Release
         if: ${{ !(github.event_name == 'workflow_dispatch' && inputs.dry_run) }}
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           tag_name: v${{ env.VERSION }}
           name: Location Tooltip ${{ env.VERSION }}
