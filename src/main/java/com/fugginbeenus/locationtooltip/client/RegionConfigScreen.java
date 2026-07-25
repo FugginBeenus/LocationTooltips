@@ -125,6 +125,13 @@ public abstract class RegionConfigScreen extends Screen {
 
     @Override public boolean shouldCloseOnEsc() { return true; }
 
+    // Skip 1.21's default screen blur; render() draws our own dim.
+    //? if >=1.21 {
+    /*@Override
+    public void renderBackground(DrawContext context, int mouseX, int mouseY, float delta) {
+    }
+    *///?}
+
     @Override
     public void render(DrawContext ctx, int mouseX, int mouseY, float delta) {
         ctx.fill(0, 0, this.width, this.height, LTGui.DIM);
