@@ -1,6 +1,7 @@
 plugins {
     id "java"
-    id "fabric-loom" version "1.17.14"
+    // Per-version: 26.x ships unobfuscated and needs a Loom that can build without mappings.
+    id "fabric-loom" version "${loom_version}"
     id "com.modrinth.minotaur" version "2.+"
 }
 
@@ -29,16 +30,30 @@ repositories {
 
 dependencies {
     minecraft "com.mojang:minecraft:${property('minecraft_version')}"
-    // Minecraft stopped publishing mappings once it shipped unobfuscated (26.1 on).
-    if (!unobfuscated) {
+    // Minecraft stopped publishing mappings once it shipped unobfuscated (26.1 on); those
+    // versions take the empty intermediary instead, since the jar already has real names.
+    if (unobfuscated) {
+        mappings "net.fabricmc:intermediary:0.0.0:v2"
+    } else {
         mappings loom.officialMojangMappings()
     }
-    modImplementation "net.fabricmc:fabric-loader:${property('loader_version')}"
-    modImplementation "net.fabricmc.fabric-api:fabric-api:${property('fabric_api_version')}"
+    // Mod dependencies only need remapping while Minecraft is still obfuscated. On the
+    // unobfuscated versions they are already in the right namespace, so they come in as plain
+    // dependencies (what the official 26.x template does).
+    def mod = unobfuscated ? "implementation" : "modImplementation"
 
-    modImplementation("com.terraformersmc:modmenu:${property('modmenu_version')}") { transitive = false }
-    modImplementation("me.shedaniel.cloth:cloth-config-fabric:${property('cloth_config_version')}") {
-        exclude group: "net.fabricmc.fabric-api"
+    add(mod, "net.fabricmc:fabric-loader:${property('loader_version')}")
+    add(mod, "net.fabricmc.fabric-api:fabric-api:${property('fabric_api_version')}")
+
+    // Both are optional at runtime, so a version we cannot resolve yet just drops out of the
+    // build for that Minecraft version rather than blocking it.
+    if (findProperty('modmenu_version')) {
+        add(mod, "com.terraformersmc:modmenu:${property('modmenu_version')}") { transitive = false }
+    }
+    if (findProperty('cloth_config_version')) {
+        add(mod, "me.shedaniel.cloth:cloth-config-fabric:${property('cloth_config_version')}") {
+            exclude group: "net.fabricmc.fabric-api"
+        }
     }
 }
 
