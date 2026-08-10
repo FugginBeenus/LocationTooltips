@@ -15,3 +15,15 @@ tasks.register("chiseledModrinth") {
     group = "project"
     dependsOn(stonecutter.versions.map { ":${it.project}:modrinth" })
 }
+
+// `./gradlew collectJars` gathers just the release jars into build/release, so the release
+// workflow can attach them without naming each Minecraft version.
+tasks.register<Copy>("collectJars") {
+    group = "project"
+    val target = layout.buildDirectory.dir("release")
+    doFirst { delete(target) }   // otherwise older versions linger between builds
+    into(target)
+    stonecutter.versions.forEach { version ->
+        from(project(":${version.project}").tasks.named("remapJar"))
+    }
+}
