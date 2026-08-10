@@ -15,7 +15,7 @@ public final class LTPerms {
         //? if >=1.21.11 {
         /*return player.permissions().hasPermission(net.minecraft.server.permissions.Permissions.COMMANDS_GAMEMASTER);
         *///?} else {
-        return player.server.getPlayerList().isOp(player.getGameProfile());
+        return player.level().getServer().getPlayerList().isOp(player.getGameProfile());
         //?}
     }
 

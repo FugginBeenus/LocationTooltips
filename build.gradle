@@ -48,8 +48,11 @@ loom {}
 // (ResourceLocationArgument, writeResourceLocation, ...). The source tree keeps the older
 // name and Stonecutter rewrites the token for the newer versions, which beats putting a
 // version switch on all ~80 usages.
+// 1.21.11 renamed a lot and replaced the item predicate API with data-driven item models.
+def modernItemModels = stonecutter.eval(stonecutter.current.version, ">=1.21.11")
+
 stonecutter.replacements {
-    def modern = stonecutter.eval(stonecutter.current.version, ">=1.21.11")
+    def modern = modernItemModels
     [
         "ResourceLocation" : "Identifier",          // and ResourceLocationArgument, writeResourceLocation, ...
         ".location()"      : ".identifier()",       // ResourceKey
@@ -57,6 +60,9 @@ stonecutter.replacements {
         "getMinBuildHeight": "getMinY",
         "getMaxBuildHeight": "getMaxY",
         "MobSpawnType"     : "EntitySpawnReason",
+        // Fabric moved the world-render API into a .world subpackage and renamed the hook.
+        "rendering.v1.WorldRender"          : "rendering.v1.world.WorldRender",
+        "WorldRenderEvents.AFTER_TRANSLUCENT": "WorldRenderEvents.END_MAIN",
     ].each { oldName, newName ->
         string(modern) {
             from = oldName
@@ -76,8 +82,15 @@ def packFormat = Integer.parseInt(property('pack_format').toString())
 tasks.processResources {
     inputs.property "version", project.version
     inputs.property "minecraft_dep", mcVersion
+    inputs.property "modernItemModels", modernItemModels
     filesMatching("fabric.mod.json") {
         expand("version": project.version, "minecraft_dep": mcVersion)
+    }
+    // The compass-needle mixin has no target once item predicates became data-driven.
+    if (modernItemModels) {
+        filesMatching("locationtooltip.mixins.json") {
+            filter { line -> line.contains("ModelPredicateRegistryInvoker") ? null : line }
+        }
     }
     // 1.21 uses singular datapack folders and "id" (not "item") in advancement icons and recipe
     // results. Ingredients still use "item", so only our own result items get rewritten.

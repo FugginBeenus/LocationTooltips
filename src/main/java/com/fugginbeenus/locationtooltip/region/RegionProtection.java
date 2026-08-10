@@ -54,7 +54,7 @@ public class RegionProtection {
 
         var dim = targetPlayer.level().dimension().location();
         BlockPos pos = targetPlayer.blockPosition();
-        RegionManager mgr = RegionManager.of(serverAttacker.server);
+        RegionManager mgr = RegionManager.of(serverAttacker.level().getServer());
 
         if (!mgr.resolveFlag(dim, pos, RegionFlags.PVP.id)) {
             Region region = mgr.smallestContaining(dim, pos);
@@ -76,7 +76,7 @@ public class RegionProtection {
         if (bypasses(sp)) return true;
 
         var dim = world.dimension().location();
-        if (!RegionManager.of(sp.server).resolveFlag(dim, pos, RegionFlags.BLOCK_BREAK.id)) {
+        if (!RegionManager.of(sp.level().getServer()).resolveFlag(dim, pos, RegionFlags.BLOCK_BREAK.id)) {
             deny(sp, "break blocks");
             return false; // cancel the break
         }
@@ -90,7 +90,7 @@ public class RegionProtection {
         if (bypasses(sp)) return InteractionResult.PASS;
 
         var dim = world.dimension().location();
-        RegionManager mgr = RegionManager.of(sp.server);
+        RegionManager mgr = RegionManager.of(sp.level().getServer());
         BlockPos clicked = hit.getBlockPos();
 
         // "interact = deny" is the broad lock: no right-click interactions at all.
@@ -126,7 +126,7 @@ public class RegionProtection {
 
         var dim = world.dimension().location();
         BlockPos pos = entity.blockPosition();
-        if (!RegionManager.of(sp.server).resolveFlag(dim, pos, RegionFlags.ENTITY_INTERACT.id)) {
+        if (!RegionManager.of(sp.level().getServer()).resolveFlag(dim, pos, RegionFlags.ENTITY_INTERACT.id)) {
             deny(sp, "interact with entities");
             return InteractionResult.FAIL;
         }

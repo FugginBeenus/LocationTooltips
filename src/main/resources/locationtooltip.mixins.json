@@ -8,8 +8,8 @@
     "FireBlockMixin"
   ],
   "client": [
-    "BossBarHudAccessor",
-    "ModelPredicateRegistryInvoker"
+    "ModelPredicateRegistryInvoker",
+    "BossBarHudAccessor"
   ],
   "injectors": {
     "defaultRequire": 1

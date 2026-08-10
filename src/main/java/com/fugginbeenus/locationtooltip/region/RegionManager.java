@@ -269,8 +269,8 @@ public final class RegionManager {
         final UUID who = player.getUUID();
         final var advId = LTId.of(MOD_ID, "first_region");
         // 60 ticks (~3 seconds) feels great; use 40 for ~2s if you prefer
-        com.fugginbeenus.locationtooltip.server.RegionTicker.later(player.server, 250, () -> {
-            ServerPlayer again = player.server.getPlayerList().getPlayer(who);
+        com.fugginbeenus.locationtooltip.server.RegionTicker.later(player.level().getServer(), 250, () -> {
+            ServerPlayer again = player.level().getServer().getPlayerList().getPlayer(who);
             if (again == null) return;
             // safe utility you already added
             com.fugginbeenus.locationtooltip.adv.AdvancementUtil.grant(again, advId);

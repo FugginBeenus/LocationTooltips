@@ -1,9 +1,13 @@
 package com.fugginbeenus.locationtooltip.client;
 
+//? if <1.21.11 {
 import com.fugginbeenus.locationtooltip.mixin.ModelPredicateRegistryInvoker;
+//?}
 import com.fugginbeenus.locationtooltip.registry.LTItems;
 import com.fugginbeenus.locationtooltip.util.LTId;
+//? if <1.21.11 {
 import net.minecraft.client.renderer.item.CompassItemPropertyFunction;
+//?}
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.GlobalPos;
@@ -23,7 +27,10 @@ import net.minecraft.core.GlobalPos;
 public final class AdminCompassModel {
     private AdminCompassModel() {}
 
+    // 1.21.11 made item predicates data-driven and its registry is closed to mods, so the
+    // needle only animates on the older versions. The compass itself works everywhere.
     public static void register() {
+        //? if <1.21.11 {
         ModelPredicateRegistryInvoker.locationtooltip$register(
                 LTItems.ADMIN_COMPASS,
                 LTId.of("minecraft", "angle"),
@@ -33,6 +40,7 @@ public final class AdminCompassModel {
                     return (target == null) ? null : GlobalPos.of(world.dimension(), target);
                 })
         );
+        //?}
     }
 
     /** Centre of the closest cached region in this dimension, or null if none are known. */

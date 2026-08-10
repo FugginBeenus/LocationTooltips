@@ -1,72 +1,65 @@
 package com.fugginbeenus.locationtooltip.client;
 
-import com.mojang.blaze3d.systems.RenderSystem;
 import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderContext;
-import com.mojang.blaze3d.vertex.BufferBuilder;
-import net.minecraft.client.Camera;
-import net.minecraft.client.renderer.GameRenderer;
-import com.mojang.blaze3d.vertex.Tesselator;
-import com.mojang.blaze3d.vertex.VertexFormat;
-import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import com.mojang.blaze3d.vertex.PoseStack;
+import com.mojang.blaze3d.vertex.VertexConsumer;
+import net.minecraft.client.renderer.MultiBufferSource;
+import net.minecraft.world.phys.Vec3;
 import org.joml.Matrix4f;
 
 /**
- * Version-isolated immediate-mode drawing for the world-space region boxes. Everything that
- * changed in the 1.21 render rewrite — the {@code Tesselator}/{@code BufferBuilder} lifecycle
- * and the vertex-chain terminator — is switched here, so both renderers stay version-agnostic.
+ * Draws the world-space region boxes. Geometry goes through the vanilla debug-box render type
+ * on the frame's shared buffer, so blending and depth come from that type rather than from
+ * manual render-state calls, which the 1.21.5 render rewrite removed.
  */
 public final class LTBoxRender {
     private final PoseStack matrices;
-    private final Matrix4f matrix;
-    private final Tesselator tessellator;
-    private BufferBuilder buffer; // 1.21 recreates this each batch, so it isn't final
+    private final MultiBufferSource consumers;
+    private VertexConsumer buffer;
+    private Matrix4f matrix;
 
-    private LTBoxRender(PoseStack matrices, Matrix4f matrix, Tesselator tessellator) {
+    private LTBoxRender(PoseStack matrices, MultiBufferSource consumers) {
         this.matrices = matrices;
-        this.matrix = matrix;
-        this.tessellator = tessellator;
+        this.consumers = consumers;
     }
 
-    /** Set up blend/depth/shader, translate to camera-relative space, and begin a batch. */
+    //? if >=1.21.11 {
+    /*private static net.minecraft.client.renderer.rendertype.RenderType boxType() {
+        return net.minecraft.client.renderer.rendertype.RenderTypes.debugFilledBox();
+    }
+    *///?} else {
+    private static net.minecraft.client.renderer.RenderType boxType() {
+        return net.minecraft.client.renderer.RenderType.debugFilledBox();
+    }
+    //?}
+
+    /** Translate to camera-relative space and take the frame's buffer. */
     public static LTBoxRender begin(WorldRenderContext ctx) {
+        //? if >=1.21.11 {
+        /*PoseStack matrices = ctx.matrices();
+        Vec3 cam = ctx.worldState().cameraRenderState.pos;
+        *///?} else {
         PoseStack matrices = ctx.matrixStack();
-        Camera camera = ctx.camera();
+        Vec3 cam = ctx.camera().getPosition();
+        //?}
 
         matrices.pushPose();
-        matrices.translate(-camera.getPosition().x, -camera.getPosition().y, -camera.getPosition().z);
-
-        RenderSystem.enableBlend();
-        RenderSystem.defaultBlendFunc();
-        RenderSystem.disableDepthTest();
-        RenderSystem.depthMask(false);
-        RenderSystem.setShader(GameRenderer::getPositionColorShader);
-
-        return new LTBoxRender(matrices, matrices.last().pose(), Tesselator.getInstance());
+        matrices.translate(-cam.x, -cam.y, -cam.z);
+        return new LTBoxRender(matrices, ctx.consumers());
     }
 
     public void startQuads() {
-        //? if >=1.21 {
-        /*buffer = tessellator.begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_COLOR);
-        *///?} else {
-        buffer = tessellator.getBuilder();
-        buffer.begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_COLOR);
-        //?}
+        matrix = matrices.last().pose();
+        buffer = consumers.getBuffer(boxType());
     }
 
     public void drawQuads() {
-        //? if >=1.21 {
-        /*com.mojang.blaze3d.vertex.BufferUploader.drawWithShader(buffer.buildOrThrow());
-        *///?} else {
-        tessellator.end();
-        //?}
+        if (consumers instanceof MultiBufferSource.BufferSource source) {
+            source.endBatch(boxType());
+        }
     }
 
-    /** Restore render state and pop the matrix. */
     public void end() {
-        RenderSystem.enableDepthTest();
-        RenderSystem.depthMask(true);
-        RenderSystem.disableBlend();
         matrices.popPose();
     }
 

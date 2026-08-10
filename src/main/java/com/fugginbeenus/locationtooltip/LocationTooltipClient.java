@@ -53,7 +53,11 @@ public final class LocationTooltipClient implements ClientModInitializer {
                         "key.locationtooltip.open_admin",
                         InputConstants.Type.KEYSYM,
                         GLFW.GLFW_KEY_O,
+                        //? if >=1.21.11 {
+                        /*net.minecraft.client.KeyMapping.Category.MISC
+                        *///?} else {
                         "key.categories.locationtooltip"
+                        //?}
                 )
         );
 

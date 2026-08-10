@@ -42,7 +42,11 @@ public final class FlagIcons {
     /** Draw the flag icon scaled to size×size at (x,y). Returns false (drawing nothing) if absent. */
     public static boolean draw(GuiGraphics ctx, String flagId, int x, int y, int size) {
         if (!has(flagId)) return false;
+        //? if >=1.21.11 {
+        /*ctx.blit(net.minecraft.client.renderer.RenderPipelines.GUI_TEXTURED, path(flagId), x, y, 0f, 0f, size, size, 16, 16);
+        *///?} else {
         ctx.blit(path(flagId), x, y, size, size, 0f, 0f, 16, 16, 16, 16);
+        //?}
         return true;
     }
 }

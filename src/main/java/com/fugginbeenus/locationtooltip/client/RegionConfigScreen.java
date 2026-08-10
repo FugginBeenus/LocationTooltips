@@ -100,27 +100,45 @@ public abstract class RegionConfigScreen extends Screen {
         return false;
     }
 
+    //? if >=1.21.11 {
+    /*@Override
+    public boolean mouseClicked(net.minecraft.client.input.MouseButtonEvent event, boolean doubleClick) {
+        return ltClick(event.x(), event.y(), event.buttonInfo().button())
+                || super.mouseClicked(event, doubleClick);
+    }
+
+    @Override
+    public boolean keyPressed(net.minecraft.client.input.KeyEvent event) {
+        return ltKey(event.key()) || super.keyPressed(event);
+    }
+    *///?} else {
     @Override
     public boolean mouseClicked(double mx, double my, int button) {
-        if (button == 0) {
-            if (LTGui.hovered(mx, my, panelX + PAD, btnY, colW, 20)) { confirm(); return true; }
-            if (LTGui.hovered(mx, my, panelX + PAD + colW + 4, btnY, colW, 20)) { onClose(); return true; }
-            if (LTGui.hovered(mx, my, panelX + PAD, gridTop, innerW, gridViewH)) {
-                flags.layout(panelX + PAD, gridTop - gridScroll, colW, 18, 4);
-                if (flags.mouseClicked(mx, my)) return true;
-            }
-        }
-        return super.mouseClicked(mx, my, button);
+        return ltClick(mx, my, button) || super.mouseClicked(mx, my, button);
     }
 
     @Override
     public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
-        if ((keyCode == GLFW.GLFW_KEY_ENTER || keyCode == GLFW.GLFW_KEY_KP_ENTER)
-                && field != null && field.isFocused()) {
-            confirm();
-            return true;
+        return ltKey(keyCode) || super.keyPressed(keyCode, scanCode, modifiers);
+    }
+    //?}
+
+    private boolean ltClick(double mx, double my, int button) {
+        if (button != 0) return false;
+        if (LTGui.hovered(mx, my, panelX + PAD, btnY, colW, 20)) { confirm(); return true; }
+        if (LTGui.hovered(mx, my, panelX + PAD + colW + 4, btnY, colW, 20)) { onClose(); return true; }
+        if (LTGui.hovered(mx, my, panelX + PAD, gridTop, innerW, gridViewH)) {
+            flags.layout(panelX + PAD, gridTop - gridScroll, colW, 18, 4);
+            if (flags.mouseClicked(mx, my)) return true;
         }
-        return super.keyPressed(keyCode, scanCode, modifiers);
+        return false;
+    }
+
+    private boolean ltKey(int keyCode) {
+        if (keyCode != GLFW.GLFW_KEY_ENTER && keyCode != GLFW.GLFW_KEY_KP_ENTER) return false;
+        if (field == null || !field.isFocused()) return false;
+        confirm();
+        return true;
     }
 
     @Override public boolean shouldCloseOnEsc() { return true; }

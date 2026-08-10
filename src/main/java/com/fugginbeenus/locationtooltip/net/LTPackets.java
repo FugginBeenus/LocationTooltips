@@ -59,7 +59,7 @@ public final class LTPackets {
         for (Region r : regions) {
             String ownerName;
             if (isOp && r.owner != null) {
-                String name = getPlayerName(player.server, r.owner);
+                String name = getPlayerName(player.level().getServer(), r.owner);
                 ownerName = (name != null) ? name : "Unknown";
             } else if (isOp) {
                 ownerName = "Server";
@@ -85,7 +85,16 @@ public final class LTPackets {
     }
 
     private static String getPlayerName(MinecraftServer server, UUID uuid) {
+        //? if >=1.21.11 {
+        /*GameProfile profile = server.services().profileResolver().fetchById(uuid).orElse(null);
+        *///?} else {
         GameProfile profile = server.getProfileCache().get(uuid).orElse(null);
-        return profile != null ? profile.getName() : null;
+        //?}
+        if (profile == null) return null;
+        //? if >=1.21.11 {
+        /*return profile.name();
+        *///?} else {
+        return profile.getName();
+        //?}
     }
 }

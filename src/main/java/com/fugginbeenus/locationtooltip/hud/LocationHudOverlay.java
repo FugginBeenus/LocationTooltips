@@ -109,20 +109,18 @@ public class LocationHudOverlay implements HudRenderCallback {
 
             if (hasRegion) {
                 // Icon (region) on left if region is present
-                ctx.blit(ICON_REGION, cx, cy + ((contentH - icon) / 2), 0f, 0f, icon, icon, icon, icon);
+                ltIcon(ctx, ICON_REGION, cx, cy + ((contentH - icon) / 2), icon);
                 cx += icon + 4;
             }
 
             // Component
-            ctx.pose().pushPose();
-            ctx.pose().translate(cx, cy + (contentH - textH) / 2f, 0);
-            ctx.pose().scale(s, s, 1);
+            ltPush(ctx, cx, cy + (contentH - textH) / 2f, s);
             ctx.drawString(mc.font, Component.literal(text), 0, 0, 0xFFFFFFFF, cfg.shadow);
-            ctx.pose().popPose();
+            ltPop(ctx);
             cx += textW + 4;
 
             if (hasTime) {
-                ctx.blit(ICON_CLOCK, cx, cy + ((contentH - icon) / 2), 0f, 0f, icon, icon, icon, icon);
+                ltIcon(ctx, ICON_CLOCK, cx, cy + ((contentH - icon) / 2), icon);
             }
 
         } else {
@@ -145,14 +143,12 @@ public class LocationHudOverlay implements HudRenderCallback {
                 int cx = rx + pad;
                 int cy = ry + pad + cfg.verticalNudge;
 
-                ctx.blit(ICON_REGION, cx, cy + ((contentH - icon) / 2), 0f, 0f, icon, icon, icon, icon);
+                ltIcon(ctx, ICON_REGION, cx, cy + ((contentH - icon) / 2), icon);
                 cx += icon + 4;
 
-                ctx.pose().pushPose();
-                ctx.pose().translate(cx, cy + (contentH - textH) / 2f, 0);
-                ctx.pose().scale(s, s, 1);
+                ltPush(ctx, cx, cy + (contentH - textH) / 2f, s);
                 ctx.drawString(mc.font, Component.literal(region), 0, 0, 0xFFFFFFFF, cfg.shadow);
-                ctx.pose().popPose();
+                ltPop(ctx);
             }
 
             // Time pill
@@ -161,14 +157,12 @@ public class LocationHudOverlay implements HudRenderCallback {
                 int cx = tx + pad;
                 int cy = ty + pad + cfg.verticalNudge;
 
-                ctx.blit(ICON_CLOCK, cx, cy + ((contentH - icon) / 2), 0f, 0f, icon, icon, icon, icon);
+                ltIcon(ctx, ICON_CLOCK, cx, cy + ((contentH - icon) / 2), icon);
                 cx += icon + 4;
 
-                ctx.pose().pushPose();
-                ctx.pose().translate(cx, cy + (contentH - textH) / 2f, 0);
-                ctx.pose().scale(s, s, 1);
+                ltPush(ctx, cx, cy + (contentH - textH) / 2f, s);
                 ctx.drawString(mc.font, Component.literal(time), 0, 0, 0xFFFFFFFF, cfg.shadow);
-                ctx.pose().popPose();
+                ltPop(ctx);
             }
         }
     }
@@ -264,5 +258,35 @@ public class LocationHudOverlay implements HudRenderCallback {
         String ampm = h >= 12 ? "PM" : "AM";
         int hh = h % 12; if (hh == 0) hh = 12;
         return String.format("%d:%02d %s", hh, m, ampm);
+    }
+
+    /** One HUD icon. 1.21.11 blits through an explicit render pipeline. */
+    private static void ltIcon(GuiGraphics ctx, ResourceLocation tex, int x, int y, int size) {
+        //? if >=1.21.11 {
+        /*ctx.blit(net.minecraft.client.renderer.RenderPipelines.GUI_TEXTURED, tex, x, y, 0f, 0f, size, size, size, size);
+        *///?} else {
+        ctx.blit(tex, x, y, 0f, 0f, size, size, size, size);
+        //?}
+    }
+
+    /** Translate + scale for the pill text. 1.21.11's GUI stack is 2D. */
+    private static void ltPush(GuiGraphics ctx, float tx, float ty, float s) {
+        //? if >=1.21.11 {
+        /*ctx.pose().pushMatrix();
+        ctx.pose().translate(tx, ty);
+        ctx.pose().scale(s, s);
+        *///?} else {
+        ctx.pose().pushPose();
+        ctx.pose().translate(tx, ty, 0);
+        ctx.pose().scale(s, s, 1);
+        //?}
+    }
+
+    private static void ltPop(GuiGraphics ctx) {
+        //? if >=1.21.11 {
+        /*ctx.pose().popMatrix();
+        *///?} else {
+        ctx.pose().popPose();
+        //?}
     }
 }

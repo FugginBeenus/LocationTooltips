@@ -1,23 +1,26 @@
 package com.fugginbeenus.locationtooltip.mixin;
 
-import net.minecraft.client.renderer.item.ClampedItemPropertyFunction;
-import net.minecraft.client.renderer.item.ItemProperties;
-import net.minecraft.world.item.Item;
-import net.minecraft.resources.ResourceLocation;
-import org.spongepowered.asm.mixin.Mixin;
-import org.spongepowered.asm.mixin.gen.Invoker;
-
 /**
  * {@code ItemProperties.register(Item, ResourceLocation, ClampedItemPropertyFunction)}
- * is private in vanilla and Fabric API (0.92.x) ships no public wrapper, so we reach it with an
+ * is private in vanilla and Fabric API ships no public wrapper, so we reach it with an
  * invoker. Used to give the Admin Compass a working "angle" predicate (a moving needle).
  *
  * Client-only — registered in the "client" list of locationtooltip.mixins.json.
+ *
+ * 1.21.11 replaced item predicates with data-driven item models, so there is nothing to
+ * target there: the build drops this from the mixin config and leaves the stub below.
  */
-@Mixin(ItemProperties.class)
+//? if >=1.21.11 {
+/*public interface ModelPredicateRegistryInvoker {
+}
+*///?} else {
+@org.spongepowered.asm.mixin.Mixin(net.minecraft.client.renderer.item.ItemProperties.class)
 public interface ModelPredicateRegistryInvoker {
-    @Invoker("register")
-    static void locationtooltip$register(Item item, ResourceLocation id, ClampedItemPropertyFunction provider) {
+    @org.spongepowered.asm.mixin.gen.Invoker("register")
+    static void locationtooltip$register(net.minecraft.world.item.Item item,
+                                         net.minecraft.resources.ResourceLocation id,
+                                         net.minecraft.client.renderer.item.ClampedItemPropertyFunction provider) {
         throw new AssertionError();
     }
 }
+//?}

@@ -129,40 +129,28 @@ public class AdminPanelScreen extends Screen {
         return false;
     }
 
+    //? if >=1.21.11 {
+    /*@Override
+    public boolean mouseClicked(net.minecraft.client.input.MouseButtonEvent event, boolean doubleClick) {
+        return ltClick(event.x(), event.y(), event.buttonInfo().button())
+                || super.mouseClicked(event, doubleClick);
+    }
+
+    @Override
+    public boolean mouseDragged(net.minecraft.client.input.MouseButtonEvent event, double dx, double dy) {
+        if (draggingScroll) { dragTo(event.y()); return true; }
+        return super.mouseDragged(event, dx, dy);
+    }
+
+    @Override
+    public boolean mouseReleased(net.minecraft.client.input.MouseButtonEvent event) {
+        draggingScroll = false;
+        return super.mouseReleased(event);
+    }
+    *///?} else {
     @Override
     public boolean mouseClicked(double mx, double my, int button) {
-        if (button == 0) {
-            // close X
-            if (LTGui.hovered(mx, my, panelX + panelW - 12 - 16, panelY + 8, 16, 16)) { onClose(); return true; }
-
-            // scrollbar
-            int max = Math.max(0, visible().size() * ROW_H - listH);
-            if (max > 0 && LTGui.hovered(mx, my, listX + listW - 4, listY, 4, listH)) {
-                draggingScroll = true;
-                dragTo(my);
-                return true;
-            }
-
-            // row action buttons (scroll-aware)
-            List<RegionRow> vis = visible();
-            for (int i = 0; i < vis.size(); i++) {
-                int rowY = listY - scroll + i * ROW_H;
-                if (rowY + ROW_H <= listY || rowY >= listY + listH) continue; // off-screen
-                int[] edit = editRect(rowY), del = deleteRect(rowY);
-                if (LTGui.hovered(mx, my, edit[0], edit[1], edit[2], edit[3])) {
-                    Minecraft.getInstance().setScreen(new EditRegionScreen(vis.get(i), this));
-                    return true;
-                }
-                if (LTGui.hovered(mx, my, del[0], del[1], del[2], del[3])) {
-                    RegionRow r = vis.get(i);
-                    regions.remove(r);                 // optimistic local removal
-                    LTPacketsClient.sendAdminDelete(r.id);
-                    clampScroll();
-                    return true;
-                }
-            }
-        }
-        return super.mouseClicked(mx, my, button);
+        return ltClick(mx, my, button) || super.mouseClicked(mx, my, button);
     }
 
     @Override
@@ -175,6 +163,42 @@ public class AdminPanelScreen extends Screen {
     public boolean mouseReleased(double mx, double my, int button) {
         draggingScroll = false;
         return super.mouseReleased(mx, my, button);
+    }
+    //?}
+
+    private boolean ltClick(double mx, double my, int button) {
+        if (button != 0) return false;
+
+        // close X
+        if (LTGui.hovered(mx, my, panelX + panelW - 12 - 16, panelY + 8, 16, 16)) { onClose(); return true; }
+
+        // scrollbar
+        int max = Math.max(0, visible().size() * ROW_H - listH);
+        if (max > 0 && LTGui.hovered(mx, my, listX + listW - 4, listY, 4, listH)) {
+            draggingScroll = true;
+            dragTo(my);
+            return true;
+        }
+
+        // row action buttons (scroll-aware)
+        List<RegionRow> vis = visible();
+        for (int i = 0; i < vis.size(); i++) {
+            int rowY = listY - scroll + i * ROW_H;
+            if (rowY + ROW_H <= listY || rowY >= listY + listH) continue; // off-screen
+            int[] edit = editRect(rowY), del = deleteRect(rowY);
+            if (LTGui.hovered(mx, my, edit[0], edit[1], edit[2], edit[3])) {
+                Minecraft.getInstance().setScreen(new EditRegionScreen(vis.get(i), this));
+                return true;
+            }
+            if (LTGui.hovered(mx, my, del[0], del[1], del[2], del[3])) {
+                RegionRow r = vis.get(i);
+                regions.remove(r);                 // optimistic local removal
+                LTPacketsClient.sendAdminDelete(r.id);
+                clampScroll();
+                return true;
+            }
+        }
+        return false;
     }
 
     private void dragTo(double my) {

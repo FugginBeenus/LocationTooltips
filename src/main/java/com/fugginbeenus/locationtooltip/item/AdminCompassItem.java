@@ -8,7 +8,9 @@ import net.minecraft.sounds.SoundEvents;
 import net.minecraft.network.chat.Component;
 import net.minecraft.ChatFormatting;
 import net.minecraft.world.InteractionHand;
+//? if <1.21.11 {
 import net.minecraft.world.InteractionResultHolder;
+//?}
 import net.minecraft.world.level.Level;
 import net.minecraft.server.level.ServerPlayer;
 
@@ -25,34 +27,59 @@ public class AdminCompassItem extends Item {
         super(settings);
     }
 
+    //? if >=1.21.11 {
+    /*@Override
+    public net.minecraft.world.InteractionResult use(Level world, Player player, InteractionHand hand) {
+        return openPanel(world, player)
+                ? net.minecraft.world.InteractionResult.SUCCESS
+                : net.minecraft.world.InteractionResult.CONSUME;
+    }
+    *///?} else {
     @Override
     public InteractionResultHolder<ItemStack> use(Level world, Player player, InteractionHand hand) {
         ItemStack stack = player.getItemInHand(hand);
+        return openPanel(world, player)
+                ? InteractionResultHolder.success(stack)
+                : InteractionResultHolder.consume(stack); // consume still plays the hand animation
+    }
+    //?}
 
-        if (!world.isClientSide && player instanceof ServerPlayer sp) {
-            // Tell client to open the panel
-            LTPackets.openAdminPanel(sp);
-
-            // feedback
-            player.playSound(SoundEvents.UI_BUTTON_CLICK.value(), 1.0f, 1.2f);
-            player.displayClientMessage(Component.literal("Opening Admin Panel..."), true);
-            return InteractionResultHolder.success(stack);
-        }
-
-        return InteractionResultHolder.consume(stack); // allow client hand animation
+    private static boolean openPanel(Level world, Player player) {
+        if (world.isClientSide() || !(player instanceof ServerPlayer sp)) return false;
+        LTPackets.openAdminPanel(sp);
+        player.playSound(SoundEvents.UI_BUTTON_CLICK.value(), 1.0f, 1.2f);
+        player.displayClientMessage(Component.literal("Opening Admin Panel..."), true);
+        return true;
     }
 
-    @Override
-    //? if >=1.21 {
-    /*public void appendHoverText(ItemStack stack, net.minecraft.world.item.Item.TooltipContext context, List<Component> tooltip, net.minecraft.world.item.TooltipFlag type) {
+    //? if >=1.21.11 {
+    /*@Override
+    public void appendHoverText(ItemStack stack, net.minecraft.world.item.Item.TooltipContext context,
+                                net.minecraft.world.item.component.TooltipDisplay display,
+                                java.util.function.Consumer<Component> out,
+                                net.minecraft.world.item.TooltipFlag type) {
+        ltTooltip(out);
+    }
+    *///?} elif >=1.21 {
+    /*@Override
+    public void appendHoverText(ItemStack stack, net.minecraft.world.item.Item.TooltipContext context,
+                                List<Component> tooltip, net.minecraft.world.item.TooltipFlag type) {
+        ltTooltip(tooltip::add);
+    }
     *///?} else {
-    public void appendHoverText(ItemStack stack, Level world, List<Component> tooltip, net.minecraft.world.item.TooltipFlag context) {
+    @Override
+    public void appendHoverText(ItemStack stack, Level world, List<Component> tooltip,
+                                net.minecraft.world.item.TooltipFlag context) {
+        ltTooltip(tooltip::add);
+    }
     //?}
-        tooltip.add(Component.literal("Manage your regions").withStyle(ChatFormatting.GRAY));
-        tooltip.add(Component.literal(""));
-        tooltip.add(Component.literal("Players: ").withStyle(ChatFormatting.YELLOW)
+
+    private static void ltTooltip(java.util.function.Consumer<Component> out) {
+        out.accept(Component.literal("Manage your regions").withStyle(ChatFormatting.GRAY));
+        out.accept(Component.literal(""));
+        out.accept(Component.literal("Players: ").withStyle(ChatFormatting.YELLOW)
                 .append(Component.literal("View your regions").withStyle(ChatFormatting.WHITE)));
-        tooltip.add(Component.literal("Admins: ").withStyle(ChatFormatting.YELLOW)
+        out.accept(Component.literal("Admins: ").withStyle(ChatFormatting.YELLOW)
                 .append(Component.literal("View all regions").withStyle(ChatFormatting.WHITE)));
     }
 }
