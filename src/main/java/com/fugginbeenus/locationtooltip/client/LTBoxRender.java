@@ -1,17 +1,23 @@
 package com.fugginbeenus.locationtooltip.client;
 
+//? if <26.1 {
 import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderContext;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.world.phys.Vec3;
 import org.joml.Matrix4f;
+//?}
 
 /**
  * Draws the world-space region boxes. Geometry goes through the vanilla debug-box render type
  * on the frame's shared buffer, so blending and depth come from that type rather than from
  * manual render-state calls, which the 1.21.5 render rewrite removed.
  */
+//? if >=26.1 {
+/*public final class LTBoxRender {
+}
+*///?} else {
 public final class LTBoxRender {
     private final PoseStack matrices;
     private final MultiBufferSource consumers;
@@ -121,3 +127,4 @@ public final class LTBoxRender {
         }
     }
 }
+//?}

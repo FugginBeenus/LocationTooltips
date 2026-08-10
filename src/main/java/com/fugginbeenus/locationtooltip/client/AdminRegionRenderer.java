@@ -1,7 +1,9 @@
 package com.fugginbeenus.locationtooltip.client;
 
+//? if <26.1 {
 import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderContext;
 import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderEvents;
+//?}
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.core.BlockPos;
 
@@ -31,7 +33,9 @@ public class AdminRegionRenderer {
     }
 
     public static void register() {
+        //? if <26.1 {
         WorldRenderEvents.AFTER_TRANSLUCENT.register(AdminRegionRenderer::render);
+        //?}
     }
 
     public static void updateRegions(AdminClientCache.Row[] rows, ResourceLocation currentDim) {
@@ -48,6 +52,7 @@ public class AdminRegionRenderer {
         regions.clear();
     }
 
+    //? if <26.1 {
     private static void render(WorldRenderContext context) {
         if (regions.isEmpty()) return;
 
@@ -100,4 +105,5 @@ public class AdminRegionRenderer {
 
         r.end();
     }
+    //?}
 }

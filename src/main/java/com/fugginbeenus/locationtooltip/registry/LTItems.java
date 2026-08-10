@@ -34,9 +34,17 @@ public final class LTItems {
 
     // 2) Our own always-present creative tab (no version-specific constants)
     //    Shows both items so you can grab them even if vanilla tabs change.
+    // 26.x made the tab's Output type protected, so the contents are filled in through
+    // Fabric's event there instead of a builder lambda.
     @SuppressWarnings("unused")
     private static final net.minecraft.world.item.CreativeModeTab LT_GROUP = Registry.register(
             BuiltInRegistries.CREATIVE_MODE_TAB, LTId.of(MODID, "main"),
+            //? if >=26.1 {
+            /*FabricItemGroup.builder()
+                    .icon(() -> new ItemStack(ADMIN_COMPASS))
+                    .title(Component.literal("Location Tooltip"))
+                    .build()
+            *///?} else {
             FabricItemGroup.builder()
                     .icon(() -> new ItemStack(ADMIN_COMPASS))
                     .title(Component.literal("Location Tooltip"))
@@ -45,7 +53,21 @@ public final class LTItems {
                         entries.accept(REGION_WAND);
                     })
                     .build()
+            //?}
     );
+
+    //? if >=26.1 {
+    /*static {
+        net.fabricmc.fabric.api.creativetab.v1.CreativeModeTabEvents.modifyOutputEvent(
+                net.minecraft.resources.ResourceKey.create(
+                        net.minecraft.core.registries.Registries.CREATIVE_MODE_TAB,
+                        LTId.of(MODID, "main"))
+        ).register(out -> {
+            out.accept(ADMIN_COMPASS);
+            out.accept(REGION_WAND);
+        });
+    }
+    *///?}
 
     private LTItems() {}
 

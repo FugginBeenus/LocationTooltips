@@ -61,7 +61,7 @@ public class RegionCommands {
                                     BlockPos pos = player.blockPosition();
 
                                     com.fugginbeenus.locationtooltip.region.SelectionManager.setFirst(player, pos);
-                                    player.displayClientMessage(Component.literal("§aFirst corner set at " + pos.toShortString()), false);
+                                    com.fugginbeenus.locationtooltip.util.LTChat.tell(player, Component.literal("§aFirst corner set at " + pos.toShortString()), false);
 
                                     return 1;
                                 })
@@ -75,11 +75,11 @@ public class RegionCommands {
                                     BlockPos pos = player.blockPosition();
 
                                     com.fugginbeenus.locationtooltip.region.SelectionManager.setSecond(player, pos);
-                                    player.displayClientMessage(Component.literal("§aSecond corner set at " + pos.toShortString()), false);
+                                    com.fugginbeenus.locationtooltip.util.LTChat.tell(player, Component.literal("§aSecond corner set at " + pos.toShortString()), false);
 
                                     // Check if both are set
                                     if (com.fugginbeenus.locationtooltip.region.SelectionManager.hasBoth(player)) {
-                                        player.displayClientMessage(Component.literal("§6Both corners set! Use §e/ltregion create <name> §6to create the region."), false);
+                                        com.fugginbeenus.locationtooltip.util.LTChat.tell(player, Component.literal("§6Both corners set! Use §e/ltregion create <name> §6to create the region."), false);
                                     }
 
                                     return 1;
@@ -95,7 +95,7 @@ public class RegionCommands {
                                             String name = StringArgumentType.getString(ctx, "name");
 
                                             if (!com.fugginbeenus.locationtooltip.region.SelectionManager.hasBoth(player)) {
-                                                player.displayClientMessage(Component.literal("§cYou must set both corners first! Use /ltregion pos1 and /ltregion pos2"), false);
+                                                com.fugginbeenus.locationtooltip.util.LTChat.tell(player, Component.literal("§cYou must set both corners first! Use /ltregion pos1 and /ltregion pos2"), false);
                                                 return 0;
                                             }
 
@@ -299,7 +299,7 @@ public class RegionCommands {
                                     ServerPlayer player = source.getPlayerOrException();
 
                                     com.fugginbeenus.locationtooltip.region.SelectionManager.clear(player);
-                                    player.displayClientMessage(Component.literal("§aSelection cleared."), false);
+                                    com.fugginbeenus.locationtooltip.util.LTChat.tell(player, Component.literal("§aSelection cleared."), false);
 
                                     return 1;
                                 })

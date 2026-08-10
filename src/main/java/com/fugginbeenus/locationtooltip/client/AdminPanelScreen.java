@@ -221,15 +221,32 @@ public class AdminPanelScreen extends Screen {
     }
 
     // Skip 1.21's default screen blur; render() draws our own dim.
-    //? if >=1.21 {
+    //? if >=26.1 {
+    /*@Override
+    public void extractBackground(GuiGraphics context, int mouseX, int mouseY, float delta) {
+    }
+    *///?} elif >=1.21 {
     /*@Override
     public void renderBackground(GuiGraphics context, int mouseX, int mouseY, float delta) {
     }
     *///?}
 
     // ===== render =====
+    //? if >=26.1 {
+    /*@Override
+    public void extractRenderState(GuiGraphics ctx, int mouseX, int mouseY, float delta) {
+        ltDraw(ctx, mouseX, mouseY, delta);
+        super.extractRenderState(ctx, mouseX, mouseY, delta);
+    }
+    *///?} else {
     @Override
     public void render(GuiGraphics ctx, int mouseX, int mouseY, float delta) {
+        ltDraw(ctx, mouseX, mouseY, delta);
+        super.render(ctx, mouseX, mouseY, delta);   // widgets (the text field)
+    }
+    //?}
+
+    private void ltDraw(GuiGraphics ctx, int mouseX, int mouseY, float delta) {
         ctx.fill(0, 0, this.width, this.height, LTGui.DIM);
         LTGui.panel(ctx, panelX, panelY, panelW, panelH);
 
@@ -280,7 +297,6 @@ public class AdminPanelScreen extends Screen {
                 Component.literal("§7" + vis.size() + (vis.size() == 1 ? " region" : " regions")),
                 panelX + 12, panelY + panelH - 16, LTGui.SUBTEXT, false);
 
-        super.render(ctx, mouseX, mouseY, delta); // search field text
     }
 
     private void renderRow(GuiGraphics ctx, RegionRow r, int rowY, int mouseX, int mouseY) {

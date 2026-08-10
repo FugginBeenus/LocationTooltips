@@ -144,14 +144,31 @@ public abstract class RegionConfigScreen extends Screen {
     @Override public boolean shouldCloseOnEsc() { return true; }
 
     // Skip 1.21's default screen blur; render() draws our own dim.
-    //? if >=1.21 {
+    //? if >=26.1 {
+    /*@Override
+    public void extractBackground(GuiGraphics context, int mouseX, int mouseY, float delta) {
+    }
+    *///?} elif >=1.21 {
     /*@Override
     public void renderBackground(GuiGraphics context, int mouseX, int mouseY, float delta) {
     }
     *///?}
 
+    //? if >=26.1 {
+    /*@Override
+    public void extractRenderState(GuiGraphics ctx, int mouseX, int mouseY, float delta) {
+        ltDraw(ctx, mouseX, mouseY, delta);
+        super.extractRenderState(ctx, mouseX, mouseY, delta);
+    }
+    *///?} else {
     @Override
     public void render(GuiGraphics ctx, int mouseX, int mouseY, float delta) {
+        ltDraw(ctx, mouseX, mouseY, delta);
+        super.render(ctx, mouseX, mouseY, delta);   // widgets (the text field)
+    }
+    //?}
+
+    private void ltDraw(GuiGraphics ctx, int mouseX, int mouseY, float delta) {
         ctx.fill(0, 0, this.width, this.height, LTGui.DIM);
         LTGui.panel(ctx, panelX, panelY, panelW, panelH);
 
@@ -185,6 +202,5 @@ public abstract class RegionConfigScreen extends Screen {
         LTGui.button(ctx, this.font, panelX + PAD + colW + 4, btnY, colW, 20, "Cancel",
                 LTGui.hovered(mouseX, mouseY, panelX + PAD + colW + 4, btnY, colW, 20));
 
-        super.render(ctx, mouseX, mouseY, delta);
     }
 }

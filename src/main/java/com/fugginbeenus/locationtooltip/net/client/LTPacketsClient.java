@@ -82,9 +82,9 @@ public final class LTPacketsClient {
         BlockPos p = mc.player.blockPosition();
         for (int i = 0; i < 60; i++) {
             w.addParticle(ParticleTypes.HAPPY_VILLAGER,
-                    p.getX() + 0.5 + (w.random.nextDouble() - 0.5) * 2.0,
-                    p.getY() + 1.2 + w.random.nextDouble(),
-                    p.getZ() + 0.5 + (w.random.nextDouble() - 0.5) * 2.0,
+                    p.getX() + 0.5 + (w.getRandom().nextDouble() - 0.5) * 2.0,
+                    p.getY() + 1.2 + w.getRandom().nextDouble(),
+                    p.getZ() + 0.5 + (w.getRandom().nextDouble() - 0.5) * 2.0,
                     0, 0.02, 0);
         }
         mc.player.playSound(SoundEvents.UI_TOAST_CHALLENGE_COMPLETE, 0.6f, 1.0f);

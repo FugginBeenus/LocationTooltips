@@ -59,7 +59,11 @@ public final class StructureRegionTagger {
             }
         }
 
+        //? if >=26.1 {
+        /*ServerChunkEvents.CHUNK_LOAD.register((world, chunk, isNew) -> onChunkLoad(world, chunk));
+        *///?} else {
         ServerChunkEvents.CHUNK_LOAD.register(StructureRegionTagger::onChunkLoad);
+        //?}
         // Debounced flush of any structure regions added since the last write (~2s).
         ServerTickEvents.END_SERVER_TICK.register(server -> {
             if ((++flushCounter % 40) == 0) RegionManager.of(server).flushDirty();

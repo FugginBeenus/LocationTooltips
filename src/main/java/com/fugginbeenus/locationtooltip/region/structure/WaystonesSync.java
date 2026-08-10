@@ -83,7 +83,7 @@ public final class WaystonesSync {
         for (ServerPlayer p : server.getPlayerList().getPlayers()) {
             if (!p.level().dimension().location().equals(r.dim)) continue;
             if (!r.contains(p.blockPosition())) continue;
-            p.displayClientMessage(msg, false);
+            com.fugginbeenus.locationtooltip.util.LTChat.tell(p, msg, false);
         }
     }
 }

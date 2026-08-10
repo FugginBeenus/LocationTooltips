@@ -6,13 +6,18 @@ import com.fugginbeenus.locationtooltip.config.LTConfig;
 import com.fugginbeenus.locationtooltip.hud.LocationHudOverlay;
 import com.fugginbeenus.locationtooltip.net.client.LTPacketsClient;
 import com.fugginbeenus.locationtooltip.registry.LTItems;
+import com.fugginbeenus.locationtooltip.util.LTId;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientLifecycleEvents;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper;
+//? if >=26.1 {
+/*import net.fabricmc.fabric.api.client.rendering.v1.hud.HudElementRegistry;
+*///?} else {
 import net.fabricmc.fabric.api.client.rendering.v1.HudRenderCallback;
+//?}
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.KeyMapping;
 import com.mojang.blaze3d.platform.InputConstants;
@@ -45,7 +50,11 @@ public final class LocationTooltipClient implements ClientModInitializer {
         ClientLifecycleEvents.CLIENT_STOPPING.register(c -> LTConfig.get().save());
 
         // HUD overlay (register once)
+        //? if >=26.1 {
+        /*HudElementRegistry.addLast(LTId.of("locationtooltip", "pill"), new LocationHudOverlay());
+        *///?} else {
         HudRenderCallback.EVENT.register(new LocationHudOverlay());
+        //?}
         LOG.info("[LT] onInitializeClient() start");
 
         openAdminKey = KeyBindingHelper.registerKeyBinding(
@@ -92,7 +101,11 @@ public final class LocationTooltipClient implements ClientModInitializer {
 
             // Holding compass - refresh the in-world region boxes (nearby only).
             // Skip while the panel is open; it does its own (all-regions) refresh. [GambaPVP]
+            //? if >=26.1 {
+            /*if ((client.level.getGameTime() % 20L) == 0L) {
+            *///?} else {
             if (!(client.screen instanceof AdminPanelScreen) && (client.level.getGameTime() % 20L) == 0L) {
+            //?}
                 LTPacketsClient.requestAdminList(256);
             }
 

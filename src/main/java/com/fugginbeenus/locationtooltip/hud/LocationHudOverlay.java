@@ -1,7 +1,11 @@
 package com.fugginbeenus.locationtooltip.hud;
 
 import com.fugginbeenus.locationtooltip.config.LTConfig;
+//? if >=26.1 {
+/*import net.fabricmc.fabric.api.client.rendering.v1.hud.HudElement;
+*///?} else {
 import net.fabricmc.fabric.api.client.rendering.v1.HudRenderCallback;
+//?}
 import com.fugginbeenus.locationtooltip.util.LTId;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
@@ -13,7 +17,11 @@ import net.minecraft.resources.ResourceLocation;
  * Vector-drawn HUD overlay with 1px "vanilla" rounded corners.
  * Scales cleanly and supports split/combined layouts.
  */
+//? if >=26.1 {
+/*public class LocationHudOverlay implements HudElement {
+*///?} else {
 public class LocationHudOverlay implements HudRenderCallback {
+//?}
 
     private static String currentTitle = "Wilderness";
     private static long   regionChangedAt = 0L;
@@ -47,7 +55,9 @@ public class LocationHudOverlay implements HudRenderCallback {
     private static final ResourceLocation ICON_CLOCK  = LTId.of("locationtooltip", "textures/gui/clock.png");
 
     @Override
-    //? if >=1.21 {
+    //? if >=26.1 {
+    /*public void extractRenderState(GuiGraphics ctx, net.minecraft.client.DeltaTracker tickCounter) {
+    *///?} elif >=1.21 {
     /*public void onHudRender(GuiGraphics ctx, net.minecraft.client.DeltaTracker tickCounter) {
     *///?} else {
     public void onHudRender(GuiGraphics ctx, float tickDelta) {
@@ -61,7 +71,10 @@ public class LocationHudOverlay implements HudRenderCallback {
 
     private static void render(GuiGraphics ctx, boolean preview) {
         Minecraft mc = Minecraft.getInstance();
-        if (mc == null || mc.player == null || (!preview && mc.options.hideGui)) return;
+        if (mc == null || mc.player == null) return;
+        //? if <26.1 {
+        if (!preview && mc.options.hideGui) return;
+        //?}
 
         LTConfig cfg = LTConfig.get();
 
@@ -171,6 +184,9 @@ public class LocationHudOverlay implements HudRenderCallback {
 
     /** True while any boss bar is on screen (vanilla draws them at the top-centre). */
     private static boolean bossBarVisible(Minecraft mc) {
+        //? if >=26.1 {
+        /*return false;   // no boss-bar accessor on 26.x yet
+        *///?} else {
         try {
             if (mc.gui == null) return false;
             var bossBarHud = mc.gui.getBossOverlay();
@@ -180,6 +196,7 @@ public class LocationHudOverlay implements HudRenderCallback {
         } catch (Throwable ignored) {
             return false; // never let the HUD crash over this
         }
+        //?}
     }
 
     private static int[] anchor(LTConfig.Position pos, Window win, int w, int h, int dx, int dy) {

@@ -50,17 +50,17 @@ public class RegionWandItem extends Item {
         if (!SelectionManager.hasBoth(player)) {
             if (SelectionManager.getFirst(player) == null) {
                 SelectionManager.setFirst(player, pos);
-                player.displayClientMessage(Component.literal("First corner set at " + pos.toShortString()), true);
+                com.fugginbeenus.locationtooltip.util.LTChat.tell(player, Component.literal("First corner set at " + pos.toShortString()), true);
                 player.playSound(SoundEvents.NOTE_BLOCK_HAT.value(), 1.0f, 1.5f);
             } else {
                 SelectionManager.setSecond(player, pos);
-                player.displayClientMessage(Component.literal("Second corner set at " + pos.toShortString()), true);
+                com.fugginbeenus.locationtooltip.util.LTChat.tell(player, Component.literal("Second corner set at " + pos.toShortString()), true);
                 player.playSound(SoundEvents.NOTE_BLOCK_PLING.value(), 1.0f, 1.3f);
             }
         } else {
             SelectionManager.clear(player);
             SelectionManager.setFirst(player, pos);
-            player.displayClientMessage(Component.literal("Selection reset. First corner set at " + pos.toShortString()), true);
+            com.fugginbeenus.locationtooltip.util.LTChat.tell(player, Component.literal("Selection reset. First corner set at " + pos.toShortString()), true);
             player.playSound(SoundEvents.NOTE_BLOCK_HAT.value(), 1.0f, 1.0f);
         }
 

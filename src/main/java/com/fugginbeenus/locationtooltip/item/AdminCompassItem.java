@@ -48,7 +48,7 @@ public class AdminCompassItem extends Item {
         if (world.isClientSide() || !(player instanceof ServerPlayer sp)) return false;
         LTPackets.openAdminPanel(sp);
         player.playSound(SoundEvents.UI_BUTTON_CLICK.value(), 1.0f, 1.2f);
-        player.displayClientMessage(Component.literal("Opening Admin Panel..."), true);
+        com.fugginbeenus.locationtooltip.util.LTChat.tell(sp, Component.literal("Opening Admin Panel..."), true);
         return true;
     }
 

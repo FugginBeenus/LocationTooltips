@@ -284,7 +284,7 @@ public final class RegionManager {
     }
 
     private static void denyEdit(ServerPlayer player) {
-        player.displayClientMessage(
+        com.fugginbeenus.locationtooltip.util.LTChat.tell(player, 
                 Component.literal("You don't have permission to modify this region.").withStyle(ChatFormatting.RED),
                 true /* action bar */
         );
@@ -331,14 +331,14 @@ public final class RegionManager {
         var dim = player.level().dimension().location();
         Region r = smallestContaining(dim, player.blockPosition());
         if (r == null) {
-            player.displayClientMessage(Component.literal("You're not standing in a region.").withStyle(ChatFormatting.RED), false);
+            com.fugginbeenus.locationtooltip.util.LTChat.tell(player, Component.literal("You're not standing in a region.").withStyle(ChatFormatting.RED), false);
             return;
         }
         if (!canEdit(player, r)) { denyEdit(player); return; }
 
         RegionFlag f = RegionFlags.byId(flagId);
         if (f == null) {
-            player.displayClientMessage(Component.literal("Unknown flag: " + flagId).withStyle(ChatFormatting.RED), false);
+            com.fugginbeenus.locationtooltip.util.LTChat.tell(player, Component.literal("Unknown flag: " + flagId).withStyle(ChatFormatting.RED), false);
             return;
         }
 
@@ -346,7 +346,7 @@ public final class RegionManager {
         saveDim(r.dim);
 
         String state = (value == null) ? "inherit" : (value ? "allow" : "deny");
-        player.displayClientMessage(
+        com.fugginbeenus.locationtooltip.util.LTChat.tell(player, 
                 Component.literal("Set ").withStyle(ChatFormatting.GREEN)
                         .append(Component.literal(f.displayName).withStyle(ChatFormatting.YELLOW))
                         .append(Component.literal(" → " + state + " for ").withStyle(ChatFormatting.GREEN))
@@ -359,11 +359,11 @@ public final class RegionManager {
         var dim = player.level().dimension().location();
         Region r = smallestContaining(dim, player.blockPosition());
         if (r == null) {
-            player.displayClientMessage(Component.literal("You're not standing in a region.").withStyle(ChatFormatting.RED), false);
+            com.fugginbeenus.locationtooltip.util.LTChat.tell(player, Component.literal("You're not standing in a region.").withStyle(ChatFormatting.RED), false);
             return;
         }
 
-        player.displayClientMessage(
+        com.fugginbeenus.locationtooltip.util.LTChat.tell(player, 
                 Component.literal("Flags for ").withStyle(ChatFormatting.GOLD)
                         .append(Component.literal(r.name).withStyle(ChatFormatting.AQUA))
                         .append(Component.literal(":").withStyle(ChatFormatting.GOLD)),
@@ -375,7 +375,7 @@ public final class RegionManager {
                     ? "inherit (default " + (f.defaultValue ? "allow" : "deny") + ")"
                     : (ov ? "allow" : "deny");
             ChatFormatting color = (ov == null) ? ChatFormatting.GRAY : (ov ? ChatFormatting.GREEN : ChatFormatting.RED);
-            player.displayClientMessage(
+            com.fugginbeenus.locationtooltip.util.LTChat.tell(player, 
                     Component.literal("  " + f.id + ": ").withStyle(ChatFormatting.WHITE)
                             .append(Component.literal(state).withStyle(color)),
                     false);
@@ -455,7 +455,7 @@ public final class RegionManager {
             if (index == null) return null;
 
             // Get candidate regions from the chunk containing this position
-            ChunkPos cp = new ChunkPos(pos);
+            ChunkPos cp = new ChunkPos(pos.getX() >> 4, pos.getZ() >> 4);
             List<Region> candidates = index.get(cp);
             if (candidates == null || candidates.isEmpty()) return null;
 
@@ -484,7 +484,7 @@ public final class RegionManager {
     public List<Region> allContaining(ResourceLocation dim, BlockPos pos) {
         Map<ChunkPos, List<Region>> index = spatialIndex.get(dim);
         if (index == null) return Collections.emptyList();
-        List<Region> candidates = index.get(new ChunkPos(pos));
+        List<Region> candidates = index.get(new ChunkPos(pos.getX() >> 4, pos.getZ() >> 4));
         if (candidates == null || candidates.isEmpty()) return Collections.emptyList();
 
         List<Region> out = new ArrayList<>();

@@ -18,7 +18,11 @@ def unobfuscated = Boolean.parseBoolean((findProperty('unobfuscated') ?: 'false'
 
 java {
     toolchain { languageVersion = JavaLanguageVersion.of(javaVersion) }
-    withSourcesJar()
+    // The unobfuscated versions map through an empty intermediary, which has no named
+    // namespace for Loom to remap sources into.
+    if (!unobfuscated) {
+        withSourcesJar()
+    }
 }
 
 repositories {
@@ -44,6 +48,12 @@ dependencies {
 
     add(mod, "net.fabricmc:fabric-loader:${property('loader_version')}")
     add(mod, "net.fabricmc.fabric-api:fabric-api:${property('fabric_api_version')}")
+
+    // Loom normally puts Mixin on the compile classpath as part of remapping; without that
+    // step the unobfuscated versions need it spelled out.
+    if (unobfuscated) {
+        compileOnly "net.fabricmc:sponge-mixin:0.17.3+mixin.0.8.7"
+    }
 
     // Both are optional at runtime, so a version we cannot resolve yet just drops out of the
     // build for that Minecraft version rather than blocking it.
@@ -84,6 +94,29 @@ stonecutter.replacements {
             to = newName
         }
     }
+
+    // 26.x swapped the immediate GuiGraphics for a render-state extractor.
+    def modernGui = stonecutter.eval(stonecutter.current.version, ">=26.1")
+    [
+        "GuiGraphics"  : "GuiGraphicsExtractor",
+        ".drawString(" : ".text(",
+        // Fabric renamed these modules for 26.x.
+        "client.keybinding.v1.KeyBindingHelper" : "client.keymapping.v1.KeyMappingHelper",
+        "KeyBindingHelper"                      : "KeyMappingHelper",
+        "registerKeyBinding"                    : "registerKeyMapping",
+        "itemgroup.v1.FabricItemGroup"          : "creativetab.v1.FabricCreativeModeTab",
+        "FabricItemGroup"                       : "FabricCreativeModeTab",
+        "PayloadTypeRegistry.playS2C()"         : "PayloadTypeRegistry.clientboundPlay()",
+        "PayloadTypeRegistry.playC2S()"         : "PayloadTypeRegistry.serverboundPlay()",
+        // Vanilla renames.
+        ".setScreen("   : ".setScreenAndShow(",
+        ".getDayTime()" : ".getOverworldClockTime()",
+    ].each { oldName, newName ->
+        string(modernGui) {
+            from = oldName
+            to = newName
+        }
+    }
 }
 
 tasks.withType(JavaCompile).configureEach {
@@ -92,12 +125,14 @@ tasks.withType(JavaCompile).configureEach {
 }
 
 def mcVersion = property('minecraft_version').toString()
-def packFormat = Integer.parseInt(property('pack_format').toString())
+// 1.21 is where the datapack folders went singular and item-stack JSON switched to "id".
+def modernData = stonecutter.eval(stonecutter.current.version, ">=1.21")
 
 tasks.processResources {
     inputs.property "version", project.version
     inputs.property "minecraft_dep", mcVersion
     inputs.property "modernItemModels", modernItemModels
+    inputs.property "modernData", modernData
     filesMatching("fabric.mod.json") {
         expand("version": project.version, "minecraft_dep": mcVersion)
     }
@@ -109,7 +144,7 @@ tasks.processResources {
     }
     // 1.21 uses singular datapack folders and "id" (not "item") in advancement icons and recipe
     // results. Ingredients still use "item", so only our own result items get rewritten.
-    if (packFormat >= 34) {
+    if (modernData) {
         filesMatching("data/locationtooltip/advancements/*.json") {
             filter { line -> line.replace('"item":', '"id":') }
         }
@@ -130,7 +165,7 @@ tasks.remapJar {
     archiveVersion = "${project.version}+${mcVersion}"
 }
 
-tasks.remapSourcesJar {
+tasks.matching { it.name == "remapSourcesJar" }.configureEach {
     archiveVersion = "${project.version}+${mcVersion}"
 }
 

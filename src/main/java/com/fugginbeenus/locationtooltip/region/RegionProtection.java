@@ -59,7 +59,7 @@ public class RegionProtection {
         if (!mgr.resolveFlag(dim, pos, RegionFlags.PVP.id)) {
             Region region = mgr.smallestContaining(dim, pos);
             String where = (region != null) ? region.name : "this area";
-            serverAttacker.displayClientMessage(
+            com.fugginbeenus.locationtooltip.util.LTChat.tell(serverAttacker, 
                     Component.literal("[X] PvP is disabled in ").withStyle(ChatFormatting.RED)
                             .append(Component.literal(where).withStyle(ChatFormatting.YELLOW))
                             .append(Component.literal("!").withStyle(ChatFormatting.RED)),
@@ -158,6 +158,6 @@ public class RegionProtection {
     }
 
     private static void deny(ServerPlayer p, String action) {
-        p.displayClientMessage(Component.literal("You can't " + action + " in this area.").withStyle(ChatFormatting.RED), true);
+        com.fugginbeenus.locationtooltip.util.LTChat.tell(p, Component.literal("You can't " + action + " in this area.").withStyle(ChatFormatting.RED), true);
     }
 }

@@ -1,7 +1,9 @@
 package com.fugginbeenus.locationtooltip.client;
 
+//? if <26.1 {
 import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderContext;
 import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderEvents;
+//?}
 import net.minecraft.core.BlockPos;
 
 /** Draws the pulsing box for the current wand corner selection. */
@@ -13,7 +15,9 @@ public class SelectionRenderer {
     private static boolean isAdminCompass = false;
 
     public static void register() {
+        //? if <26.1 {
         WorldRenderEvents.AFTER_TRANSLUCENT.register(SelectionRenderer::render);
+        //?}
     }
 
     public static void setCorners(BlockPos a, BlockPos b) {
@@ -33,6 +37,7 @@ public class SelectionRenderer {
         isAdminCompass = false;
     }
 
+    //? if <26.1 {
     private static void render(WorldRenderContext context) {
         if (corner1 == null || corner2 == null) return;
 
@@ -84,4 +89,5 @@ public class SelectionRenderer {
 
         box.end();
     }
+    //?}
 }
