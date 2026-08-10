@@ -29,7 +29,7 @@ repositories {
 
 dependencies {
     minecraft "com.mojang:minecraft:${property('minecraft_version')}"
-    // Minecraft ships unobfuscated from 1.21.11 on, so only the older versions need mappings.
+    // Minecraft stopped publishing mappings once it shipped unobfuscated (26.1 on).
     if (!unobfuscated) {
         mappings loom.officialMojangMappings()
     }
@@ -43,6 +43,17 @@ dependencies {
 }
 
 loom {}
+
+// Mojang renamed ResourceLocation to Identifier in 1.21.11, and did it consistently
+// (ResourceLocationArgument, writeResourceLocation, ...). The source tree keeps the older
+// name and Stonecutter rewrites the token for the newer versions, which beats putting a
+// version switch on all ~80 usages.
+stonecutter.replacements {
+    string(stonecutter.eval(stonecutter.current.version, ">=1.21.11")) {
+        from = "ResourceLocation"
+        to = "Identifier"
+    }
+}
 
 tasks.withType(JavaCompile).configureEach {
     options.encoding = "UTF-8"
