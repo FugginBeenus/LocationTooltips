@@ -178,7 +178,8 @@ modrinth {
     versionName = "Location Tooltip ${version} for ${mcVersion}"
     versionType = "release"
     uploadFile = tasks.named("remapJar").flatMap { it.archiveFile }
-    gameVersions = [mcVersion]
+    // One build usually covers a whole patch family; game_versions lists the rest.
+    gameVersions = (findProperty('game_versions') ?: mcVersion).toString().split(',').collect { it.trim() }
     loaders = ["fabric"]
 
     def changelogFile = rootProject.file("changelogs/${version}.md")
