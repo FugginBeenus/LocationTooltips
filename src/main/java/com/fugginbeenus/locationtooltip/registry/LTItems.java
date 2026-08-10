@@ -24,12 +24,12 @@ public final class LTItems {
     // 1) Items
     public static final Item REGION_WAND = Registry.register(
             BuiltInRegistries.ITEM, LTId.of(MODID, "region_wand"),
-            new RegionWandItem(settings())
+            new RegionWandItem(settings("region_wand"))
     );
 
     public static final Item ADMIN_COMPASS = Registry.register(
             BuiltInRegistries.ITEM, LTId.of(MODID, "admin_compass"),
-            new AdminCompassItem(settings())
+            new AdminCompassItem(settings("admin_compass"))
     );
 
     // 2) Our own always-present creative tab (no version-specific constants)
@@ -49,9 +49,15 @@ public final class LTItems {
 
     private LTItems() {}
 
-    // Fabric folded its item settings into vanilla Item.Properties in 1.21; FabricItemSettings is gone.
-    private static Item.Properties settings() {
-        //? if >=1.21 {
+    // Fabric folded its item settings into vanilla Item.Properties in 1.21; FabricItemSettings is
+    // gone. From 1.21.2 an item also has to know its own registry key before it is constructed.
+    private static Item.Properties settings(String path) {
+        //? if >=1.21.11 {
+        /*return new Item.Properties()
+                .setId(net.minecraft.resources.ResourceKey.create(
+                        net.minecraft.core.registries.Registries.ITEM, LTId.of(MODID, path)))
+                .stacksTo(1);
+        *///?} elif >=1.21 {
         /*return new Item.Properties().stacksTo(1);
         *///?} else {
         return new net.fabricmc.fabric.api.item.v1.FabricItemSettings().maxCount(1);
