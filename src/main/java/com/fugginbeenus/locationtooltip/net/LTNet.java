@@ -40,7 +40,7 @@ public final class LTNet {
         net.fabricmc.fabric.api.networking.v1.PayloadTypeRegistry.playC2S().register(LTCarrier.ID, LTCarrier.CODEC);
         ServerPlayNetworking.registerGlobalReceiver(LTCarrier.ID, (payload, context) -> {
             ServerPlayer player = context.player();
-            dispatch(player.getServer(), player, payload);
+            dispatch(player.level().getServer(), player, payload);
         });
     }
 

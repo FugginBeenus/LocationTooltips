@@ -147,7 +147,7 @@ public class RegionProtection {
 
     /** Operators bypass action protections (so admins can build/manage in protected zones). */
     private static boolean bypasses(ServerPlayer p) {
-        return p.server.getPlayerList().isOp(p.getGameProfile());
+        return com.fugginbeenus.locationtooltip.util.LTPerms.isAdmin(p);
     }
 
     private static boolean isContainer(Level world, BlockPos pos) {

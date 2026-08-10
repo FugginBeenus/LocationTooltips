@@ -49,9 +49,19 @@ loom {}
 // name and Stonecutter rewrites the token for the newer versions, which beats putting a
 // version switch on all ~80 usages.
 stonecutter.replacements {
-    string(stonecutter.eval(stonecutter.current.version, ">=1.21.11")) {
-        from = "ResourceLocation"
-        to = "Identifier"
+    def modern = stonecutter.eval(stonecutter.current.version, ">=1.21.11")
+    [
+        "ResourceLocation" : "Identifier",          // and ResourceLocationArgument, writeResourceLocation, ...
+        ".location()"      : ".identifier()",       // ResourceKey
+        "registryOrThrow"  : "lookupOrThrow",
+        "getMinBuildHeight": "getMinY",
+        "getMaxBuildHeight": "getMaxY",
+        "MobSpawnType"     : "EntitySpawnReason",
+    ].each { oldName, newName ->
+        string(modern) {
+            from = oldName
+            to = newName
+        }
     }
 }
 

@@ -51,7 +51,7 @@ public class RegionCommands {
     public static void register(CommandDispatcher<CommandSourceStack> dispatcher, CommandBuildContext registryAccess) {
         dispatcher.register(
                 Commands.literal("ltregion")
-                        .requires(source -> source.hasPermission(2)) // OP level 2
+                        .requires(com.fugginbeenus.locationtooltip.util.LTPerms::isAdmin) // OP level 2
 
                         // /ltregion pos1 - Set first corner at current position
                         .then(Commands.literal("pos1")
@@ -103,7 +103,7 @@ public class RegionCommands {
                                             BlockPos b = com.fugginbeenus.locationtooltip.region.SelectionManager.getSecond(player);
 
                                             // Create the region with default settings
-                                            RegionManager.of(player.getServer()).createRegion(player, name, a, b, java.util.Map.of());
+                                            RegionManager.of(player.level().getServer()).createRegion(player, name, a, b, java.util.Map.of());
 
                                             return 1;
                                         })
@@ -124,7 +124,7 @@ public class RegionCommands {
                                                     BlockPos a = center.offset(-radius, -10, -radius);
                                                     BlockPos b = center.offset(radius, 10, radius);
 
-                                                    RegionManager.of(player.getServer()).createRegion(player, name, a, b, java.util.Map.of());
+                                                    RegionManager.of(player.level().getServer()).createRegion(player, name, a, b, java.util.Map.of());
 
                                                     return 1;
                                                 })
@@ -156,7 +156,7 @@ public class RegionCommands {
                                                                                             BlockPos a = new BlockPos(x1, y1, z1);
                                                                                             BlockPos b = new BlockPos(x2, y2, z2);
 
-                                                                                            RegionManager.of(player.getServer()).createRegion(player, name, a, b, java.util.Map.of());
+                                                                                            RegionManager.of(player.level().getServer()).createRegion(player, name, a, b, java.util.Map.of());
 
                                                                                             return 1;
                                                                                         })
@@ -274,7 +274,7 @@ public class RegionCommands {
                         .then(Commands.literal("flags")
                                 .executes(ctx -> {
                                     ServerPlayer player = ctx.getSource().getPlayerOrException();
-                                    RegionManager.of(player.getServer()).listFlagsAtPlayer(player);
+                                    RegionManager.of(player.level().getServer()).listFlagsAtPlayer(player);
                                     return 1;
                                 })
                         )
@@ -311,7 +311,7 @@ public class RegionCommands {
     private static int setFlag(CommandContext<CommandSourceStack> ctx, Boolean value) throws CommandSyntaxException {
         ServerPlayer player = ctx.getSource().getPlayerOrException();
         String flag = StringArgumentType.getString(ctx, "flag");
-        RegionManager.of(player.getServer()).setFlagAtPlayer(player, flag, value);
+        RegionManager.of(player.level().getServer()).setFlagAtPlayer(player, flag, value);
         return 1;
     }
 }

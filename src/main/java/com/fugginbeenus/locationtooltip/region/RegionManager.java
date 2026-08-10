@@ -183,7 +183,7 @@ public final class RegionManager {
     public void sendNearbyTo(ServerPlayer player, int radius) {
         ResourceLocation dim = player.level().dimension().location();
         BlockPos p = player.blockPosition();
-        boolean isOp = player.server.getPlayerList().isOp(player.getGameProfile());
+        boolean isOp = com.fugginbeenus.locationtooltip.util.LTPerms.isAdmin(player);
 
         List<Region> all = listFor(dim);
         List<Region> near = new ArrayList<>();
@@ -215,7 +215,7 @@ public final class RegionManager {
      * {@link #sendNearbyTo}. Originally contributed by GambaPVP (all-locations-packet).
      */
     public void sendAllTo(ServerPlayer player, @Nullable ResourceLocation dim) {
-        boolean isOp = player.server.getPlayerList().isOp(player.getGameProfile());
+        boolean isOp = com.fugginbeenus.locationtooltip.util.LTPerms.isAdmin(player);
 
         List<Region> all = new ArrayList<>();
         for (Region r : listFor(dim)) {
@@ -279,7 +279,7 @@ public final class RegionManager {
 
     /** True if this player may modify the given region (ops always; otherwise only the owner). */
     private boolean canEdit(ServerPlayer player, Region r) {
-        boolean isOp = player.server.getPlayerList().isOp(player.getGameProfile());
+        boolean isOp = com.fugginbeenus.locationtooltip.util.LTPerms.isAdmin(player);
         return r.canBeEditedBy(player.getUUID(), isOp);
     }
 

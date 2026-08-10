@@ -19,7 +19,7 @@ public class DebugCommands {
     public static void register(CommandDispatcher<CommandSourceStack> dispatcher) {
         dispatcher.register(
                 Commands.literal("ltdebug")
-                        .requires(source -> source.hasPermission(2))
+                        .requires(com.fugginbeenus.locationtooltip.util.LTPerms::isAdmin)
                         .then(Commands.literal("stats")
                                 .executes(DebugCommands::showStats))
                         .then(Commands.literal("reset")
