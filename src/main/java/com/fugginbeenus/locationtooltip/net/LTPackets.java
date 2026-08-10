@@ -4,8 +4,8 @@ import com.fugginbeenus.locationtooltip.region.Region;
 import com.fugginbeenus.locationtooltip.region.RegionManager;
 import com.mojang.authlib.GameProfile;
 import net.minecraft.server.MinecraftServer;
-import net.minecraft.server.network.ServerPlayerEntity;
-import net.minecraft.util.math.BlockPos;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.core.BlockPos;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -42,19 +42,19 @@ public final class LTPackets {
                 RegionManager.of(server).deleteRegion(player, p.id()));
     }
 
-    public static void openName(ServerPlayerEntity player, BlockPos a, BlockPos b) {
+    public static void openName(ServerPlayer player, BlockPos a, BlockPos b) {
         LTNet.send(player, LTPayloads.OPEN_NAME, new LTPayloads.OpenName(a, b));
     }
 
-    public static void openAdminPanel(ServerPlayerEntity player) {
+    public static void openAdminPanel(ServerPlayer player) {
         LTNet.send(player, LTPayloads.OPEN_ADMIN_PANEL, new LTPayloads.OpenAdminPanel());
     }
 
-    public static void sendRegionUpdate(ServerPlayerEntity player, String name) {
+    public static void sendRegionUpdate(ServerPlayer player, String name) {
         LTNet.send(player, LTPayloads.REGION_UPDATE, new LTPayloads.RegionUpdate(name));
     }
 
-    public static void sendAdminList(ServerPlayerEntity player, List<Region> regions, boolean isOp) {
+    public static void sendAdminList(ServerPlayer player, List<Region> regions, boolean isOp) {
         List<LTPayloads.RegionEntry> entries = new ArrayList<>(regions.size());
         for (Region r : regions) {
             String ownerName;
@@ -72,20 +72,20 @@ public final class LTPackets {
         LTNet.send(player, LTPayloads.ADMIN_LIST, new LTPayloads.AdminList(entries));
     }
 
-    public static void sendRegionCreatedCelebrate(ServerPlayerEntity player, String name, BlockPos min, BlockPos max) {
+    public static void sendRegionCreatedCelebrate(ServerPlayer player, String name, BlockPos min, BlockPos max) {
         LTNet.send(player, LTPayloads.REGION_CREATED, new LTPayloads.RegionCreated(name, min, max));
     }
 
-    public static void sendSelectionUpdate(ServerPlayerEntity player, BlockPos a, BlockPos b) {
+    public static void sendSelectionUpdate(ServerPlayer player, BlockPos a, BlockPos b) {
         LTNet.send(player, LTPayloads.SELECTION_UPDATE, new LTPayloads.SelectionUpdate(a, b));
     }
 
-    public static void sendSelectionClear(ServerPlayerEntity player) {
+    public static void sendSelectionClear(ServerPlayer player) {
         LTNet.send(player, LTPayloads.SELECTION_CLEAR, new LTPayloads.SelectionClear());
     }
 
     private static String getPlayerName(MinecraftServer server, UUID uuid) {
-        GameProfile profile = server.getUserCache().getByUuid(uuid).orElse(null);
+        GameProfile profile = server.getProfileCache().get(uuid).orElse(null);
         return profile != null ? profile.getName() : null;
     }
 }

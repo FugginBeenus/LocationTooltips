@@ -1,6 +1,6 @@
 package com.fugginbeenus.locationtooltip.region.structure;
 
-import net.minecraft.util.Identifier;
+import net.minecraft.resources.ResourceLocation;
 
 import java.util.Map;
 
@@ -52,7 +52,7 @@ public final class StructureNames {
     );
 
     /** Friendly name for a structure id (curated for vanilla, prettified path otherwise). */
-    public static String displayName(Identifier structureId) {
+    public static String displayName(ResourceLocation structureId) {
         String nice = NICE.get(structureId.getPath());
         return (nice != null) ? nice : prettify(structureId.getPath());
     }

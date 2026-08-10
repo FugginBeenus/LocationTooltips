@@ -3,9 +3,9 @@ package com.fugginbeenus.locationtooltip.region;
 import com.fugginbeenus.locationtooltip.region.flag.RegionFlags;
 import com.google.gson.*;
 import net.minecraft.server.MinecraftServer;
-import net.minecraft.util.Identifier;
-import net.minecraft.util.WorldSavePath;
-import net.minecraft.util.math.BlockPos;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.level.storage.LevelResource;
+import net.minecraft.core.BlockPos;
 
 import java.io.IOException;
 import java.io.Reader;
@@ -21,7 +21,7 @@ final class RegionStorage {
 
     private RegionStorage() {}
 
-    static List<Region> load(MinecraftServer server, Identifier dim) {
+    static List<Region> load(MinecraftServer server, ResourceLocation dim) {
         Path path = fileFor(server, dim);
         if (!Files.exists(path)) return new ArrayList<>();
 
@@ -36,7 +36,7 @@ final class RegionStorage {
 
                 String id   = o.has("id")   ? o.get("id").getAsString()   : null;
                 String name = o.has("name") ? o.get("name").getAsString() : "Region";
-                Identifier d = dim; // stored per-file; ignore if present in older files
+                ResourceLocation d = dim; // stored per-file; ignore if present in older files
 
                 BlockPos min = fromObj(o.getAsJsonObject("min"));
                 BlockPos max = fromObj(o.getAsJsonObject("max"));
@@ -100,7 +100,7 @@ final class RegionStorage {
         }
     }
 
-    static void save(MinecraftServer server, Identifier dim, List<Region> list) {
+    static void save(MinecraftServer server, ResourceLocation dim, List<Region> list) {
         Path path = fileFor(server, dim);
         try {
             Files.createDirectories(path.getParent());
@@ -148,10 +148,10 @@ final class RegionStorage {
 
     /* ---------------- helpers ---------------- */
 
-    private static Path fileFor(MinecraftServer server, Identifier dim) {
+    private static Path fileFor(MinecraftServer server, ResourceLocation dim) {
         // Per-dimension file under the world folder:
         //   <world>/locationtooltip/regions/<namespace>/<path>.json
-        Path root = server.getSavePath(WorldSavePath.ROOT);
+        Path root = server.getWorldPath(LevelResource.ROOT);
         Path dir = root.resolve("locationtooltip")
                 .resolve("regions")
                 .resolve(dim.getNamespace());

@@ -4,8 +4,8 @@ import com.fugginbeenus.locationtooltip.net.LTPackets;
 import com.fugginbeenus.locationtooltip.region.RegionManager;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.minecraft.server.MinecraftServer;
-import net.minecraft.server.network.ServerPlayerEntity;
-import net.minecraft.util.math.BlockPos;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.core.BlockPos;
 
 import java.util.*;
 import java.util.Map;
@@ -42,14 +42,14 @@ public final class RegionTicker {
         }
 
         RegionManager mgr = RegionManager.of(server);
-        for (ServerPlayerEntity p : server.getPlayerManager().getPlayerList()) {
-            UUID playerId = p.getUuid();
-            BlockPos currentPos = p.getBlockPos();
+        for (ServerPlayer p : server.getPlayerList().getPlayers()) {
+            UUID playerId = p.getUUID();
+            BlockPos currentPos = p.blockPosition();
 
             // Movement detection - skip if player hasn't moved significantly
             BlockPos lastPos = LAST_POS.get(playerId);
             if (lastPos != null) {
-                double distSq = lastPos.getSquaredDistance(currentPos);
+                double distSq = lastPos.distSqr(currentPos);
                 if (distSq < MIN_MOVEMENT_SQ) {
                     continue; // Player hasn't moved enough, skip region check
                 }
@@ -59,7 +59,7 @@ public final class RegionTicker {
             LAST_POS.put(playerId, currentPos);
 
             // Perform region lookup
-            var dim = p.getWorld().getRegistryKey().getValue();
+            var dim = p.level().dimension().location();
             String currentRegion = mgr.currentRegionName(dim, currentPos);
             String previousRegion = LAST_REGION.put(playerId, currentRegion);
 
@@ -101,12 +101,12 @@ public final class RegionTicker {
 
     /** Schedule a runnable to execute after delayTicks on the server thread. */
     public static void later(MinecraftServer server, int delayTicks, Runnable r) {
-        long now = server.getOverworld().getTime();
+        long now = server.overworld().getGameTime();
         QUEUE.addLast(new Task(now + Math.max(1, delayTicks), r));
     }
 
     private static void runDue(MinecraftServer server) {
-        long now = server.getOverworld().getTime();
+        long now = server.overworld().getGameTime();
         int n = QUEUE.size();
         // simple pass: execute tasks whose dueTick <= now
         for (int i = 0; i < n; i++) {

@@ -40,7 +40,7 @@ public final class ConfigLiveBridge {
         ClientTickEvents.END_CLIENT_TICK.register(client -> {
             final Object open = openScreenRef.get();
             if (open == null) return;
-            if (client.currentScreen != open) {
+            if (client.screen != open) {
                 CURRENT.clear();
                 openScreenRef.clear();
                 return;

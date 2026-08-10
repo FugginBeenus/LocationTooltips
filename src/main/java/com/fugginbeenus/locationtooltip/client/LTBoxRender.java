@@ -2,27 +2,27 @@ package com.fugginbeenus.locationtooltip.client;
 
 import com.mojang.blaze3d.systems.RenderSystem;
 import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderContext;
-import net.minecraft.client.render.BufferBuilder;
-import net.minecraft.client.render.Camera;
-import net.minecraft.client.render.GameRenderer;
-import net.minecraft.client.render.Tessellator;
-import net.minecraft.client.render.VertexFormat;
-import net.minecraft.client.render.VertexFormats;
-import net.minecraft.client.util.math.MatrixStack;
+import com.mojang.blaze3d.vertex.BufferBuilder;
+import net.minecraft.client.Camera;
+import net.minecraft.client.renderer.GameRenderer;
+import com.mojang.blaze3d.vertex.Tesselator;
+import com.mojang.blaze3d.vertex.VertexFormat;
+import com.mojang.blaze3d.vertex.DefaultVertexFormat;
+import com.mojang.blaze3d.vertex.PoseStack;
 import org.joml.Matrix4f;
 
 /**
  * Version-isolated immediate-mode drawing for the world-space region boxes. Everything that
- * changed in the 1.21 render rewrite — the {@code Tessellator}/{@code BufferBuilder} lifecycle
+ * changed in the 1.21 render rewrite — the {@code Tesselator}/{@code BufferBuilder} lifecycle
  * and the vertex-chain terminator — is switched here, so both renderers stay version-agnostic.
  */
 public final class LTBoxRender {
-    private final MatrixStack matrices;
+    private final PoseStack matrices;
     private final Matrix4f matrix;
-    private final Tessellator tessellator;
+    private final Tesselator tessellator;
     private BufferBuilder buffer; // 1.21 recreates this each batch, so it isn't final
 
-    private LTBoxRender(MatrixStack matrices, Matrix4f matrix, Tessellator tessellator) {
+    private LTBoxRender(PoseStack matrices, Matrix4f matrix, Tesselator tessellator) {
         this.matrices = matrices;
         this.matrix = matrix;
         this.tessellator = tessellator;
@@ -30,35 +30,35 @@ public final class LTBoxRender {
 
     /** Set up blend/depth/shader, translate to camera-relative space, and begin a batch. */
     public static LTBoxRender begin(WorldRenderContext ctx) {
-        MatrixStack matrices = ctx.matrixStack();
+        PoseStack matrices = ctx.matrixStack();
         Camera camera = ctx.camera();
 
-        matrices.push();
-        matrices.translate(-camera.getPos().x, -camera.getPos().y, -camera.getPos().z);
+        matrices.pushPose();
+        matrices.translate(-camera.getPosition().x, -camera.getPosition().y, -camera.getPosition().z);
 
         RenderSystem.enableBlend();
         RenderSystem.defaultBlendFunc();
         RenderSystem.disableDepthTest();
         RenderSystem.depthMask(false);
-        RenderSystem.setShader(GameRenderer::getPositionColorProgram);
+        RenderSystem.setShader(GameRenderer::getPositionColorShader);
 
-        return new LTBoxRender(matrices, matrices.peek().getPositionMatrix(), Tessellator.getInstance());
+        return new LTBoxRender(matrices, matrices.last().pose(), Tesselator.getInstance());
     }
 
     public void startQuads() {
         //? if >=1.21 {
-        /*buffer = tessellator.begin(VertexFormat.DrawMode.QUADS, VertexFormats.POSITION_COLOR);
+        /*buffer = tessellator.begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_COLOR);
         *///?} else {
-        buffer = tessellator.getBuffer();
-        buffer.begin(VertexFormat.DrawMode.QUADS, VertexFormats.POSITION_COLOR);
+        buffer = tessellator.getBuilder();
+        buffer.begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_COLOR);
         //?}
     }
 
     public void drawQuads() {
         //? if >=1.21 {
-        /*net.minecraft.client.render.BufferRenderer.drawWithGlobalProgram(buffer.end());
+        /*com.mojang.blaze3d.vertex.BufferUploader.drawWithShader(buffer.buildOrThrow());
         *///?} else {
-        tessellator.draw();
+        tessellator.end();
         //?}
     }
 
@@ -67,7 +67,7 @@ public final class LTBoxRender {
         RenderSystem.enableDepthTest();
         RenderSystem.depthMask(true);
         RenderSystem.disableBlend();
-        matrices.pop();
+        matrices.popPose();
     }
 
     private void quad(double x1, double y1, double z1,
@@ -76,15 +76,15 @@ public final class LTBoxRender {
                       double x4, double y4, double z4,
                       float r, float g, float b, float a) {
         //? if >=1.21 {
-        /*buffer.vertex(matrix, (float) x1, (float) y1, (float) z1).color(r, g, b, a);
-        buffer.vertex(matrix, (float) x2, (float) y2, (float) z2).color(r, g, b, a);
-        buffer.vertex(matrix, (float) x3, (float) y3, (float) z3).color(r, g, b, a);
-        buffer.vertex(matrix, (float) x4, (float) y4, (float) z4).color(r, g, b, a);
+        /*buffer.addVertex(matrix, (float) x1, (float) y1, (float) z1).setColor(r, g, b, a);
+        buffer.addVertex(matrix, (float) x2, (float) y2, (float) z2).setColor(r, g, b, a);
+        buffer.addVertex(matrix, (float) x3, (float) y3, (float) z3).setColor(r, g, b, a);
+        buffer.addVertex(matrix, (float) x4, (float) y4, (float) z4).setColor(r, g, b, a);
         *///?} else {
-        buffer.vertex(matrix, (float) x1, (float) y1, (float) z1).color(r, g, b, a).next();
-        buffer.vertex(matrix, (float) x2, (float) y2, (float) z2).color(r, g, b, a).next();
-        buffer.vertex(matrix, (float) x3, (float) y3, (float) z3).color(r, g, b, a).next();
-        buffer.vertex(matrix, (float) x4, (float) y4, (float) z4).color(r, g, b, a).next();
+        buffer.vertex(matrix, (float) x1, (float) y1, (float) z1).color(r, g, b, a).endVertex();
+        buffer.vertex(matrix, (float) x2, (float) y2, (float) z2).color(r, g, b, a).endVertex();
+        buffer.vertex(matrix, (float) x3, (float) y3, (float) z3).color(r, g, b, a).endVertex();
+        buffer.vertex(matrix, (float) x4, (float) y4, (float) z4).color(r, g, b, a).endVertex();
         //?}
     }
 

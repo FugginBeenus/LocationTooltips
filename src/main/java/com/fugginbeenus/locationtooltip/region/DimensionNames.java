@@ -1,6 +1,7 @@
 package com.fugginbeenus.locationtooltip.region;
 
-import net.minecraft.util.Identifier;
+import com.fugginbeenus.locationtooltip.util.LTId;
+import net.minecraft.resources.ResourceLocation;
 
 /**
  * Default HUD name shown when the player isn't inside any region ("wilderness" text).
@@ -12,12 +13,12 @@ import net.minecraft.util.Identifier;
 public final class DimensionNames {
     private DimensionNames() {}
 
-    private static final Identifier OVERWORLD = Identifier.of("minecraft", "overworld");
-    private static final Identifier THE_NETHER = Identifier.of("minecraft", "the_nether");
-    private static final Identifier THE_END = Identifier.of("minecraft", "the_end");
+    private static final ResourceLocation OVERWORLD = LTId.of("minecraft", "overworld");
+    private static final ResourceLocation THE_NETHER = LTId.of("minecraft", "the_nether");
+    private static final ResourceLocation THE_END = LTId.of("minecraft", "the_end");
 
     /** Name to show when standing outside every region in this dimension. */
-    public static String wilderness(Identifier dim) {
+    public static String wilderness(ResourceLocation dim) {
         if (dim == null) return "Wilderness";
         if (OVERWORLD.equals(dim)) return "Wilderness";
         if (THE_NETHER.equals(dim)) return "The Nether";

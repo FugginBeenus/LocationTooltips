@@ -13,10 +13,10 @@ import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientLifecycleEvents;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper;
 import net.fabricmc.fabric.api.client.rendering.v1.HudRenderCallback;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.option.KeyBinding;
-import net.minecraft.client.util.InputUtil;
-import net.minecraft.particle.DustParticleEffect;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.KeyMapping;
+import com.mojang.blaze3d.platform.InputConstants;
+import net.minecraft.core.particles.DustParticleOptions;
 import org.joml.Vector3f;
 import org.lwjgl.glfw.GLFW;
 
@@ -24,7 +24,7 @@ import org.lwjgl.glfw.GLFW;
 @Environment(EnvType.CLIENT)
 public final class LocationTooltipClient implements ClientModInitializer {
 
-    private static KeyBinding openAdminKey;
+    private static KeyMapping openAdminKey;
 
     @Override
     public void onInitializeClient() {
@@ -49,9 +49,9 @@ public final class LocationTooltipClient implements ClientModInitializer {
         LOG.info("[LT] onInitializeClient() start");
 
         openAdminKey = KeyBindingHelper.registerKeyBinding(
-                new KeyBinding(
+                new KeyMapping(
                         "key.locationtooltip.open_admin",
-                        InputUtil.Type.KEYSYM,
+                        InputConstants.Type.KEYSYM,
                         GLFW.GLFW_KEY_O,
                         "key.categories.locationtooltip"
                 )
@@ -61,23 +61,23 @@ public final class LocationTooltipClient implements ClientModInitializer {
         ClientTickEvents.END_CLIENT_TICK.register(client -> {
             if (client == null) return;
 
-            while (openAdminKey.wasPressed()) {
-                MinecraftClient mc = MinecraftClient.getInstance();
+            while (openAdminKey.consumeClick()) {
+                Minecraft mc = Minecraft.getInstance();
                 if (mc != null) {
                     mc.setScreen(new AdminPanelScreen());
                     LTPacketsClient.requestAllAdminList();
                 }
             }
 
-            if (client.player == null || client.world == null) return;
+            if (client.player == null || client.level == null) return;
 
             // Check if holding admin compass
             boolean holding = false;
-            var main = client.player.getMainHandStack();
-            if (!main.isEmpty() && main.isOf(LTItems.ADMIN_COMPASS)) holding = true;
+            var main = client.player.getMainHandItem();
+            if (!main.isEmpty() && main.is(LTItems.ADMIN_COMPASS)) holding = true;
             if (!holding) {
-                var off = client.player.getOffHandStack();
-                if (!off.isEmpty() && off.isOf(LTItems.ADMIN_COMPASS)) holding = true;
+                var off = client.player.getOffhandItem();
+                if (!off.isEmpty() && off.is(LTItems.ADMIN_COMPASS)) holding = true;
             }
 
             if (!holding) {
@@ -88,13 +88,13 @@ public final class LocationTooltipClient implements ClientModInitializer {
 
             // Holding compass - refresh the in-world region boxes (nearby only).
             // Skip while the panel is open; it does its own (all-regions) refresh. [GambaPVP]
-            if (!(client.currentScreen instanceof AdminPanelScreen) && (client.world.getTime() % 20L) == 0L) {
+            if (!(client.screen instanceof AdminPanelScreen) && (client.level.getGameTime() % 20L) == 0L) {
                 LTPacketsClient.requestAdminList(256);
             }
 
             // Update renderer with current regions
-            var world = client.world;
-            var hereDim = world.getRegistryKey().getValue();
+            var world = client.level;
+            var hereDim = world.dimension().location();
             var rows = AdminClientCache.current();
             if (rows != null && rows.length > 0) {
                 com.fugginbeenus.locationtooltip.client.AdminRegionRenderer.updateRegions(rows, hereDim);

@@ -1,18 +1,18 @@
 package com.fugginbeenus.locationtooltip.item;
 
 import com.fugginbeenus.locationtooltip.region.SelectionManager;
-import net.minecraft.item.Item;
-import net.minecraft.item.ItemUsageContext;
-import net.minecraft.item.ItemStack;
-import net.minecraft.server.network.ServerPlayerEntity;
-import net.minecraft.sound.SoundEvents;
-import net.minecraft.text.Text;
-import net.minecraft.util.ActionResult;
-import net.minecraft.util.Formatting;
-import net.minecraft.util.Hand;
-import net.minecraft.util.TypedActionResult;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.world.World;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.item.context.UseOnContext;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.sounds.SoundEvents;
+import net.minecraft.network.chat.Component;
+import net.minecraft.world.InteractionResult;
+import net.minecraft.ChatFormatting;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.InteractionResultHolder;
+import net.minecraft.core.BlockPos;
+import net.minecraft.world.level.Level;
 
 import java.util.List;
 
@@ -24,70 +24,70 @@ import java.util.List;
  */
 public class RegionWandItem extends Item {
 
-    public RegionWandItem(Settings settings) {
+    public RegionWandItem(Properties settings) {
         super(settings);
     }
 
     @Override
-    public ActionResult useOnBlock(ItemUsageContext context) {
-        World world = context.getWorld();
-        if (world.isClient) return ActionResult.SUCCESS;
+    public InteractionResult useOn(UseOnContext context) {
+        Level world = context.getLevel();
+        if (world.isClientSide) return InteractionResult.SUCCESS;
 
-        var player = (ServerPlayerEntity) context.getPlayer();
-        if (player == null) return ActionResult.PASS;
+        var player = (ServerPlayer) context.getPlayer();
+        if (player == null) return InteractionResult.PASS;
 
-        BlockPos pos = context.getBlockPos();
-        boolean sneaking = player.isSneaking();
+        BlockPos pos = context.getClickedPos();
+        boolean sneaking = player.isShiftKeyDown();
 
         if (sneaking && SelectionManager.hasBoth(player)) {
             SelectionManager.openNamingScreen(player);
             player.playSound(SoundEvents.UI_BUTTON_CLICK.value(), 1.0f, 1.2f);
-            return ActionResult.SUCCESS;
+            return InteractionResult.SUCCESS;
         }
 
         if (!SelectionManager.hasBoth(player)) {
             if (SelectionManager.getFirst(player) == null) {
                 SelectionManager.setFirst(player, pos);
-                player.sendMessage(Text.literal("First corner set at " + pos.toShortString()), true);
-                player.playSound(SoundEvents.BLOCK_NOTE_BLOCK_HAT.value(), 1.0f, 1.5f);
+                player.displayClientMessage(Component.literal("First corner set at " + pos.toShortString()), true);
+                player.playSound(SoundEvents.NOTE_BLOCK_HAT.value(), 1.0f, 1.5f);
             } else {
                 SelectionManager.setSecond(player, pos);
-                player.sendMessage(Text.literal("Second corner set at " + pos.toShortString()), true);
-                player.playSound(SoundEvents.BLOCK_NOTE_BLOCK_PLING.value(), 1.0f, 1.3f);
+                player.displayClientMessage(Component.literal("Second corner set at " + pos.toShortString()), true);
+                player.playSound(SoundEvents.NOTE_BLOCK_PLING.value(), 1.0f, 1.3f);
             }
         } else {
             SelectionManager.clear(player);
             SelectionManager.setFirst(player, pos);
-            player.sendMessage(Text.literal("Selection reset. First corner set at " + pos.toShortString()), true);
-            player.playSound(SoundEvents.BLOCK_NOTE_BLOCK_HAT.value(), 1.0f, 1.0f);
+            player.displayClientMessage(Component.literal("Selection reset. First corner set at " + pos.toShortString()), true);
+            player.playSound(SoundEvents.NOTE_BLOCK_HAT.value(), 1.0f, 1.0f);
         }
 
-        return ActionResult.SUCCESS;
+        return InteractionResult.SUCCESS;
     }
 
     @Override
-    public TypedActionResult<ItemStack> use(World world, net.minecraft.entity.player.PlayerEntity player, Hand hand) {
-        if (!world.isClient && player.isSneaking() && player instanceof ServerPlayerEntity serverPlayer) {
+    public InteractionResultHolder<ItemStack> use(Level world, net.minecraft.world.entity.player.Player player, InteractionHand hand) {
+        if (!world.isClientSide && player.isShiftKeyDown() && player instanceof ServerPlayer serverPlayer) {
             if (SelectionManager.hasBoth(serverPlayer)) {
                 SelectionManager.openNamingScreen(serverPlayer);
                 player.playSound(SoundEvents.UI_BUTTON_CLICK.value(), 1.0f, 1.0f);
-                return TypedActionResult.success(player.getStackInHand(hand));
+                return InteractionResultHolder.success(player.getItemInHand(hand));
             }
         }
-        return TypedActionResult.pass(player.getStackInHand(hand));
+        return InteractionResultHolder.pass(player.getItemInHand(hand));
     }
 
     @Override
     //? if >=1.21 {
-    /*public void appendTooltip(ItemStack stack, net.minecraft.item.Item.TooltipContext context, List<Text> tooltip, net.minecraft.item.tooltip.TooltipType type) {
+    /*public void appendHoverText(ItemStack stack, net.minecraft.world.item.Item.TooltipContext context, List<Component> tooltip, net.minecraft.world.item.TooltipFlag type) {
     *///?} else {
-    public void appendTooltip(ItemStack stack, World world, List<Text> tooltip, net.minecraft.client.item.TooltipContext context) {
+    public void appendHoverText(ItemStack stack, Level world, List<Component> tooltip, net.minecraft.world.item.TooltipFlag context) {
     //?}
-        tooltip.add(Text.literal("Select corners to create regions").formatted(Formatting.GRAY));
-        tooltip.add(Text.literal(""));
-        tooltip.add(Text.literal("Right-click: ").formatted(Formatting.YELLOW)
-                .append(Text.literal("Set corner").formatted(Formatting.WHITE)));
-        tooltip.add(Text.literal("Shift + Right-click: ").formatted(Formatting.YELLOW)
-                .append(Text.literal("Create region").formatted(Formatting.WHITE)));
+        tooltip.add(Component.literal("Select corners to create regions").withStyle(ChatFormatting.GRAY));
+        tooltip.add(Component.literal(""));
+        tooltip.add(Component.literal("Right-click: ").withStyle(ChatFormatting.YELLOW)
+                .append(Component.literal("Set corner").withStyle(ChatFormatting.WHITE)));
+        tooltip.add(Component.literal("Shift + Right-click: ").withStyle(ChatFormatting.YELLOW)
+                .append(Component.literal("Create region").withStyle(ChatFormatting.WHITE)));
     }
 }

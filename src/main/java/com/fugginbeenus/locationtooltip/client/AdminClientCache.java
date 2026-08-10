@@ -1,7 +1,7 @@
 package com.fugginbeenus.locationtooltip.client;
 
-import net.minecraft.util.Identifier;
-import net.minecraft.util.math.BlockPos;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.core.BlockPos;
 
 public final class AdminClientCache {
     private static Row[] CACHE = new Row[0];
@@ -20,7 +20,7 @@ public final class AdminClientCache {
     public static final class Row {
         public final String id;
         public final String name;
-        public final Identifier dim;
+        public final ResourceLocation dim;
 
         // Canonical corners:
         public final BlockPos min;
@@ -39,7 +39,7 @@ public final class AdminClientCache {
         // Region source: PLAYER / SERVER / STRUCTURE — drives the render color.
         public final String source;
 
-        public Row(String id, String name, Identifier dim, BlockPos min, BlockPos max,
+        public Row(String id, String name, ResourceLocation dim, BlockPos min, BlockPos max,
                    java.util.Map<String, Boolean> flags, String ownerName, String source) {
             this.id = id;
             this.name = name;

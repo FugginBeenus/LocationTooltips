@@ -1,8 +1,8 @@
 package com.fugginbeenus.locationtooltip.client;
 
 import com.fugginbeenus.locationtooltip.net.client.LTPacketsClient;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.util.math.BlockPos;
+import net.minecraft.client.Minecraft;
+import net.minecraft.core.BlockPos;
 
 import java.util.Map;
 
@@ -28,8 +28,8 @@ public class NameRegionScreen extends RegionConfigScreen {
     @Override
     protected void onConfirm(String name, Map<String, Boolean> flags) {
         LTPacketsClient.sendCreate(name, a, b, flags);
-        close();
+        onClose();
     }
 
-    @Override public void close() { MinecraftClient.getInstance().setScreen(null); }
+    @Override public void onClose() { Minecraft.getInstance().setScreen(null); }
 }

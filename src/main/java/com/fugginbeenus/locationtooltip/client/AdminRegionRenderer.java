@@ -2,8 +2,8 @@ package com.fugginbeenus.locationtooltip.client;
 
 import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderContext;
 import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderEvents;
-import net.minecraft.util.Identifier;
-import net.minecraft.util.math.BlockPos;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.core.BlockPos;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -34,7 +34,7 @@ public class AdminRegionRenderer {
         WorldRenderEvents.AFTER_TRANSLUCENT.register(AdminRegionRenderer::render);
     }
 
-    public static void updateRegions(AdminClientCache.Row[] rows, Identifier currentDim) {
+    public static void updateRegions(AdminClientCache.Row[] rows, ResourceLocation currentDim) {
         regions.clear();
         for (var row : rows) {
             if (row.dim.equals(currentDim)) {

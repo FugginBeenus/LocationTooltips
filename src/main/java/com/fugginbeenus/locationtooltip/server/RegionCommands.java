@@ -12,16 +12,17 @@ import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.mojang.brigadier.suggestion.SuggestionProvider;
-import net.minecraft.command.CommandRegistryAccess;
-import net.minecraft.command.CommandSource;
-import net.minecraft.command.argument.IdentifierArgumentType;
-import net.minecraft.registry.RegistryKeys;
-import net.minecraft.server.command.CommandManager;
-import net.minecraft.server.command.ServerCommandSource;
-import net.minecraft.server.network.ServerPlayerEntity;
-import net.minecraft.text.Text;
-import net.minecraft.util.Identifier;
-import net.minecraft.util.math.BlockPos;
+import net.minecraft.commands.CommandBuildContext;
+import net.minecraft.commands.SharedSuggestionProvider;
+import net.minecraft.commands.arguments.ResourceLocationArgument;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.core.registries.Registries;
+import net.minecraft.commands.Commands;
+import net.minecraft.commands.CommandSourceStack;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.network.chat.Component;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.core.BlockPos;
 
 /**
  * Command-based region creation for when the wand doesn't work
@@ -30,55 +31,55 @@ import net.minecraft.util.math.BlockPos;
 public class RegionCommands {
 
     /** Tab-completion for flag ids, sourced from the flag registry. */
-    private static final SuggestionProvider<ServerCommandSource> FLAG_SUGGESTIONS = (ctx, builder) -> {
+    private static final SuggestionProvider<CommandSourceStack> FLAG_SUGGESTIONS = (ctx, builder) -> {
         for (RegionFlag f : RegionFlags.all()) builder.suggest(f.id);
         return builder.buildFuture();
     };
 
     /** Tab-completion for ALL structure registry ids (incl. modded), for `structures enable`. */
-    private static final SuggestionProvider<ServerCommandSource> ALL_STRUCTURE_IDS = (ctx, builder) ->
-            CommandSource.suggestIdentifiers(
-                    ctx.getSource().getServer().getRegistryManager().get(RegistryKeys.STRUCTURE).getIds(),
+    private static final SuggestionProvider<CommandSourceStack> ALL_STRUCTURE_IDS = (ctx, builder) ->
+            SharedSuggestionProvider.suggestResource(
+                    ctx.getSource().getServer().registryAccess().registryOrThrow(Registries.STRUCTURE).keySet(),
                     builder);
 
     /** Tab-completion for currently-enabled structure ids, for `structures disable`. */
-    private static final SuggestionProvider<ServerCommandSource> ENABLED_STRUCTURE_IDS = (ctx, builder) -> {
+    private static final SuggestionProvider<CommandSourceStack> ENABLED_STRUCTURE_IDS = (ctx, builder) -> {
         for (String s : StructureConfig.get().structures) builder.suggest(s);
         return builder.buildFuture();
     };
 
-    public static void register(CommandDispatcher<ServerCommandSource> dispatcher, CommandRegistryAccess registryAccess) {
+    public static void register(CommandDispatcher<CommandSourceStack> dispatcher, CommandBuildContext registryAccess) {
         dispatcher.register(
-                CommandManager.literal("ltregion")
-                        .requires(source -> source.hasPermissionLevel(2)) // OP level 2
+                Commands.literal("ltregion")
+                        .requires(source -> source.hasPermission(2)) // OP level 2
 
                         // /ltregion pos1 - Set first corner at current position
-                        .then(CommandManager.literal("pos1")
+                        .then(Commands.literal("pos1")
                                 .executes(ctx -> {
-                                    ServerCommandSource source = ctx.getSource();
-                                    ServerPlayerEntity player = source.getPlayerOrThrow();
-                                    BlockPos pos = player.getBlockPos();
+                                    CommandSourceStack source = ctx.getSource();
+                                    ServerPlayer player = source.getPlayerOrException();
+                                    BlockPos pos = player.blockPosition();
 
                                     com.fugginbeenus.locationtooltip.region.SelectionManager.setFirst(player, pos);
-                                    player.sendMessage(Text.literal("§aFirst corner set at " + pos.toShortString()), false);
+                                    player.displayClientMessage(Component.literal("§aFirst corner set at " + pos.toShortString()), false);
 
                                     return 1;
                                 })
                         )
 
                         // /ltregion pos2 - Set second corner at current position
-                        .then(CommandManager.literal("pos2")
+                        .then(Commands.literal("pos2")
                                 .executes(ctx -> {
-                                    ServerCommandSource source = ctx.getSource();
-                                    ServerPlayerEntity player = source.getPlayerOrThrow();
-                                    BlockPos pos = player.getBlockPos();
+                                    CommandSourceStack source = ctx.getSource();
+                                    ServerPlayer player = source.getPlayerOrException();
+                                    BlockPos pos = player.blockPosition();
 
                                     com.fugginbeenus.locationtooltip.region.SelectionManager.setSecond(player, pos);
-                                    player.sendMessage(Text.literal("§aSecond corner set at " + pos.toShortString()), false);
+                                    player.displayClientMessage(Component.literal("§aSecond corner set at " + pos.toShortString()), false);
 
                                     // Check if both are set
                                     if (com.fugginbeenus.locationtooltip.region.SelectionManager.hasBoth(player)) {
-                                        player.sendMessage(Text.literal("§6Both corners set! Use §e/ltregion create <name> §6to create the region."), false);
+                                        player.displayClientMessage(Component.literal("§6Both corners set! Use §e/ltregion create <name> §6to create the region."), false);
                                     }
 
                                     return 1;
@@ -86,15 +87,15 @@ public class RegionCommands {
                         )
 
                         // /ltregion create <name> - Create region from pos1/pos2
-                        .then(CommandManager.literal("create")
-                                .then(CommandManager.argument("name", StringArgumentType.greedyString())
+                        .then(Commands.literal("create")
+                                .then(Commands.argument("name", StringArgumentType.greedyString())
                                         .executes(ctx -> {
-                                            ServerCommandSource source = ctx.getSource();
-                                            ServerPlayerEntity player = source.getPlayerOrThrow();
+                                            CommandSourceStack source = ctx.getSource();
+                                            ServerPlayer player = source.getPlayerOrException();
                                             String name = StringArgumentType.getString(ctx, "name");
 
                                             if (!com.fugginbeenus.locationtooltip.region.SelectionManager.hasBoth(player)) {
-                                                player.sendMessage(Text.literal("§cYou must set both corners first! Use /ltregion pos1 and /ltregion pos2"), false);
+                                                player.displayClientMessage(Component.literal("§cYou must set both corners first! Use /ltregion pos1 and /ltregion pos2"), false);
                                                 return 0;
                                             }
 
@@ -110,18 +111,18 @@ public class RegionCommands {
                         )
 
                         // /ltregion createhere <name> <radius> - Create region around current position
-                        .then(CommandManager.literal("createhere")
-                                .then(CommandManager.argument("name", StringArgumentType.string())
-                                        .then(CommandManager.argument("radius", IntegerArgumentType.integer(1, 1000))
+                        .then(Commands.literal("createhere")
+                                .then(Commands.argument("name", StringArgumentType.string())
+                                        .then(Commands.argument("radius", IntegerArgumentType.integer(1, 1000))
                                                 .executes(ctx -> {
-                                                    ServerCommandSource source = ctx.getSource();
-                                                    ServerPlayerEntity player = source.getPlayerOrThrow();
+                                                    CommandSourceStack source = ctx.getSource();
+                                                    ServerPlayer player = source.getPlayerOrException();
                                                     String name = StringArgumentType.getString(ctx, "name");
                                                     int radius = IntegerArgumentType.getInteger(ctx, "radius");
 
-                                                    BlockPos center = player.getBlockPos();
-                                                    BlockPos a = center.add(-radius, -10, -radius);
-                                                    BlockPos b = center.add(radius, 10, radius);
+                                                    BlockPos center = player.blockPosition();
+                                                    BlockPos a = center.offset(-radius, -10, -radius);
+                                                    BlockPos b = center.offset(radius, 10, radius);
 
                                                     RegionManager.of(player.getServer()).createRegion(player, name, a, b, java.util.Map.of());
 
@@ -132,17 +133,17 @@ public class RegionCommands {
                         )
 
                         // /ltregion createbox <name> <x1> <y1> <z1> <x2> <y2> <z2> - Create region by coordinates
-                        .then(CommandManager.literal("createbox")
-                                .then(CommandManager.argument("name", StringArgumentType.string())
-                                        .then(CommandManager.argument("x1", IntegerArgumentType.integer())
-                                                .then(CommandManager.argument("y1", IntegerArgumentType.integer())
-                                                        .then(CommandManager.argument("z1", IntegerArgumentType.integer())
-                                                                .then(CommandManager.argument("x2", IntegerArgumentType.integer())
-                                                                        .then(CommandManager.argument("y2", IntegerArgumentType.integer())
-                                                                                .then(CommandManager.argument("z2", IntegerArgumentType.integer())
+                        .then(Commands.literal("createbox")
+                                .then(Commands.argument("name", StringArgumentType.string())
+                                        .then(Commands.argument("x1", IntegerArgumentType.integer())
+                                                .then(Commands.argument("y1", IntegerArgumentType.integer())
+                                                        .then(Commands.argument("z1", IntegerArgumentType.integer())
+                                                                .then(Commands.argument("x2", IntegerArgumentType.integer())
+                                                                        .then(Commands.argument("y2", IntegerArgumentType.integer())
+                                                                                .then(Commands.argument("z2", IntegerArgumentType.integer())
                                                                                         .executes(ctx -> {
-                                                                                            ServerCommandSource source = ctx.getSource();
-                                                                                            ServerPlayerEntity player = source.getPlayerOrThrow();
+                                                                                            CommandSourceStack source = ctx.getSource();
+                                                                                            ServerPlayer player = source.getPlayerOrException();
                                                                                             String name = StringArgumentType.getString(ctx, "name");
 
                                                                                             int x1 = IntegerArgumentType.getInteger(ctx, "x1");
@@ -169,14 +170,14 @@ public class RegionCommands {
                         )
 
                         // /ltregion structures <status|on|off|rescan> - Manage auto structure regions
-                        .then(CommandManager.literal("structures")
-                                .then(CommandManager.literal("status")
+                        .then(Commands.literal("structures")
+                                .then(Commands.literal("status")
                                         .executes(ctx -> {
-                                            ServerCommandSource src = ctx.getSource();
+                                            CommandSourceStack src = ctx.getSource();
                                             int count = RegionManager.of(src.getServer()).countBySource(RegionSource.STRUCTURE);
                                             boolean on = StructureRegionTagger.isEnabled();
                                             StructureConfig cfg = StructureConfig.get();
-                                            src.sendFeedback(() -> Text.literal("Structure tagging: " + (on ? "§aON" : "§cOFF")
+                                            src.sendSuccess(() -> Component.literal("Structure tagging: " + (on ? "§aON" : "§cOFF")
                                                     + "§r | auto-tag modded: " + (cfg.tagModdedStructures ? "§aON" : "§cOFF")
                                                     + "§r | vanilla listed: " + cfg.structures.size()
                                                     + " | excluded: " + cfg.denied.size()
@@ -184,83 +185,83 @@ public class RegionCommands {
                                             return 1;
                                         })
                                 )
-                                .then(CommandManager.literal("on")
+                                .then(Commands.literal("on")
                                         .executes(ctx -> {
                                             StructureRegionTagger.setEnabled(true);
-                                            ctx.getSource().sendFeedback(() -> Text.literal(
+                                            ctx.getSource().sendSuccess(() -> Component.literal(
                                                     "§aStructure tagging enabled. New chunks are tagged as they load."), false);
                                             return 1;
                                         })
                                 )
-                                .then(CommandManager.literal("off")
+                                .then(Commands.literal("off")
                                         .executes(ctx -> {
                                             StructureRegionTagger.setEnabled(false);
-                                            ctx.getSource().sendFeedback(() -> Text.literal(
+                                            ctx.getSource().sendSuccess(() -> Component.literal(
                                                     "§eStructure tagging disabled. Existing structure regions are kept (use rescan to clear)."), false);
                                             return 1;
                                         })
                                 )
-                                .then(CommandManager.literal("modded")
-                                        .then(CommandManager.literal("on")
+                                .then(Commands.literal("modded")
+                                        .then(Commands.literal("on")
                                                 .executes(ctx -> {
                                                     StructureConfig.get().setTagModdedStructures(true);
-                                                    ctx.getSource().sendFeedback(() -> Text.literal(
+                                                    ctx.getSource().sendSuccess(() -> Component.literal(
                                                             "§aAuto-tagging modded structures enabled. Use rescan + revisit to apply to existing chunks."), false);
                                                     return 1;
                                                 })
                                         )
-                                        .then(CommandManager.literal("off")
+                                        .then(Commands.literal("off")
                                                 .executes(ctx -> {
                                                     StructureConfig.get().setTagModdedStructures(false);
-                                                    ctx.getSource().sendFeedback(() -> Text.literal(
+                                                    ctx.getSource().sendSuccess(() -> Component.literal(
                                                             "§eAuto-tagging modded structures disabled. Only listed structures will be tagged."), false);
                                                     return 1;
                                                 })
                                         )
                                 )
-                                .then(CommandManager.literal("rescan")
+                                .then(Commands.literal("rescan")
                                         .executes(ctx -> {
                                             RegionManager.of(ctx.getSource().getServer()).rescanStructures();
-                                            ctx.getSource().sendFeedback(() -> Text.literal(
+                                            ctx.getSource().sendSuccess(() -> Component.literal(
                                                     "§aCleared auto structure regions. They will re-tag as chunks reload."), false);
                                             return 1;
                                         })
                                 )
-                                .then(CommandManager.literal("list")
+                                .then(Commands.literal("list")
                                         .executes(ctx -> {
                                             StructureConfig cfg = StructureConfig.get();
-                                            ctx.getSource().sendFeedback(() -> Text.literal(
+                                            ctx.getSource().sendSuccess(() -> Component.literal(
                                                     "§6Vanilla tagged (" + cfg.structures.size() + "): §f" + String.join(", ", cfg.structures)), false);
-                                            ctx.getSource().sendFeedback(() -> Text.literal(
+                                            ctx.getSource().sendSuccess(() -> Component.literal(
                                                     "§6Auto-tag modded: §f" + (cfg.tagModdedStructures
                                                             ? "on (any non-minecraft structure)" : "off")), false);
                                             if (!cfg.denied.isEmpty()) {
-                                                ctx.getSource().sendFeedback(() -> Text.literal(
+                                                ctx.getSource().sendSuccess(() -> Component.literal(
                                                         "§6Excluded (" + cfg.denied.size() + "): §f" + String.join(", ", cfg.denied)), false);
                                             }
                                             return 1;
                                         })
                                 )
-                                .then(CommandManager.literal("enable")
-                                        .then(CommandManager.argument("id", IdentifierArgumentType.identifier())
+                                .then(Commands.literal("enable")
+                                        .then(Commands.argument("id", ResourceLocationArgument.id())
                                                 .suggests(ALL_STRUCTURE_IDS)
                                                 .executes(ctx -> {
-                                                    Identifier id = IdentifierArgumentType.getIdentifier(ctx, "id");
+                                                    ResourceLocation id = ResourceLocationArgument.getId(ctx, "id");
                                                     boolean added = StructureConfig.get().allow(id.toString());
-                                                    ctx.getSource().sendFeedback(() -> Text.literal(added
+                                                    ctx.getSource().sendSuccess(() -> Component.literal(added
                                                             ? "§aNow tagging " + id + ". Use rescan + revisit to apply to existing chunks."
                                                             : "§e" + id + " is already tagged."), false);
                                                     return 1;
                                                 })
                                         )
                                 )
-                                .then(CommandManager.literal("disable")
-                                        .then(CommandManager.argument("id", IdentifierArgumentType.identifier())
+                                .then(Commands.literal("disable")
+                                        .then(Commands.argument("id", ResourceLocationArgument.id())
                                                 .suggests(ENABLED_STRUCTURE_IDS)
                                                 .executes(ctx -> {
-                                                    Identifier id = IdentifierArgumentType.getIdentifier(ctx, "id");
+                                                    ResourceLocation id = ResourceLocationArgument.getId(ctx, "id");
                                                     boolean removed = StructureConfig.get().deny(id.toString());
-                                                    ctx.getSource().sendFeedback(() -> Text.literal(removed
+                                                    ctx.getSource().sendSuccess(() -> Component.literal(removed
                                                             ? "§aNo longer tagging " + id + ". Use rescan to remove existing ones."
                                                             : "§e" + id + " was already excluded."), false);
                                                     return 1;
@@ -270,35 +271,35 @@ public class RegionCommands {
                         )
 
                         // /ltregion flags - List flags + state for the region you're standing in
-                        .then(CommandManager.literal("flags")
+                        .then(Commands.literal("flags")
                                 .executes(ctx -> {
-                                    ServerPlayerEntity player = ctx.getSource().getPlayerOrThrow();
+                                    ServerPlayer player = ctx.getSource().getPlayerOrException();
                                     RegionManager.of(player.getServer()).listFlagsAtPlayer(player);
                                     return 1;
                                 })
                         )
 
                         // /ltregion flag <flag> <allow|deny|inherit> - Set a flag on the region you're in
-                        .then(CommandManager.literal("flag")
-                                .then(CommandManager.argument("flag", StringArgumentType.word())
+                        .then(Commands.literal("flag")
+                                .then(Commands.argument("flag", StringArgumentType.word())
                                         .suggests(FLAG_SUGGESTIONS)
-                                        .then(CommandManager.literal("allow")
+                                        .then(Commands.literal("allow")
                                                 .executes(ctx -> setFlag(ctx, Boolean.TRUE)))
-                                        .then(CommandManager.literal("deny")
+                                        .then(Commands.literal("deny")
                                                 .executes(ctx -> setFlag(ctx, Boolean.FALSE)))
-                                        .then(CommandManager.literal("inherit")
+                                        .then(Commands.literal("inherit")
                                                 .executes(ctx -> setFlag(ctx, null)))
                                 )
                         )
 
                         // /ltregion clear - Clear current selection
-                        .then(CommandManager.literal("clear")
+                        .then(Commands.literal("clear")
                                 .executes(ctx -> {
-                                    ServerCommandSource source = ctx.getSource();
-                                    ServerPlayerEntity player = source.getPlayerOrThrow();
+                                    CommandSourceStack source = ctx.getSource();
+                                    ServerPlayer player = source.getPlayerOrException();
 
                                     com.fugginbeenus.locationtooltip.region.SelectionManager.clear(player);
-                                    player.sendMessage(Text.literal("§aSelection cleared."), false);
+                                    player.displayClientMessage(Component.literal("§aSelection cleared."), false);
 
                                     return 1;
                                 })
@@ -307,8 +308,8 @@ public class RegionCommands {
     }
 
     /** Apply a flag value (true=allow, false=deny, null=inherit) to the region the player is in. */
-    private static int setFlag(CommandContext<ServerCommandSource> ctx, Boolean value) throws CommandSyntaxException {
-        ServerPlayerEntity player = ctx.getSource().getPlayerOrThrow();
+    private static int setFlag(CommandContext<CommandSourceStack> ctx, Boolean value) throws CommandSyntaxException {
+        ServerPlayer player = ctx.getSource().getPlayerOrException();
         String flag = StringArgumentType.getString(ctx, "flag");
         RegionManager.of(player.getServer()).setFlagAtPlayer(player, flag, value);
         return 1;

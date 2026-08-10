@@ -7,16 +7,17 @@ import com.fugginbeenus.locationtooltip.server.RegionTicker;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerChunkEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.fabricmc.loader.api.FabricLoader;
-import net.minecraft.registry.Registry;
-import net.minecraft.registry.RegistryKeys;
+import net.minecraft.core.Registry;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.core.registries.Registries;
 import net.minecraft.server.MinecraftServer;
-import net.minecraft.server.world.ServerWorld;
-import net.minecraft.structure.StructureStart;
-import net.minecraft.util.Identifier;
-import net.minecraft.util.math.BlockBox;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.world.chunk.WorldChunk;
-import net.minecraft.world.gen.structure.Structure;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.level.levelgen.structure.StructureStart;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.level.levelgen.structure.BoundingBox;
+import net.minecraft.core.BlockPos;
+import net.minecraft.world.level.chunk.LevelChunk;
+import net.minecraft.world.level.levelgen.structure.Structure;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -65,27 +66,27 @@ public final class StructureRegionTagger {
         });
     }
 
-    private static void onChunkLoad(ServerWorld world, WorldChunk chunk) {
+    private static void onChunkLoad(ServerLevel world, LevelChunk chunk) {
         if (!isEnabled()) return;
 
-        Map<Structure, StructureStart> starts = chunk.getStructureStarts();
+        Map<Structure, StructureStart> starts = chunk.getAllStarts();
         if (starts == null || starts.isEmpty()) return;
 
-        Registry<Structure> structureReg = world.getRegistryManager().get(RegistryKeys.STRUCTURE);
-        Identifier dim = world.getRegistryKey().getValue();
+        Registry<Structure> structureReg = world.registryAccess().registryOrThrow(Registries.STRUCTURE);
+        ResourceLocation dim = world.dimension().location();
 
         // Read immutable structure data here; defer filtering + creation to the server thread.
         List<Candidate> candidates = null;
         for (Map.Entry<Structure, StructureStart> e : starts.entrySet()) {
             StructureStart start = e.getValue();
-            if (start == null || !start.hasChildren()) continue;
+            if (start == null || !start.isValid()) continue;
 
-            Identifier sid = structureReg.getId(e.getKey());
+            ResourceLocation sid = structureReg.getKey(e.getKey());
             if (sid == null) continue;
 
-            BlockBox box = start.getBoundingBox();
+            BoundingBox box = start.getBoundingBox();
             String regionId = "structure/" + dim.getPath() + "/" + sid.getPath()
-                    + "@" + box.getMinX() + "_" + box.getMinZ();
+                    + "@" + box.minX() + "_" + box.minZ();
 
             if (candidates == null) candidates = new ArrayList<>();
             candidates.add(new Candidate(regionId, sid, box));
@@ -103,10 +104,10 @@ public final class StructureRegionTagger {
                 if (!cfg.isAllowed(c.sid)) continue;
                 if (mgr.exists(c.regionId)) continue;
 
-                int minY = Math.max(world.getBottomY(), c.box.getMinY() - 1);
-                int maxY = Math.min(world.getTopY() - 1, c.box.getMaxY() + 8);
-                BlockPos min = new BlockPos(c.box.getMinX(), minY, c.box.getMinZ());
-                BlockPos max = new BlockPos(c.box.getMaxX(), maxY, c.box.getMaxZ());
+                int minY = Math.max(world.getMinBuildHeight(), c.box.minY() - 1);
+                int maxY = Math.min(world.getMaxBuildHeight() - 1, c.box.maxY() + 8);
+                BlockPos min = new BlockPos(c.box.minX(), minY, c.box.minZ());
+                BlockPos max = new BlockPos(c.box.maxX(), maxY, c.box.maxZ());
 
                 String name = StructureNaming.resolve(server, dim, c.sid, c.box);
                 Region r = new Region(c.regionId, name, dim, min, max, null);
@@ -122,8 +123,8 @@ public final class StructureRegionTagger {
     }
 
     /** Re-resolve a structure region's name from providers (e.g. Waystones) a bit later. */
-    private static void scheduleNameRecheck(MinecraftServer server, Identifier dim, Region region,
-                                            Identifier sid, BlockBox box) {
+    private static void scheduleNameRecheck(MinecraftServer server, ResourceLocation dim, Region region,
+                                            ResourceLocation sid, BoundingBox box) {
         if (!StructureNaming.hasProviders()) return;
         for (int delayTicks : new int[]{100, 1200}) { // ~5s and ~60s
             RegionTicker.later(server, delayTicks, () -> {
@@ -140,5 +141,5 @@ public final class StructureRegionTagger {
         }
     }
 
-    private record Candidate(String regionId, Identifier sid, BlockBox box) {}
+    private record Candidate(String regionId, ResourceLocation sid, BoundingBox box) {}
 }

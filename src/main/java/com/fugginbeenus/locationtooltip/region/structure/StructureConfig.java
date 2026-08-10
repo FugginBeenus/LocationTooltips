@@ -3,7 +3,7 @@ package com.fugginbeenus.locationtooltip.region.structure;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import net.fabricmc.loader.api.FabricLoader;
-import net.minecraft.util.Identifier;
+import net.minecraft.resources.ResourceLocation;
 
 import java.io.Reader;
 import java.io.Writer;
@@ -98,7 +98,7 @@ public final class StructureConfig {
     // ---- API ----
 
     /** Deny list wins; then the explicit list; then modded structures if auto-tagging is on. */
-    public boolean isAllowed(Identifier id) {
+    public boolean isAllowed(ResourceLocation id) {
         String key = id.toString();
         if (denied.contains(key)) return false;
         if (structures.contains(key)) return true;

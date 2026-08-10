@@ -2,8 +2,8 @@ package com.fugginbeenus.locationtooltip.client;
 
 import com.fugginbeenus.locationtooltip.region.flag.RegionFlag;
 import com.fugginbeenus.locationtooltip.region.flag.RegionFlags;
-import net.minecraft.client.font.TextRenderer;
-import net.minecraft.client.gui.DrawContext;
+import net.minecraft.client.gui.Font;
+import net.minecraft.client.gui.GuiGraphics;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -53,7 +53,7 @@ public final class FlagEditor {
         return y + (i % rows()) * (rowH + gap);
     }
 
-    public void render(DrawContext ctx, TextRenderer tr, double mouseX, double mouseY) {
+    public void render(GuiGraphics ctx, Font tr, double mouseX, double mouseY) {
         for (int i = 0; i < flags.size(); i++) {
             RegionFlag f = flags.get(i);
             int bx = cellX(i), by = cellY(i);
@@ -69,11 +69,11 @@ public final class FlagEditor {
             boolean hasIcon = FlagIcons.draw(ctx, f.id, bx + 6, iconY, 12);
             int textX = hasIcon ? bx + 22 : bx + 8;
 
-            ctx.drawText(tr, shortName(f), textX, by + (rowH - 8) / 2, LTGui.TEXT, false);
+            ctx.drawString(tr, shortName(f), textX, by + (rowH - 8) / 2, LTGui.TEXT, false);
 
             String state = (v == null) ? "Inherit" : (v ? "Allow" : "Deny");
-            int sw = tr.getWidth(state);
-            ctx.drawText(tr, state, bx + colW - sw - 6, by + (rowH - 8) / 2, stateColor, false);
+            int sw = tr.width(state);
+            ctx.drawString(tr, state, bx + colW - sw - 6, by + (rowH - 8) / 2, stateColor, false);
         }
     }
 

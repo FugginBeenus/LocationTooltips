@@ -1,13 +1,13 @@
 package com.fugginbeenus.locationtooltip.client;
 
 import com.fugginbeenus.locationtooltip.net.client.LTPacketsClient;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.gui.DrawContext;
-import net.minecraft.client.gui.screen.Screen;
-import net.minecraft.client.gui.widget.TextFieldWidget;
-import net.minecraft.text.Text;
-import net.minecraft.util.Identifier;
-import net.minecraft.util.math.BlockPos;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.client.gui.components.EditBox;
+import net.minecraft.network.chat.Component;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.core.BlockPos;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -24,13 +24,13 @@ public class AdminPanelScreen extends Screen {
     public static class RegionRow {
         public final String id;
         public String name;
-        public final Identifier dim;
+        public final ResourceLocation dim;
         public final BlockPos a, b;
         public java.util.Map<String, Boolean> flags; // id -> allow/deny; absent = inherit
         public String ownerName;  // Player name or "Server" for admin regions
         public String source;     // PLAYER / SERVER / STRUCTURE
 
-        public RegionRow(String id, String name, Identifier dim, BlockPos a, BlockPos b,
+        public RegionRow(String id, String name, ResourceLocation dim, BlockPos a, BlockPos b,
                          java.util.Map<String, Boolean> flags, String ownerName, String source) {
             this.id = id; this.name = name; this.dim = dim; this.a = a; this.b = b;
             this.flags = flags; this.ownerName = ownerName; this.source = source;
@@ -43,7 +43,7 @@ public class AdminPanelScreen extends Screen {
 
     private static final int ROW_H = 42;
 
-    private TextFieldWidget searchField;
+    private EditBox searchField;
     private int panelX, panelY, panelW, panelH;
     private int listX, listY, listW, listH;
     private int scroll;
@@ -51,7 +51,7 @@ public class AdminPanelScreen extends Screen {
     private int ticks;
 
     public AdminPanelScreen() {
-        super(Text.literal("Regions"));
+        super(Component.literal("Regions"));
         instance = this;
     }
 
@@ -77,11 +77,11 @@ public class AdminPanelScreen extends Screen {
 
         int searchW = 150, searchH = 16;
         int searchX = panelX + panelW - 12 - 16 - 6 - searchW;
-        searchField = new TextFieldWidget(this.textRenderer, searchX + 5, panelY + 11, searchW - 10, 12, Text.literal("Search"));
-        searchField.setDrawsBackground(false);
+        searchField = new EditBox(this.font, searchX + 5, panelY + 11, searchW - 10, 12, Component.literal("Search"));
+        searchField.setBordered(false);
         searchField.setMaxLength(48);
-        searchField.setChangedListener(s -> clampScroll());
-        addDrawableChild(searchField);
+        searchField.setResponder(s -> clampScroll());
+        addRenderableWidget(searchField);
 
         LTPacketsClient.requestAllAdminList();
     }
@@ -94,7 +94,7 @@ public class AdminPanelScreen extends Screen {
 
     // ===== filtered view =====
     private List<RegionRow> visible() {
-        String q = (searchField == null) ? "" : searchField.getText().trim().toLowerCase(Locale.ROOT);
+        String q = (searchField == null) ? "" : searchField.getValue().trim().toLowerCase(Locale.ROOT);
         if (q.isEmpty()) return regions;
         List<RegionRow> out = new ArrayList<>();
         for (RegionRow r : regions) if (r.name.toLowerCase(Locale.ROOT).contains(q)) out.add(r);
@@ -133,7 +133,7 @@ public class AdminPanelScreen extends Screen {
     public boolean mouseClicked(double mx, double my, int button) {
         if (button == 0) {
             // close X
-            if (LTGui.hovered(mx, my, panelX + panelW - 12 - 16, panelY + 8, 16, 16)) { close(); return true; }
+            if (LTGui.hovered(mx, my, panelX + panelW - 12 - 16, panelY + 8, 16, 16)) { onClose(); return true; }
 
             // scrollbar
             int max = Math.max(0, visible().size() * ROW_H - listH);
@@ -150,7 +150,7 @@ public class AdminPanelScreen extends Screen {
                 if (rowY + ROW_H <= listY || rowY >= listY + listH) continue; // off-screen
                 int[] edit = editRect(rowY), del = deleteRect(rowY);
                 if (LTGui.hovered(mx, my, edit[0], edit[1], edit[2], edit[3])) {
-                    MinecraftClient.getInstance().setScreen(new EditRegionScreen(vis.get(i), this));
+                    Minecraft.getInstance().setScreen(new EditRegionScreen(vis.get(i), this));
                     return true;
                 }
                 if (LTGui.hovered(mx, my, del[0], del[1], del[2], del[3])) {
@@ -199,40 +199,40 @@ public class AdminPanelScreen extends Screen {
     // Skip 1.21's default screen blur; render() draws our own dim.
     //? if >=1.21 {
     /*@Override
-    public void renderBackground(DrawContext context, int mouseX, int mouseY, float delta) {
+    public void renderBackground(GuiGraphics context, int mouseX, int mouseY, float delta) {
     }
     *///?}
 
     // ===== render =====
     @Override
-    public void render(DrawContext ctx, int mouseX, int mouseY, float delta) {
+    public void render(GuiGraphics ctx, int mouseX, int mouseY, float delta) {
         ctx.fill(0, 0, this.width, this.height, LTGui.DIM);
         LTGui.panel(ctx, panelX, panelY, panelW, panelH);
 
         // header
         LTGui.roundRect(ctx, panelX, panelY, panelW, 30, 6, LTGui.PANEL_HEAD);
-        ctx.drawText(this.textRenderer, Text.literal("§lRegions"), panelX + 12, panelY + 11, LTGui.TEXT, false);
+        ctx.drawString(this.font, Component.literal("§lRegions"), panelX + 12, panelY + 11, LTGui.TEXT, false);
         ctx.fill(panelX + 10, panelY + 29, panelX + panelW - 10, panelY + 30, LTGui.ACCENT);
 
         // search field
         int searchW = 150;
         int searchX = panelX + panelW - 12 - 16 - 6 - searchW;
         LTGui.field(ctx, searchX, panelY + 8, searchW, 16, searchField != null && searchField.isFocused());
-        if (searchField != null && searchField.getText().isEmpty()) {
-            ctx.drawText(this.textRenderer, Text.literal("Search…"), searchX + 5, panelY + 11, LTGui.FAINT, false);
+        if (searchField != null && searchField.getValue().isEmpty()) {
+            ctx.drawString(this.font, Component.literal("Search…"), searchX + 5, panelY + 11, LTGui.FAINT, false);
         }
 
         // close X
         boolean closeHover = LTGui.hovered(mouseX, mouseY, panelX + panelW - 12 - 16, panelY + 8, 16, 16);
         LTGui.roundRect(ctx, panelX + panelW - 12 - 16, panelY + 8, 16, 16, 4, closeHover ? LTGui.DANGER_HOVER : LTGui.BTN);
-        ctx.drawText(this.textRenderer, Text.literal("✕"), panelX + panelW - 12 - 16 + 5, panelY + 12, LTGui.TEXT, false);
+        ctx.drawString(this.font, Component.literal("✕"), panelX + panelW - 12 - 16 + 5, panelY + 12, LTGui.TEXT, false);
 
         // list
         List<RegionRow> vis = visible();
         ctx.enableScissor(listX, listY, listX + listW, listY + listH);
         if (vis.isEmpty()) {
             String msg = regions.isEmpty() ? "No regions nearby" : "No matches";
-            ctx.drawText(this.textRenderer, msg, listX + 8, listY + 8, LTGui.SUBTEXT, false);
+            ctx.drawString(this.font, msg, listX + 8, listY + 8, LTGui.SUBTEXT, false);
         }
         for (int i = 0; i < vis.size(); i++) {
             int rowY = listY - scroll + i * ROW_H;
@@ -252,14 +252,14 @@ public class AdminPanelScreen extends Screen {
         }
 
         // footer
-        ctx.drawText(this.textRenderer,
-                Text.literal("§7" + vis.size() + (vis.size() == 1 ? " region" : " regions")),
+        ctx.drawString(this.font,
+                Component.literal("§7" + vis.size() + (vis.size() == 1 ? " region" : " regions")),
                 panelX + 12, panelY + panelH - 16, LTGui.SUBTEXT, false);
 
         super.render(ctx, mouseX, mouseY, delta); // search field text
     }
 
-    private void renderRow(DrawContext ctx, RegionRow r, int rowY, int mouseX, int mouseY) {
+    private void renderRow(GuiGraphics ctx, RegionRow r, int rowY, int mouseX, int mouseY) {
         boolean hover = LTGui.hovered(mouseX, mouseY, listX, rowY, listW, ROW_H)
                 && mouseY >= listY && mouseY < listY + listH;
         LTGui.roundRect(ctx, listX, rowY + 1, listW, ROW_H - 2, 4, hover ? LTGui.ROW_HOVER : LTGui.ROW_ALT);
@@ -269,44 +269,44 @@ public class AdminPanelScreen extends Screen {
         ctx.fill(listX + 4, rowY + 6, listX + 6, rowY + ROW_H - 6, dotColor);
 
         // name
-        ctx.drawText(this.textRenderer, r.name, listX + 12, rowY + 6, LTGui.TEXT, false);
+        ctx.drawString(this.font, r.name, listX + 12, rowY + 6, LTGui.TEXT, false);
 
         // dim + owner
         String sub = "§7" + r.dim.getPath();
         if (r.ownerName != null && !r.ownerName.isEmpty()) sub += " §8• §7" + r.ownerName;
-        ctx.drawText(this.textRenderer, sub, listX + 12, rowY + 18, LTGui.SUBTEXT, false);
+        ctx.drawString(this.font, sub, listX + 12, rowY + 18, LTGui.SUBTEXT, false);
 
         // flag icons
         int fx = listX + 12;
         int fyMax = listX + listW - 12 - 54 - 6 - 46 - 8; // keep clear of buttons
         if (r.flags != null && !r.flags.isEmpty()) {
             for (java.util.Map.Entry<String, Boolean> e : r.flags.entrySet()) {
-                if (fx > fyMax) { ctx.drawText(this.textRenderer, "…", fx, rowY + 30, LTGui.FAINT, false); break; }
+                if (fx > fyMax) { ctx.drawString(this.font, "…", fx, rowY + 30, LTGui.FAINT, false); break; }
                 boolean allow = e.getValue();
                 if (FlagIcons.draw(ctx, e.getKey(), fx, rowY + 28, 10)) {
                     ctx.fill(fx, rowY + 38, fx + 10, rowY + 39, allow ? 0xFF55FF55 : 0xFFFF5555);
                     fx += 13;
                 } else {
-                    ctx.drawText(this.textRenderer, (allow ? "§a" : "§c") + e.getKey(), fx, rowY + 30, LTGui.TEXT, false);
-                    fx += this.textRenderer.getWidth(e.getKey()) + 8;
+                    ctx.drawString(this.font, (allow ? "§a" : "§c") + e.getKey(), fx, rowY + 30, LTGui.TEXT, false);
+                    fx += this.font.width(e.getKey()) + 8;
                 }
             }
         } else {
-            ctx.drawText(this.textRenderer, "§8default", listX + 12, rowY + 30, 0xFF6A7079, false);
+            ctx.drawString(this.font, "§8default", listX + 12, rowY + 30, 0xFF6A7079, false);
         }
 
         // action buttons
         int[] edit = editRect(rowY), del = deleteRect(rowY);
-        LTGui.button(ctx, this.textRenderer, edit[0], edit[1], edit[2], edit[3], "Edit",
+        LTGui.button(ctx, this.font, edit[0], edit[1], edit[2], edit[3], "Edit",
                 LTGui.hovered(mouseX, mouseY, edit[0], edit[1], edit[2], edit[3]) && mouseY >= listY && mouseY < listY + listH,
                 LTGui.BTN, LTGui.BTN_HOVER);
-        LTGui.button(ctx, this.textRenderer, del[0], del[1], del[2], del[3], "Delete",
+        LTGui.button(ctx, this.font, del[0], del[1], del[2], del[3], "Delete",
                 LTGui.hovered(mouseX, mouseY, del[0], del[1], del[2], del[3]) && mouseY >= listY && mouseY < listY + listH,
                 LTGui.DANGER, LTGui.DANGER_HOVER);
     }
 
     @Override public boolean shouldCloseOnEsc() { return true; }
-    @Override public void close() { MinecraftClient.getInstance().setScreen(null); }
+    @Override public void onClose() { Minecraft.getInstance().setScreen(null); }
 
     // ===== edit subscreen =====
     public static class EditRegionScreen extends RegionConfigScreen {
@@ -329,9 +329,9 @@ public class AdminPanelScreen extends Screen {
             row.name = name;
             row.flags = new java.util.LinkedHashMap<>(newFlags);
             LTPacketsClient.sendAdminRename(row.id, name, newFlags);
-            close();
+            onClose();
         }
 
-        @Override public void close() { MinecraftClient.getInstance().setScreen(returnTo); }
+        @Override public void onClose() { Minecraft.getInstance().setScreen(returnTo); }
     }
 }

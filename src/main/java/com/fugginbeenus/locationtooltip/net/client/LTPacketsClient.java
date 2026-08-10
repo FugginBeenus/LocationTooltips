@@ -7,10 +7,10 @@ import com.fugginbeenus.locationtooltip.client.NameRegionScreen;
 import com.fugginbeenus.locationtooltip.client.SelectionRenderer;
 import com.fugginbeenus.locationtooltip.hud.LocationHudOverlay;
 import com.fugginbeenus.locationtooltip.net.LTPayloads;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.particle.ParticleTypes;
-import net.minecraft.sound.SoundEvents;
-import net.minecraft.util.math.BlockPos;
+import net.minecraft.client.Minecraft;
+import net.minecraft.core.particles.ParticleTypes;
+import net.minecraft.sounds.SoundEvents;
+import net.minecraft.core.BlockPos;
 
 import java.util.List;
 import java.util.Map;
@@ -75,11 +75,11 @@ public final class LTPacketsClient {
 
     // -------- helpers --------
     private static void celebrate() {
-        MinecraftClient mc = MinecraftClient.getInstance();
-        if (mc == null || mc.world == null || mc.player == null) return;
+        Minecraft mc = Minecraft.getInstance();
+        if (mc == null || mc.level == null || mc.player == null) return;
 
-        var w = mc.world;
-        BlockPos p = mc.player.getBlockPos();
+        var w = mc.level;
+        BlockPos p = mc.player.blockPosition();
         for (int i = 0; i < 60; i++) {
             w.addParticle(ParticleTypes.HAPPY_VILLAGER,
                     p.getX() + 0.5 + (w.random.nextDouble() - 0.5) * 2.0,

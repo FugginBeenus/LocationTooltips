@@ -1,8 +1,8 @@
 package com.fugginbeenus.locationtooltip.region.structure;
 
 import net.minecraft.server.MinecraftServer;
-import net.minecraft.util.Identifier;
-import net.minecraft.util.math.BlockBox;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.level.levelgen.structure.BoundingBox;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -28,7 +28,7 @@ public final class StructureNaming {
     }
 
     /** Name from a provider only (no fallback) — used by delayed re-resolution. */
-    public static Optional<String> providerName(MinecraftServer server, Identifier dim, Identifier structureId, BlockBox box) {
+    public static Optional<String> providerName(MinecraftServer server, ResourceLocation dim, ResourceLocation structureId, BoundingBox box) {
         for (StructureNameProvider p : PROVIDERS) {
             try {
                 Optional<String> name = p.nameFor(server, dim, structureId, box);
@@ -41,7 +41,7 @@ public final class StructureNaming {
     }
 
     /** Final name: a provider's name if any, otherwise the built-in structure name. */
-    public static String resolve(MinecraftServer server, Identifier dim, Identifier structureId, BlockBox box) {
+    public static String resolve(MinecraftServer server, ResourceLocation dim, ResourceLocation structureId, BoundingBox box) {
         return providerName(server, dim, structureId, box)
                 .orElseGet(() -> StructureNames.displayName(structureId));
     }

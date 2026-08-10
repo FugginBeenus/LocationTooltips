@@ -2,7 +2,7 @@ package com.fugginbeenus.locationtooltip.client;
 
 import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderContext;
 import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderEvents;
-import net.minecraft.util.math.BlockPos;
+import net.minecraft.core.BlockPos;
 
 /** Draws the pulsing box for the current wand corner selection. */
 public class SelectionRenderer {

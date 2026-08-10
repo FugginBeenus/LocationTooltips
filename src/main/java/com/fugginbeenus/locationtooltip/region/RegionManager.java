@@ -4,14 +4,15 @@ import com.fugginbeenus.locationtooltip.adv.AdvancementUtil;
 import com.fugginbeenus.locationtooltip.net.LTPackets;
 import com.fugginbeenus.locationtooltip.region.flag.RegionFlag;
 import com.fugginbeenus.locationtooltip.region.flag.RegionFlags;
+import com.fugginbeenus.locationtooltip.util.LTId;
 import net.minecraft.server.MinecraftServer;
-import net.minecraft.server.network.ServerPlayerEntity;
-import net.minecraft.text.Text;
-import net.minecraft.util.Formatting;
-import net.minecraft.util.Identifier;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.Box;
-import net.minecraft.util.math.ChunkPos;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.network.chat.Component;
+import net.minecraft.ChatFormatting;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.core.BlockPos;
+import net.minecraft.world.phys.AABB;
+import net.minecraft.world.level.ChunkPos;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
@@ -55,13 +56,13 @@ public final class RegionManager {
 
     // ----- state -----
     private final MinecraftServer server;
-    private final Map<Identifier, List<Region>> byDim = new HashMap<>();
+    private final Map<ResourceLocation, List<Region>> byDim = new HashMap<>();
 
     // OPTIMIZATION: Spatial index - maps chunks to regions that intersect them
-    private final Map<Identifier, Map<ChunkPos, List<Region>>> spatialIndex = new HashMap<>();
+    private final Map<ResourceLocation, Map<ChunkPos, List<Region>>> spatialIndex = new HashMap<>();
 
     // Dimensions touched by structure auto-tagging since the last debounced disk flush.
-    private final Set<Identifier> dirtyDims = new HashSet<>();
+    private final Set<ResourceLocation> dirtyDims = new HashSet<>();
 
     // Performance tracking
     private long lookupCount = 0;
@@ -77,15 +78,15 @@ public final class RegionManager {
     private void loadAll() {
         byDim.clear();
         spatialIndex.clear();
-        server.getWorlds().forEach(sw -> {
-            Identifier dim = sw.getRegistryKey().getValue();
+        server.getAllLevels().forEach(sw -> {
+            ResourceLocation dim = sw.dimension().location();
             List<Region> list = RegionStorage.load(server, dim);
             byDim.put(dim, new ArrayList<>(list));
             rebuildSpatialIndex(dim);
         });
     }
 
-    private void saveDim(Identifier dim) {
+    private void saveDim(ResourceLocation dim) {
         List<Region> list = byDim.get(dim);
         if (list == null) list = Collections.emptyList();
         RegionStorage.save(server, dim, list);
@@ -96,7 +97,7 @@ public final class RegionManager {
      * OPTIMIZATION: Rebuild spatial index for a dimension.
      * Called after loading or modifying regions.
      */
-    private void rebuildSpatialIndex(Identifier dim) {
+    private void rebuildSpatialIndex(ResourceLocation dim) {
         Map<ChunkPos, List<Region>> index = new HashMap<>();
         List<Region> regions = byDim.get(dim);
 
@@ -122,7 +123,7 @@ public final class RegionManager {
     }
 
     /** Add a single region to the spatial index without rebuilding the whole thing. */
-    private void indexRegionIncremental(Identifier dim, Region r) {
+    private void indexRegionIncremental(ResourceLocation dim, Region r) {
         Map<ChunkPos, List<Region>> index = spatialIndex.computeIfAbsent(dim, d -> new HashMap<>());
         int minCX = r.min.getX() >> 4, maxCX = r.max.getX() >> 4;
         int minCZ = r.min.getZ() >> 4, maxCZ = r.max.getZ() >> 4;
@@ -135,7 +136,7 @@ public final class RegionManager {
 
     // ===== helpers =====
 
-    private List<Region> listFor(@Nullable Identifier dim) {
+    private List<Region> listFor(@Nullable ResourceLocation dim) {
         if (dim == null) {
             // null = flatten regions across all dimensions
             List<Region> all = new ArrayList<>();
@@ -152,15 +153,15 @@ public final class RegionManager {
         return null;
     }
 
-    private static Box boxOf(Region r) {
-        // +1 because BlockPos are voxel corners; Box is min..max as doubles
-        return new Box(
+    private static AABB boxOf(Region r) {
+        // +1 because BlockPos are voxel corners; AABB is min..max as doubles
+        return new AABB(
                 r.min.getX(), r.min.getY(), r.min.getZ(),
                 r.max.getX() + 1, r.max.getY() + 1, r.max.getZ() + 1
         );
     }
 
-    private static double distance2ToBox(BlockPos p, Box bb) {
+    private static double distance2ToBox(BlockPos p, AABB bb) {
         double px = p.getX() + 0.5, py = p.getY() + 0.5, pz = p.getZ() + 0.5;
         double dx = clamp(px, bb.minX, bb.maxX) - px;
         double dy = clamp(py, bb.minY, bb.maxY) - py;
@@ -179,10 +180,10 @@ public final class RegionManager {
     // ===== API =====
 
     /** Send regions in caller's dimension within radius, sorted by distance then name. */
-    public void sendNearbyTo(ServerPlayerEntity player, int radius) {
-        Identifier dim = player.getWorld().getRegistryKey().getValue();
-        BlockPos p = player.getBlockPos();
-        boolean isOp = player.server.getPlayerManager().isOperator(player.getGameProfile());
+    public void sendNearbyTo(ServerPlayer player, int radius) {
+        ResourceLocation dim = player.level().dimension().location();
+        BlockPos p = player.blockPosition();
+        boolean isOp = player.server.getPlayerList().isOp(player.getGameProfile());
 
         List<Region> all = listFor(dim);
         List<Region> near = new ArrayList<>();
@@ -192,7 +193,7 @@ public final class RegionManager {
             double d2 = distance2ToBox(p, boxOf(r));
             if (d2 <= r2) {
                 // Filter: admins see all, players see only their own
-                if (isOp || r.isOwnedBy(player.getUuid())) {
+                if (isOp || r.isOwnedBy(player.getUUID())) {
                     near.add(r);
                 }
             }
@@ -213,12 +214,12 @@ public final class RegionManager {
      * dimension (null = every dimension). Honours the same owner/op visibility filter as
      * {@link #sendNearbyTo}. Originally contributed by GambaPVP (all-locations-packet).
      */
-    public void sendAllTo(ServerPlayerEntity player, @Nullable Identifier dim) {
-        boolean isOp = player.server.getPlayerManager().isOperator(player.getGameProfile());
+    public void sendAllTo(ServerPlayer player, @Nullable ResourceLocation dim) {
+        boolean isOp = player.server.getPlayerList().isOp(player.getGameProfile());
 
         List<Region> all = new ArrayList<>();
         for (Region r : listFor(dim)) {
-            if (isOp || r.isOwnedBy(player.getUuid())) all.add(r);
+            if (isOp || r.isOwnedBy(player.getUUID())) all.add(r);
         }
         all.sort(Comparator.comparing((Region r) -> r.name, String.CASE_INSENSITIVE_ORDER));
 
@@ -226,8 +227,8 @@ public final class RegionManager {
     }
 
     /** Create a new region in the player's current dimension. */
-    public void createRegion(ServerPlayerEntity player, String name, BlockPos a, BlockPos b, Map<String, Boolean> flags) {
-        Identifier dim = player.getWorld().getRegistryKey().getValue();
+    public void createRegion(ServerPlayer player, String name, BlockPos a, BlockPos b, Map<String, Boolean> flags) {
+        ResourceLocation dim = player.level().dimension().location();
 
         // Expand Y so regions always “catch” the player (see section 3 below)
         int minX = Math.min(a.getX(), b.getX());
@@ -238,14 +239,14 @@ public final class RegionManager {
         int maxY = Math.max(a.getY(), b.getY()) + 4;   // +4y like you wanted
 
         // Clamp to build limits so huge/void selections don’t explode
-        var sw = player.getWorld();
-        minY = Math.max(sw.getBottomY(), minY);
-        maxY = Math.min(sw.getTopY() - 1, maxY);
+        var sw = player.level();
+        minY = Math.max(sw.getMinBuildHeight(), minY);
+        maxY = Math.min(sw.getMaxBuildHeight() - 1, maxY);
 
         BlockPos na = new BlockPos(minX, minY, minZ);
         BlockPos nb = new BlockPos(maxX, maxY, maxZ);
 
-        Region region = new Region(java.util.UUID.randomUUID().toString(), name, dim, na, nb, player.getUuid());
+        Region region = new Region(java.util.UUID.randomUUID().toString(), name, dim, na, nb, player.getUUID());
 
         // Apply protection flag overrides from the GUI (empty/absent = inherit defaults).
         region.source = RegionSource.PLAYER;
@@ -265,11 +266,11 @@ public final class RegionManager {
         grantFirstRegion(player);
 
         // --- NEW: delay the advancement grant so the toast isn't hidden by the celebration ---
-        final UUID who = player.getUuid();
-        final var advId = Identifier.of(MOD_ID, "first_region");
+        final UUID who = player.getUUID();
+        final var advId = LTId.of(MOD_ID, "first_region");
         // 60 ticks (~3 seconds) feels great; use 40 for ~2s if you prefer
         com.fugginbeenus.locationtooltip.server.RegionTicker.later(player.server, 250, () -> {
-            ServerPlayerEntity again = player.server.getPlayerManager().getPlayer(who);
+            ServerPlayer again = player.server.getPlayerList().getPlayer(who);
             if (again == null) return;
             // safe utility you already added
             com.fugginbeenus.locationtooltip.adv.AdvancementUtil.grant(again, advId);
@@ -277,20 +278,20 @@ public final class RegionManager {
     }
 
     /** True if this player may modify the given region (ops always; otherwise only the owner). */
-    private boolean canEdit(ServerPlayerEntity player, Region r) {
-        boolean isOp = player.server.getPlayerManager().isOperator(player.getGameProfile());
-        return r.canBeEditedBy(player.getUuid(), isOp);
+    private boolean canEdit(ServerPlayer player, Region r) {
+        boolean isOp = player.server.getPlayerList().isOp(player.getGameProfile());
+        return r.canBeEditedBy(player.getUUID(), isOp);
     }
 
-    private static void denyEdit(ServerPlayerEntity player) {
-        player.sendMessage(
-                Text.literal("You don't have permission to modify this region.").formatted(Formatting.RED),
+    private static void denyEdit(ServerPlayer player) {
+        player.displayClientMessage(
+                Component.literal("You don't have permission to modify this region.").withStyle(ChatFormatting.RED),
                 true /* action bar */
         );
     }
 
     /** Rename by id; persists and refreshes the caller's list and HUD. */
-    public void renameRegion(ServerPlayerEntity player, String id, String newName, Map<String, Boolean> flags) {
+    public void renameRegion(ServerPlayer player, String id, String newName, Map<String, Boolean> flags) {
         Region r = findById(id);
         if (r == null) return;
         if (!canEdit(player, r)) { denyEdit(player); return; }
@@ -311,7 +312,7 @@ public final class RegionManager {
     }
 
     /** Delete by id; persists and refreshes the caller's list and HUD. */
-    public void deleteRegion(ServerPlayerEntity player, String id) {
+    public void deleteRegion(ServerPlayer player, String id) {
         Region r = findById(id);
         if (r == null) return;
         if (!canEdit(player, r)) { denyEdit(player); return; }
@@ -326,18 +327,18 @@ public final class RegionManager {
      * Set (value = true/false) or clear (value = null → inherit) a flag on the smallest
      * region the player is standing in. Used by the {@code /ltregion flag} command.
      */
-    public void setFlagAtPlayer(ServerPlayerEntity player, String flagId, Boolean value) {
-        var dim = player.getWorld().getRegistryKey().getValue();
-        Region r = smallestContaining(dim, player.getBlockPos());
+    public void setFlagAtPlayer(ServerPlayer player, String flagId, Boolean value) {
+        var dim = player.level().dimension().location();
+        Region r = smallestContaining(dim, player.blockPosition());
         if (r == null) {
-            player.sendMessage(Text.literal("You're not standing in a region.").formatted(Formatting.RED), false);
+            player.displayClientMessage(Component.literal("You're not standing in a region.").withStyle(ChatFormatting.RED), false);
             return;
         }
         if (!canEdit(player, r)) { denyEdit(player); return; }
 
         RegionFlag f = RegionFlags.byId(flagId);
         if (f == null) {
-            player.sendMessage(Text.literal("Unknown flag: " + flagId).formatted(Formatting.RED), false);
+            player.displayClientMessage(Component.literal("Unknown flag: " + flagId).withStyle(ChatFormatting.RED), false);
             return;
         }
 
@@ -345,27 +346,27 @@ public final class RegionManager {
         saveDim(r.dim);
 
         String state = (value == null) ? "inherit" : (value ? "allow" : "deny");
-        player.sendMessage(
-                Text.literal("Set ").formatted(Formatting.GREEN)
-                        .append(Text.literal(f.displayName).formatted(Formatting.YELLOW))
-                        .append(Text.literal(" → " + state + " for ").formatted(Formatting.GREEN))
-                        .append(Text.literal(r.name).formatted(Formatting.AQUA)),
+        player.displayClientMessage(
+                Component.literal("Set ").withStyle(ChatFormatting.GREEN)
+                        .append(Component.literal(f.displayName).withStyle(ChatFormatting.YELLOW))
+                        .append(Component.literal(" → " + state + " for ").withStyle(ChatFormatting.GREEN))
+                        .append(Component.literal(r.name).withStyle(ChatFormatting.AQUA)),
                 false);
     }
 
     /** List every flag and its effective state for the region the player is standing in. */
-    public void listFlagsAtPlayer(ServerPlayerEntity player) {
-        var dim = player.getWorld().getRegistryKey().getValue();
-        Region r = smallestContaining(dim, player.getBlockPos());
+    public void listFlagsAtPlayer(ServerPlayer player) {
+        var dim = player.level().dimension().location();
+        Region r = smallestContaining(dim, player.blockPosition());
         if (r == null) {
-            player.sendMessage(Text.literal("You're not standing in a region.").formatted(Formatting.RED), false);
+            player.displayClientMessage(Component.literal("You're not standing in a region.").withStyle(ChatFormatting.RED), false);
             return;
         }
 
-        player.sendMessage(
-                Text.literal("Flags for ").formatted(Formatting.GOLD)
-                        .append(Text.literal(r.name).formatted(Formatting.AQUA))
-                        .append(Text.literal(":").formatted(Formatting.GOLD)),
+        player.displayClientMessage(
+                Component.literal("Flags for ").withStyle(ChatFormatting.GOLD)
+                        .append(Component.literal(r.name).withStyle(ChatFormatting.AQUA))
+                        .append(Component.literal(":").withStyle(ChatFormatting.GOLD)),
                 false);
 
         for (RegionFlag f : RegionFlags.all()) {
@@ -373,10 +374,10 @@ public final class RegionManager {
             String state = (ov == null)
                     ? "inherit (default " + (f.defaultValue ? "allow" : "deny") + ")"
                     : (ov ? "allow" : "deny");
-            Formatting color = (ov == null) ? Formatting.GRAY : (ov ? Formatting.GREEN : Formatting.RED);
-            player.sendMessage(
-                    Text.literal("  " + f.id + ": ").formatted(Formatting.WHITE)
-                            .append(Text.literal(state).formatted(color)),
+            ChatFormatting color = (ov == null) ? ChatFormatting.GRAY : (ov ? ChatFormatting.GREEN : ChatFormatting.RED);
+            player.displayClientMessage(
+                    Component.literal("  " + f.id + ": ").withStyle(ChatFormatting.WHITE)
+                            .append(Component.literal(state).withStyle(color)),
                     false);
         }
     }
@@ -389,7 +390,7 @@ public final class RegionManager {
     }
 
     /** Smallest auto-generated STRUCTURE region containing pos, or null. */
-    public @Nullable Region smallestStructureContaining(Identifier dim, BlockPos pos) {
+    public @Nullable Region smallestStructureContaining(ResourceLocation dim, BlockPos pos) {
         for (Region r : allContaining(dim, pos)) {          // already innermost-first
             if (r.source == RegionSource.STRUCTURE) return r;
         }
@@ -400,21 +401,21 @@ public final class RegionManager {
      * Add an auto-generated structure region: updates memory + the spatial index immediately
      * (so the HUD reflects it right away) and marks the dimension dirty for a debounced save.
      */
-    public void addStructureRegion(Identifier dim, Region r) {
+    public void addStructureRegion(ResourceLocation dim, Region r) {
         listFor(dim).add(r);
         indexRegionIncremental(dim, r);
         dirtyDims.add(dim);
     }
 
     /** Mark a dimension dirty so its regions persist on the next flush (e.g. after an in-place rename). */
-    public void touchDim(Identifier dim) {
+    public void touchDim(ResourceLocation dim) {
         dirtyDims.add(dim);
     }
 
     /** Persist any dimensions touched by structure tagging since the last flush. */
     public void flushDirty() {
         if (dirtyDims.isEmpty()) return;
-        for (Identifier dim : dirtyDims) {
+        for (ResourceLocation dim : dirtyDims) {
             RegionStorage.save(server, dim, byDim.getOrDefault(dim, Collections.emptyList()));
         }
         dirtyDims.clear();
@@ -445,7 +446,7 @@ public final class RegionManager {
      * OPTIMIZED: Smallest-volume region containing pos in dim (nested → inner wins).
      * Uses spatial index for fast lookup - O(k) instead of O(n) where k = regions per chunk.
      */
-    public @Nullable Region smallestContaining(Identifier dim, BlockPos pos) {
+    public @Nullable Region smallestContaining(ResourceLocation dim, BlockPos pos) {
         long startTime = System.nanoTime();
         lookupCount++;
 
@@ -480,7 +481,7 @@ public final class RegionManager {
      * All regions containing pos in dim, sorted innermost first (smallest volume).
      * Uses the spatial index, so it only scans regions registered to pos's chunk.
      */
-    public List<Region> allContaining(Identifier dim, BlockPos pos) {
+    public List<Region> allContaining(ResourceLocation dim, BlockPos pos) {
         Map<ChunkPos, List<Region>> index = spatialIndex.get(dim);
         if (index == null) return Collections.emptyList();
         List<Region> candidates = index.get(new ChunkPos(pos));
@@ -499,7 +500,7 @@ public final class RegionManager {
      * the innermost region with an explicit override wins; if none override it, the flag's
      * registered default applies. This is what protection handlers should call.
      */
-    public boolean resolveFlag(Identifier dim, BlockPos pos, String flagId) {
+    public boolean resolveFlag(ResourceLocation dim, BlockPos pos, String flagId) {
         for (Region r : allContaining(dim, pos)) {
             Boolean v = r.getFlagOverride(flagId);
             if (v != null) return v;
@@ -513,36 +514,22 @@ public final class RegionManager {
      * region, falls back to the dimension's default name ("Wilderness", "The Nether",
      * "The End", or a prettified modded dimension name).
      */
-    public String currentRegionName(Identifier dim, BlockPos pos) {
+    public String currentRegionName(ResourceLocation dim, BlockPos pos) {
         Region r = smallestContaining(dim, pos);
         return (r != null) ? r.name : DimensionNames.wilderness(dim);
     }
 
     /** Push the active region name to the client HUD for this player. */
-    public void pushNameTo(ServerPlayerEntity player) {
-        var dim = player.getWorld().getRegistryKey().getValue();
-        var pos = player.getBlockPos();
+    public void pushNameTo(ServerPlayer player) {
+        var dim = player.level().dimension().location();
+        var pos = player.blockPosition();
         String name = currentRegionName(dim, pos);
         LTPackets.sendRegionUpdate(player, name);
     }
 
-    private static void grantFirstRegion(ServerPlayerEntity player) {
-        // Grant: locationtooltip:first_region
-        final net.minecraft.util.Identifier advId =
-                net.minecraft.util.Identifier.of("locationtooltip", "first_region");
-        var adv = player.server.getAdvancementLoader().get(advId);
-        if (adv == null) {
-            // If you ever see this in logs, your JSON path/namespace is wrong.
-            player.server.sendMessage(net.minecraft.text.Text.literal("[LocationTooltip] Missing advancement: " + advId));
-            return;
-        }
-        var tracker = player.getAdvancementTracker();
-        var progress = tracker.getProgress(adv);
-        if (!progress.isDone()) {
-            for (String crit : progress.getUnobtainedCriteria()) {
-                tracker.grantCriterion(adv, crit);
-            }
-        }
+    private static void grantFirstRegion(ServerPlayer player) {
+        com.fugginbeenus.locationtooltip.adv.AdvancementUtil.grant(
+                player, LTId.of("locationtooltip", "first_region"));
     }
 
     // ===== Performance Monitoring =====

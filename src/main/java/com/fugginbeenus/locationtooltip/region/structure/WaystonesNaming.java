@@ -1,11 +1,11 @@
 package com.fugginbeenus.locationtooltip.region.structure;
 
-import net.minecraft.registry.RegistryKey;
+import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.MinecraftServer;
-import net.minecraft.util.Identifier;
-import net.minecraft.util.math.BlockBox;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.world.World;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.level.levelgen.structure.BoundingBox;
+import net.minecraft.core.BlockPos;
+import net.minecraft.world.level.Level;
 
 import java.lang.reflect.Method;
 import java.util.ArrayList;
@@ -23,18 +23,18 @@ import java.util.stream.Stream;
  * (e.g. "Restful Hamlet") instead of the generic "Plains Village".
  *
  * <p>Handles both API generations: 1.20.1 (Waystones 14.x, {@code IWaystone}, name is a String)
- * and 1.21+ (Waystones 21.x, {@code Waystone}, name is a Text). {@code getAllWaystones} and
+ * and 1.21+ (Waystones 21.x, {@code Waystone}, name is a Component). {@code getAllWaystones} and
  * {@code getPos/getDimension/getWaystoneUid/hasName/wasGenerated} are identical across both.
  */
 public final class WaystonesNaming implements StructureNameProvider {
 
     /** A waystone's data, pulled out of the reflective API into something plain. */
-    public record WaystoneInfo(String uid, String name, Identifier dim, BlockPos pos, boolean generated) {}
+    public record WaystoneInfo(String uid, String name, ResourceLocation dim, BlockPos pos, boolean generated) {}
 
     private final Method getAllWaystones; // static WaystonesAPI.getAllWaystones(MinecraftServer)
-    private final Method getName;         // getName() -> String (1.20.1) or Text (1.21+)
-    private final Method getPos;          // IWaystone.getPos() -> BlockPos
-    private final Method getDimension;    // IWaystone.getDimension() -> RegistryKey<World>
+    private final Method getName;         // getName() -> String (1.20.1) or Component (1.21+)
+    private final Method getPos;          // IWaystone.getPosition() -> BlockPos
+    private final Method getDimension;    // IWaystone.getDimension() -> ResourceKey<Level>
     private final Method hasName;         // IWaystone.hasName() -> boolean
     private final Method wasGenerated;    // IWaystone.wasGenerated() -> boolean
     private final Method getWaystoneUid;  // IWaystone.getWaystoneUid() -> UUID
@@ -86,12 +86,12 @@ public final class WaystonesNaming implements StructureNameProvider {
                     String name = waystoneName(getName.invoke(w));
                     if (name == null || name.isBlank()) return;
 
-                    RegistryKey<World> wDim = (RegistryKey<World>) getDimension.invoke(w);
+                    ResourceKey<Level> wDim = (ResourceKey<Level>) getDimension.invoke(w);
                     BlockPos pos = (BlockPos) getPos.invoke(w);
                     Object uid = getWaystoneUid.invoke(w);
                     if (wDim == null || pos == null || uid == null) return;
 
-                    out.add(new WaystoneInfo(uid.toString(), name, wDim.getValue(), pos,
+                    out.add(new WaystoneInfo(uid.toString(), name, wDim.location(), pos,
                             (boolean) wasGenerated.invoke(w)));
                 } catch (Throwable ignored) {
                 }
@@ -108,7 +108,7 @@ public final class WaystonesNaming implements StructureNameProvider {
 
     @Override
     @SuppressWarnings("unchecked")
-    public Optional<String> nameFor(MinecraftServer server, Identifier dim, Identifier structureId, BlockBox box) {
+    public Optional<String> nameFor(MinecraftServer server, ResourceLocation dim, ResourceLocation structureId, BoundingBox box) {
         if (!ready) return Optional.empty();
         try {
             Stream<Object> all = (Stream<Object>) getAllWaystones.invoke(null, server);
@@ -118,8 +118,8 @@ public final class WaystonesNaming implements StructureNameProvider {
             all.forEach(w -> {
                 try {
                     if (!(boolean) hasName.invoke(w)) return;
-                    RegistryKey<World> wDim = (RegistryKey<World>) getDimension.invoke(w);
-                    if (wDim == null || !wDim.getValue().equals(dim)) return;
+                    ResourceKey<Level> wDim = (ResourceKey<Level>) getDimension.invoke(w);
+                    if (wDim == null || !wDim.location().equals(dim)) return;
                     BlockPos pos = (BlockPos) getPos.invoke(w);
                     if (pos == null || !inBox(box, pos)) return;
                     matches.add(w);
@@ -158,16 +158,16 @@ public final class WaystonesNaming implements StructureNameProvider {
         }
     }
 
-    /** getName() is a String on 1.20.1 and a Text on 1.21+. */
+    /** getName() is a String on 1.20.1 and a Component on 1.21+. */
     private static String waystoneName(Object result) {
         if (result instanceof String s) return s;
-        if (result instanceof net.minecraft.text.Text t) return t.getString();
+        if (result instanceof net.minecraft.network.chat.Component t) return t.getString();
         return null;
     }
 
-    private static boolean inBox(BlockBox b, BlockPos p) {
-        return p.getX() >= b.getMinX() && p.getX() <= b.getMaxX()
-                && p.getY() >= b.getMinY() && p.getY() <= b.getMaxY()
-                && p.getZ() >= b.getMinZ() && p.getZ() <= b.getMaxZ();
+    private static boolean inBox(BoundingBox b, BlockPos p) {
+        return p.getX() >= b.minX() && p.getX() <= b.maxX()
+                && p.getY() >= b.minY() && p.getY() <= b.maxY()
+                && p.getZ() >= b.minZ() && p.getZ() <= b.maxZ();
     }
 }

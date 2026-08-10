@@ -1,11 +1,11 @@
 package com.fugginbeenus.locationtooltip.client;
 
-import net.minecraft.client.font.TextRenderer;
-import net.minecraft.client.gui.DrawContext;
+import net.minecraft.client.gui.Font;
+import net.minecraft.client.gui.GuiGraphics;
 
 /**
  * Tiny shared UI toolkit for the mod's custom screens: a dark "high-end" theme + rounded-rect
- * drawing, hover testing, fields and buttons. Built on vanilla {@link DrawContext} (no GUI
+ * drawing, hover testing, fields and buttons. Built on vanilla {@link GuiGraphics} (no GUI
  * library dependency).
  */
 public final class LTGui {
@@ -36,7 +36,7 @@ public final class LTGui {
     }
 
     /** Solid rounded rectangle (anti-aliased-ish via per-row corner insets). */
-    public static void roundRect(DrawContext ctx, int x, int y, int w, int h, int r, int argb) {
+    public static void roundRect(GuiGraphics ctx, int x, int y, int w, int h, int r, int argb) {
         if (w <= 0 || h <= 0) return;
         r = Math.max(0, Math.min(r, Math.min(w, h) / 2));
         int x2 = x + w, y2 = y + h;
@@ -53,7 +53,7 @@ public final class LTGui {
     }
 
     /** 1px rounded border (edges only). */
-    public static void roundBorder(DrawContext ctx, int x, int y, int w, int h, int r, int argb) {
+    public static void roundBorder(GuiGraphics ctx, int x, int y, int w, int h, int r, int argb) {
         if (w <= 0 || h <= 0) return;
         ctx.fill(x + r, y, x + w - r, y + 1, argb);
         ctx.fill(x + r, y + h - 1, x + w - r, y + h, argb);
@@ -62,26 +62,26 @@ public final class LTGui {
     }
 
     /** Panel with body + subtle border. */
-    public static void panel(DrawContext ctx, int x, int y, int w, int h) {
+    public static void panel(GuiGraphics ctx, int x, int y, int w, int h) {
         roundRect(ctx, x, y, w, h, 6, PANEL);
         roundBorder(ctx, x, y, w, h, 6, BORDER);
     }
 
-    /** A field background (use with a TextFieldWidget that has drawsBackground=false). */
-    public static void field(DrawContext ctx, int x, int y, int w, int h, boolean focused) {
+    /** A field background (use with a EditBox that has drawsBackground=false). */
+    public static void field(GuiGraphics ctx, int x, int y, int w, int h, boolean focused) {
         roundRect(ctx, x, y, w, h, 4, FIELD);
         roundBorder(ctx, x, y, w, h, 4, focused ? ACCENT : BORDER);
     }
 
     /** Pill button; caller does the click via hovered(). */
-    public static void button(DrawContext ctx, TextRenderer tr, int x, int y, int w, int h,
+    public static void button(GuiGraphics ctx, Font tr, int x, int y, int w, int h,
                               String label, boolean hover, int base, int baseHover) {
         roundRect(ctx, x, y, w, h, 4, hover ? baseHover : base);
-        int tw = tr.getWidth(label);
-        ctx.drawText(tr, label, x + (w - tw) / 2, y + (h - 8) / 2, TEXT, false);
+        int tw = tr.width(label);
+        ctx.drawString(tr, label, x + (w - tw) / 2, y + (h - 8) / 2, TEXT, false);
     }
 
-    public static void button(DrawContext ctx, TextRenderer tr, int x, int y, int w, int h, String label, boolean hover) {
+    public static void button(GuiGraphics ctx, Font tr, int x, int y, int w, int h, String label, boolean hover) {
         button(ctx, tr, x, y, w, h, label, hover, BTN, BTN_HOVER);
     }
 }

@@ -4,9 +4,9 @@ import com.fugginbeenus.locationtooltip.region.Region;
 import com.fugginbeenus.locationtooltip.region.RegionManager;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.minecraft.server.MinecraftServer;
-import net.minecraft.server.network.ServerPlayerEntity;
-import net.minecraft.text.Text;
-import net.minecraft.util.Formatting;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.network.chat.Component;
+import net.minecraft.ChatFormatting;
 
 import java.util.List;
 
@@ -74,16 +74,16 @@ public final class WaystonesSync {
 
     /** Tell anyone standing in the region that it just got its name. */
     private static void announce(MinecraftServer server, Region r, String previous) {
-        Text msg = Text.literal("")
-                .append(Text.literal(previous).formatted(Formatting.GRAY))
-                .append(Text.literal(" is now known as ").formatted(Formatting.GRAY))
-                .append(Text.literal(r.name).formatted(Formatting.AQUA))
-                .append(Text.literal(" (named after its waystone)").formatted(Formatting.DARK_GRAY));
+        Component msg = Component.literal("")
+                .append(Component.literal(previous).withStyle(ChatFormatting.GRAY))
+                .append(Component.literal(" is now known as ").withStyle(ChatFormatting.GRAY))
+                .append(Component.literal(r.name).withStyle(ChatFormatting.AQUA))
+                .append(Component.literal(" (named after its waystone)").withStyle(ChatFormatting.DARK_GRAY));
 
-        for (ServerPlayerEntity p : server.getPlayerManager().getPlayerList()) {
-            if (!p.getWorld().getRegistryKey().getValue().equals(r.dim)) continue;
-            if (!r.contains(p.getBlockPos())) continue;
-            p.sendMessage(msg, false);
+        for (ServerPlayer p : server.getPlayerList().getPlayers()) {
+            if (!p.level().dimension().location().equals(r.dim)) continue;
+            if (!r.contains(p.blockPosition())) continue;
+            p.displayClientMessage(msg, false);
         }
     }
 }

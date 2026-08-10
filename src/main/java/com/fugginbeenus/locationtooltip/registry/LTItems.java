@@ -7,14 +7,15 @@ import net.fabricmc.fabric.api.itemgroup.v1.FabricItemGroup;
 // If you later want to also add to vanilla tabs for *your* version, you can
 // re-enable these imports and code, but keeping it version-agnostic for now.
 // import net.fabricmc.fabric.api.itemgroup.v1.ItemGroupEvents;
-// import net.minecraft.item.ItemGroups;
+import com.fugginbeenus.locationtooltip.util.LTId;
+import net.minecraft.world.item.CreativeModeTabs;
 
-import net.minecraft.item.Item;
-import net.minecraft.item.ItemStack;
-import net.minecraft.registry.Registries;
-import net.minecraft.registry.Registry;
-import net.minecraft.text.Text;
-import net.minecraft.util.Identifier;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.core.Registry;
+import net.minecraft.network.chat.Component;
+import net.minecraft.resources.ResourceLocation;
 
 public final class LTItems {
 
@@ -22,36 +23,36 @@ public final class LTItems {
 
     // 1) Items
     public static final Item REGION_WAND = Registry.register(
-            Registries.ITEM, Identifier.of(MODID, "region_wand"),
+            BuiltInRegistries.ITEM, LTId.of(MODID, "region_wand"),
             new RegionWandItem(settings())
     );
 
     public static final Item ADMIN_COMPASS = Registry.register(
-            Registries.ITEM, Identifier.of(MODID, "admin_compass"),
+            BuiltInRegistries.ITEM, LTId.of(MODID, "admin_compass"),
             new AdminCompassItem(settings())
     );
 
     // 2) Our own always-present creative tab (no version-specific constants)
     //    Shows both items so you can grab them even if vanilla tabs change.
     @SuppressWarnings("unused")
-    private static final net.minecraft.item.ItemGroup LT_GROUP = Registry.register(
-            Registries.ITEM_GROUP, Identifier.of(MODID, "main"),
+    private static final net.minecraft.world.item.CreativeModeTab LT_GROUP = Registry.register(
+            BuiltInRegistries.CREATIVE_MODE_TAB, LTId.of(MODID, "main"),
             FabricItemGroup.builder()
                     .icon(() -> new ItemStack(ADMIN_COMPASS))
-                    .displayName(Text.literal("Location Tooltip"))
-                    .entries((ctx, entries) -> {
-                        entries.add(ADMIN_COMPASS);
-                        entries.add(REGION_WAND);
+                    .title(Component.literal("Location Tooltip"))
+                    .displayItems((ctx, entries) -> {
+                        entries.accept(ADMIN_COMPASS);
+                        entries.accept(REGION_WAND);
                     })
                     .build()
     );
 
     private LTItems() {}
 
-    // Fabric folded its item settings into vanilla Item.Settings in 1.21; FabricItemSettings is gone.
-    private static Item.Settings settings() {
+    // Fabric folded its item settings into vanilla Item.Properties in 1.21; FabricItemSettings is gone.
+    private static Item.Properties settings() {
         //? if >=1.21 {
-        /*return new Item.Settings().maxCount(1);
+        /*return new Item.Properties().stacksTo(1);
         *///?} else {
         return new net.fabricmc.fabric.api.item.v1.FabricItemSettings().maxCount(1);
         //?}
@@ -62,9 +63,9 @@ public final class LTItems {
         // If you later want to also add items to vanilla tabs for a specific MC version,
         // put that version-locked code here so this class still compiles everywhere.
         // Example (uncomment & adjust for your version):
-        // ItemGroupEvents.modifyEntriesEvent(ItemGroups.TOOLS).register(entries -> {
-        //     entries.add(ADMIN_COMPASS);
-        //     entries.add(REGION_WAND);
+        // ItemGroupEvents.modifyEntriesEvent(CreativeModeTabs.TOOLS).register(entries -> {
+        //     entries.accept(ADMIN_COMPASS);
+        //     entries.accept(REGION_WAND);
         // });
     }
 }

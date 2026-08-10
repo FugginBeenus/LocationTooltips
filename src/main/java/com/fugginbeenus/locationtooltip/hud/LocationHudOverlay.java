@@ -2,11 +2,12 @@ package com.fugginbeenus.locationtooltip.hud;
 
 import com.fugginbeenus.locationtooltip.config.LTConfig;
 import net.fabricmc.fabric.api.client.rendering.v1.HudRenderCallback;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.gui.DrawContext;
-import net.minecraft.client.util.Window;
-import net.minecraft.text.Text;
-import net.minecraft.util.Identifier;
+import com.fugginbeenus.locationtooltip.util.LTId;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.GuiGraphics;
+import com.mojang.blaze3d.platform.Window;
+import net.minecraft.network.chat.Component;
+import net.minecraft.resources.ResourceLocation;
 
 /**
  * Vector-drawn HUD overlay with 1px "vanilla" rounded corners.
@@ -42,25 +43,25 @@ public class LocationHudOverlay implements HudRenderCallback {
     }
 
     // Icons
-    private static final Identifier ICON_REGION = Identifier.of("locationtooltip", "textures/gui/region.png");
-    private static final Identifier ICON_CLOCK  = Identifier.of("locationtooltip", "textures/gui/clock.png");
+    private static final ResourceLocation ICON_REGION = LTId.of("locationtooltip", "textures/gui/region.png");
+    private static final ResourceLocation ICON_CLOCK  = LTId.of("locationtooltip", "textures/gui/clock.png");
 
     @Override
     //? if >=1.21 {
-    /*public void onHudRender(DrawContext ctx, net.minecraft.client.render.RenderTickCounter tickCounter) {
+    /*public void onHudRender(GuiGraphics ctx, net.minecraft.client.DeltaTracker tickCounter) {
     *///?} else {
-    public void onHudRender(DrawContext ctx, float tickDelta) {
+    public void onHudRender(GuiGraphics ctx, float tickDelta) {
     //?}
         render(ctx, false);
     }
 
-    public static void renderPreview(DrawContext ctx) {
+    public static void renderPreview(GuiGraphics ctx) {
         render(ctx, true);
     }
 
-    private static void render(DrawContext ctx, boolean preview) {
-        MinecraftClient mc = MinecraftClient.getInstance();
-        if (mc == null || mc.player == null || (!preview && mc.options.hudHidden)) return;
+    private static void render(GuiGraphics ctx, boolean preview) {
+        Minecraft mc = Minecraft.getInstance();
+        if (mc == null || mc.player == null || (!preview && mc.options.hideGui)) return;
 
         LTConfig cfg = LTConfig.get();
 
@@ -69,7 +70,7 @@ public class LocationHudOverlay implements HudRenderCallback {
 
         // What to show?
         String region = cfg.showRegionName ? currentTitle : null;
-        String time   = (cfg.showClock && mc.world != null) ? formatTime(mc.world.getTimeOfDay(), cfg.time24h) : null;
+        String time   = (cfg.showClock && mc.level != null) ? formatTime(mc.level.getDayTime(), cfg.time24h) : null;
 
         final boolean hasRegion = region != null && !region.isEmpty();
         final boolean hasTime   = time   != null && !time.isEmpty();
@@ -79,12 +80,12 @@ public class LocationHudOverlay implements HudRenderCallback {
         final int icon  = Math.max(8, cfg.iconSize);
         final int pad   = Math.max(0, cfg.pillPadding);
         final float s   = Math.max(0.5f, cfg.textScale);
-        final int textH = (int) (mc.textRenderer.fontHeight * s);
+        final int textH = (int) (mc.font.lineHeight * s);
         final int contentH = Math.max(textH, icon);
         final int totalH   = Math.round((contentH + pad * 2) * Math.max(0.5f, cfg.pillHeightScale));
 
-        final int regionW = hasRegion ? (int) (mc.textRenderer.getWidth(region) * s) : 0;
-        final int timeW   = hasTime   ? (int) (mc.textRenderer.getWidth(time)   * s) : 0;
+        final int regionW = hasRegion ? (int) (mc.font.width(region) * s) : 0;
+        final int timeW   = hasTime   ? (int) (mc.font.width(time)   * s) : 0;
 
         final int alpha = (int) (Math.max(0f, Math.min(1f, cfg.backgroundOpacity)) * 255) & 0xFF;
         final int bg = (alpha << 24); // black with alpha
@@ -92,7 +93,7 @@ public class LocationHudOverlay implements HudRenderCallback {
         if (!cfg.splitElements) {
             // Single pill layout
             final String text = hasRegion && hasTime ? region + cfg.separator + time : (hasRegion ? region : time);
-            final int textW = (int) (mc.textRenderer.getWidth(text) * s);
+            final int textW = (int) (mc.font.width(text) * s);
             final int iconLeft  = hasRegion ? (icon + 4) : 0;
             final int iconRight = hasTime   ? (icon + 4) : 0;
             final int totalW = pad + iconLeft + textW + iconRight + pad + Math.max(0, cfg.pillExtraWidth);
@@ -108,20 +109,20 @@ public class LocationHudOverlay implements HudRenderCallback {
 
             if (hasRegion) {
                 // Icon (region) on left if region is present
-                ctx.drawTexture(ICON_REGION, cx, cy + ((contentH - icon) / 2), 0f, 0f, icon, icon, icon, icon);
+                ctx.blit(ICON_REGION, cx, cy + ((contentH - icon) / 2), 0f, 0f, icon, icon, icon, icon);
                 cx += icon + 4;
             }
 
-            // Text
-            ctx.getMatrices().push();
-            ctx.getMatrices().translate(cx, cy + (contentH - textH) / 2f, 0);
-            ctx.getMatrices().scale(s, s, 1);
-            ctx.drawText(mc.textRenderer, Text.literal(text), 0, 0, 0xFFFFFFFF, cfg.shadow);
-            ctx.getMatrices().pop();
+            // Component
+            ctx.pose().pushPose();
+            ctx.pose().translate(cx, cy + (contentH - textH) / 2f, 0);
+            ctx.pose().scale(s, s, 1);
+            ctx.drawString(mc.font, Component.literal(text), 0, 0, 0xFFFFFFFF, cfg.shadow);
+            ctx.pose().popPose();
             cx += textW + 4;
 
             if (hasTime) {
-                ctx.drawTexture(ICON_CLOCK, cx, cy + ((contentH - icon) / 2), 0f, 0f, icon, icon, icon, icon);
+                ctx.blit(ICON_CLOCK, cx, cy + ((contentH - icon) / 2), 0f, 0f, icon, icon, icon, icon);
             }
 
         } else {
@@ -144,14 +145,14 @@ public class LocationHudOverlay implements HudRenderCallback {
                 int cx = rx + pad;
                 int cy = ry + pad + cfg.verticalNudge;
 
-                ctx.drawTexture(ICON_REGION, cx, cy + ((contentH - icon) / 2), 0f, 0f, icon, icon, icon, icon);
+                ctx.blit(ICON_REGION, cx, cy + ((contentH - icon) / 2), 0f, 0f, icon, icon, icon, icon);
                 cx += icon + 4;
 
-                ctx.getMatrices().push();
-                ctx.getMatrices().translate(cx, cy + (contentH - textH) / 2f, 0);
-                ctx.getMatrices().scale(s, s, 1);
-                ctx.drawText(mc.textRenderer, Text.literal(region), 0, 0, 0xFFFFFFFF, cfg.shadow);
-                ctx.getMatrices().pop();
+                ctx.pose().pushPose();
+                ctx.pose().translate(cx, cy + (contentH - textH) / 2f, 0);
+                ctx.pose().scale(s, s, 1);
+                ctx.drawString(mc.font, Component.literal(region), 0, 0, 0xFFFFFFFF, cfg.shadow);
+                ctx.pose().popPose();
             }
 
             // Time pill
@@ -160,14 +161,14 @@ public class LocationHudOverlay implements HudRenderCallback {
                 int cx = tx + pad;
                 int cy = ty + pad + cfg.verticalNudge;
 
-                ctx.drawTexture(ICON_CLOCK, cx, cy + ((contentH - icon) / 2), 0f, 0f, icon, icon, icon, icon);
+                ctx.blit(ICON_CLOCK, cx, cy + ((contentH - icon) / 2), 0f, 0f, icon, icon, icon, icon);
                 cx += icon + 4;
 
-                ctx.getMatrices().push();
-                ctx.getMatrices().translate(cx, cy + (contentH - textH) / 2f, 0);
-                ctx.getMatrices().scale(s, s, 1);
-                ctx.drawText(mc.textRenderer, Text.literal(time), 0, 0, 0xFFFFFFFF, cfg.shadow);
-                ctx.getMatrices().pop();
+                ctx.pose().pushPose();
+                ctx.pose().translate(cx, cy + (contentH - textH) / 2f, 0);
+                ctx.pose().scale(s, s, 1);
+                ctx.drawString(mc.font, Component.literal(time), 0, 0, 0xFFFFFFFF, cfg.shadow);
+                ctx.pose().popPose();
             }
         }
     }
@@ -175,10 +176,10 @@ public class LocationHudOverlay implements HudRenderCallback {
     /* ------------------------------- helpers ------------------------------- */
 
     /** True while any boss bar is on screen (vanilla draws them at the top-centre). */
-    private static boolean bossBarVisible(MinecraftClient mc) {
+    private static boolean bossBarVisible(Minecraft mc) {
         try {
-            if (mc.inGameHud == null) return false;
-            var bossBarHud = mc.inGameHud.getBossBarHud();
+            if (mc.gui == null) return false;
+            var bossBarHud = mc.gui.getBossOverlay();
             if (bossBarHud == null) return false;
             return !((com.fugginbeenus.locationtooltip.mixin.BossBarHudAccessor) (Object) bossBarHud)
                     .getBossBars().isEmpty();
@@ -188,7 +189,7 @@ public class LocationHudOverlay implements HudRenderCallback {
     }
 
     private static int[] anchor(LTConfig.Position pos, Window win, int w, int h, int dx, int dy) {
-        int sw = win.getScaledWidth(), sh = win.getScaledHeight();
+        int sw = win.getGuiScaledWidth(), sh = win.getGuiScaledHeight();
         int x = switch (pos) {
             case TOP_LEFT      -> 0 + dx;
             case TOP_CENTER    -> (sw - w) / 2 + dx;
@@ -215,7 +216,7 @@ public class LocationHudOverlay implements HudRenderCallback {
     }
 
     /** Draw a pill: optional border frame, then the background, honouring the corner style. */
-    private static void drawPill(DrawContext ctx, LTConfig cfg, int x, int y, int w, int h, int bg) {
+    private static void drawPill(GuiGraphics ctx, LTConfig cfg, int x, int y, int w, int h, int bg) {
         int bw = Math.max(0, cfg.borderWidth);
         if (bw > 0) {
             int a = (bg >>> 24) & 0xFF;
@@ -226,7 +227,7 @@ public class LocationHudOverlay implements HudRenderCallback {
         fillRound(ctx, x, y, w, h, effectiveRadius(cfg, w, h), bg);
     }
 
-    private static void fillRound1px(DrawContext ctx, int x, int y, int w, int h, int argb) {
+    private static void fillRound1px(GuiGraphics ctx, int x, int y, int w, int h, int argb) {
         if (w <= 2 || h <= 2) { // too small to round
             ctx.fill(x, y, x + w, y + h, argb);
             return;
@@ -240,7 +241,7 @@ public class LocationHudOverlay implements HudRenderCallback {
     }
 
     /** Vector rounded rect; when r==1 uses the crisp 1px-corner helper. */
-    private static void fillRound(DrawContext ctx, int x, int y, int w, int h, int r, int argb) {
+    private static void fillRound(GuiGraphics ctx, int x, int y, int w, int h, int r, int argb) {
         r = (r <= 1) ? 1 : Math.min(r, Math.min(w, h) / 2); // 1px vanilla if ≤ 1
         if (r == 1) { fillRound1px(ctx, x, y, w, h, argb); return; }
 

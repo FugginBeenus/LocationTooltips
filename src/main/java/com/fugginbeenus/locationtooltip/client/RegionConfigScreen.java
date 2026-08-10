@@ -1,10 +1,10 @@
 package com.fugginbeenus.locationtooltip.client;
 
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.gui.DrawContext;
-import net.minecraft.client.gui.screen.Screen;
-import net.minecraft.client.gui.widget.TextFieldWidget;
-import net.minecraft.text.Text;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.client.gui.components.EditBox;
+import net.minecraft.network.chat.Component;
 import org.lwjgl.glfw.GLFW;
 
 import java.util.Map;
@@ -18,14 +18,14 @@ public abstract class RegionConfigScreen extends Screen {
     protected static final int PAD = 14;
 
     protected FlagEditor flags;
-    protected TextFieldWidget field;
+    protected EditBox field;
 
     private int panelX, panelY, panelW, panelH, innerW, colW;
     private int nameY, labelY, gridTop, gridViewH, btnY;
     private int gridContentH, gridScroll;
 
     protected RegionConfigScreen(String title) {
-        super(Text.literal(title));
+        super(Component.literal(title));
     }
 
     protected abstract String headerTitle();
@@ -60,12 +60,12 @@ public abstract class RegionConfigScreen extends Screen {
         btnY = gridTop + gridViewH + gapGrid;
         gridScroll = Math.min(gridScroll, maxScroll());
 
-        String existing = (field != null) ? field.getText() : initialName();
-        field = new TextFieldWidget(this.textRenderer, panelX + PAD + 4, nameY + 5, innerW - 8, 12, Text.literal("Name"));
+        String existing = (field != null) ? field.getValue() : initialName();
+        field = new EditBox(this.font, panelX + PAD + 4, nameY + 5, innerW - 8, 12, Component.literal("Name"));
         field.setMaxLength(48);
-        field.setDrawsBackground(false);
-        field.setText(existing);
-        addDrawableChild(field);
+        field.setBordered(false);
+        field.setValue(existing);
+        addRenderableWidget(field);
         setInitialFocus(field);
     }
 
@@ -74,7 +74,7 @@ public abstract class RegionConfigScreen extends Screen {
     }
 
     private void confirm() {
-        String name = field.getText().trim();
+        String name = field.getValue().trim();
         if (name.isEmpty()) return;
         onConfirm(name, flags.overrides());
     }
@@ -104,7 +104,7 @@ public abstract class RegionConfigScreen extends Screen {
     public boolean mouseClicked(double mx, double my, int button) {
         if (button == 0) {
             if (LTGui.hovered(mx, my, panelX + PAD, btnY, colW, 20)) { confirm(); return true; }
-            if (LTGui.hovered(mx, my, panelX + PAD + colW + 4, btnY, colW, 20)) { close(); return true; }
+            if (LTGui.hovered(mx, my, panelX + PAD + colW + 4, btnY, colW, 20)) { onClose(); return true; }
             if (LTGui.hovered(mx, my, panelX + PAD, gridTop, innerW, gridViewH)) {
                 flags.layout(panelX + PAD, gridTop - gridScroll, colW, 18, 4);
                 if (flags.mouseClicked(mx, my)) return true;
@@ -128,30 +128,30 @@ public abstract class RegionConfigScreen extends Screen {
     // Skip 1.21's default screen blur; render() draws our own dim.
     //? if >=1.21 {
     /*@Override
-    public void renderBackground(DrawContext context, int mouseX, int mouseY, float delta) {
+    public void renderBackground(GuiGraphics context, int mouseX, int mouseY, float delta) {
     }
     *///?}
 
     @Override
-    public void render(DrawContext ctx, int mouseX, int mouseY, float delta) {
+    public void render(GuiGraphics ctx, int mouseX, int mouseY, float delta) {
         ctx.fill(0, 0, this.width, this.height, LTGui.DIM);
         LTGui.panel(ctx, panelX, panelY, panelW, panelH);
 
-        ctx.drawText(this.textRenderer, Text.literal(headerTitle()), panelX + PAD, panelY + 10, LTGui.TEXT, false);
+        ctx.drawString(this.font, Component.literal(headerTitle()), panelX + PAD, panelY + 10, LTGui.TEXT, false);
         ctx.fill(panelX + PAD, panelY + 24, panelX + panelW - PAD, panelY + 25, LTGui.ACCENT);
 
         LTGui.field(ctx, panelX + PAD, nameY, innerW, 18, field != null && field.isFocused());
-        if (field != null && field.getText().isEmpty()) {
-            ctx.drawText(this.textRenderer, Text.literal("Region name…"), panelX + PAD + 5, nameY + 5, LTGui.FAINT, false);
+        if (field != null && field.getValue().isEmpty()) {
+            ctx.drawString(this.font, Component.literal("Region name…"), panelX + PAD + 5, nameY + 5, LTGui.FAINT, false);
         }
 
-        ctx.drawText(this.textRenderer, Text.literal("Protection — click to cycle Inherit / Allow / Deny"),
+        ctx.drawString(this.font, Component.literal("Protection — click to cycle Inherit / Allow / Deny"),
                 panelX + PAD, labelY, LTGui.SUBTEXT, false);
 
         // flag grid (scrolled + clipped)
         ctx.enableScissor(panelX + PAD, gridTop, panelX + panelW - PAD, gridTop + gridViewH);
         flags.layout(panelX + PAD, gridTop - gridScroll, colW, 18, 4);
-        flags.render(ctx, this.textRenderer, mouseX, mouseY);
+        flags.render(ctx, this.font, mouseX, mouseY);
         ctx.disableScissor();
 
         if (maxScroll() > 0) {
@@ -162,9 +162,9 @@ public abstract class RegionConfigScreen extends Screen {
             LTGui.roundRect(ctx, tx, thumbY, 3, thumbH, 1, LTGui.ACCENT_DIM);
         }
 
-        LTGui.button(ctx, this.textRenderer, panelX + PAD, btnY, colW, 20, confirmLabel(),
+        LTGui.button(ctx, this.font, panelX + PAD, btnY, colW, 20, confirmLabel(),
                 LTGui.hovered(mouseX, mouseY, panelX + PAD, btnY, colW, 20), LTGui.OK, LTGui.OK_HOVER);
-        LTGui.button(ctx, this.textRenderer, panelX + PAD + colW + 4, btnY, colW, 20, "Cancel",
+        LTGui.button(ctx, this.font, panelX + PAD + colW + 4, btnY, colW, 20, "Cancel",
                 LTGui.hovered(mouseX, mouseY, panelX + PAD + colW + 4, btnY, colW, 20));
 
         super.render(ctx, mouseX, mouseY, delta);

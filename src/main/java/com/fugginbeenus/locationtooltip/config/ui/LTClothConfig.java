@@ -2,8 +2,8 @@ package com.fugginbeenus.locationtooltip.config.ui;
 
 import com.fugginbeenus.locationtooltip.config.LTConfig;
 import me.shedaniel.clothconfig2.api.ConfigBuilder;
-import net.minecraft.client.gui.screen.Screen;
-import net.minecraft.text.Text;
+import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.network.chat.Component;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -23,7 +23,7 @@ public final class LTClothConfig {
 
         final var builder = ConfigBuilder.create()
                 .setParentScreen(parent)
-                .setTitle(Text.literal("Location Tooltip (Advanced)"))
+                .setTitle(Component.literal("Location Tooltip (Advanced)"))
                 .setTransparentBackground(true);
 
         builder.setSavingRunnable(cfg::save);
@@ -31,33 +31,33 @@ public final class LTClothConfig {
 
         // ---- General ----
         {
-            var cat = builder.getOrCreateCategory(Text.literal("General"));
+            var cat = builder.getOrCreateCategory(Component.literal("General"));
 
-            var eShowRegion = eb.startBooleanToggle(Text.literal("Show Region Name"), cfg.showRegionName)
+            var eShowRegion = eb.startBooleanToggle(Component.literal("Show Region Name"), cfg.showRegionName)
                     .setSaveConsumer(v -> { cfg.showRegionName = v; cfg.save(); })
                     .build();
             cat.addEntry(eShowRegion);
             tracked.add(new ConfigLiveBridge.Tracked<>(eShowRegion, v -> cfg.showRegionName = v));
 
-            var eShowClock = eb.startBooleanToggle(Text.literal("Show Clock"), cfg.showClock)
+            var eShowClock = eb.startBooleanToggle(Component.literal("Show Clock"), cfg.showClock)
                     .setSaveConsumer(v -> { cfg.showClock = v; cfg.save(); })
                     .build();
             cat.addEntry(eShowClock);
             tracked.add(new ConfigLiveBridge.Tracked<>(eShowClock, v -> cfg.showClock = v));
 
-            var e24h = eb.startBooleanToggle(Text.literal("24h Time"), cfg.time24h)
+            var e24h = eb.startBooleanToggle(Component.literal("24h Time"), cfg.time24h)
                     .setSaveConsumer(v -> { cfg.time24h = v; cfg.save(); })
                     .build();
             cat.addEntry(e24h);
             tracked.add(new ConfigLiveBridge.Tracked<>(e24h, v -> cfg.time24h = v));
 
-            var eSep = eb.startStrField(Text.literal("Single Pill Separator"), cfg.separator)
+            var eSep = eb.startStrField(Component.literal("Single Pill Separator"), cfg.separator)
                     .setSaveConsumer(v -> { cfg.separator = (v == null || v.isEmpty()) ? " • " : v; cfg.save(); })
                     .build();
             cat.addEntry(eSep);
             tracked.add(new ConfigLiveBridge.Tracked<>(eSep, v -> cfg.separator = (v == null || v.isEmpty()) ? " • " : v));
 
-            var eSplit = eb.startBooleanToggle(Text.literal("Split Elements (Two Pills)"), cfg.splitElements)
+            var eSplit = eb.startBooleanToggle(Component.literal("Split Elements (Two Pills)"), cfg.splitElements)
                     .setSaveConsumer(v -> { cfg.splitElements = v; cfg.save(); })
                     .build();
             cat.addEntry(eSplit);
@@ -66,82 +66,82 @@ public final class LTClothConfig {
 
         // ---- Appearance ----
         {
-            var cat = builder.getOrCreateCategory(Text.literal("Appearance"));
+            var cat = builder.getOrCreateCategory(Component.literal("Appearance"));
 
-            var eOpacity = eb.startIntSlider(Text.literal("Background Opacity"), toPct(cfg.backgroundOpacity), 0, 100)
-                    .setTooltip(Text.literal("Opacity of pill background (0–100%)"))
-                    .setTextGetter(pct -> Text.literal(toPctLabel(pct)))
+            var eOpacity = eb.startIntSlider(Component.literal("Background Opacity"), toPct(cfg.backgroundOpacity), 0, 100)
+                    .setTooltip(Component.literal("Opacity of pill background (0–100%)"))
+                    .setTextGetter(pct -> Component.literal(toPctLabel(pct)))
                     .setSaveConsumer(pct -> { cfg.backgroundOpacity = clampF(fromPct(pct), 0f, 1f); cfg.save(); })
                     .build();
             cat.addEntry(eOpacity);
             tracked.add(new ConfigLiveBridge.Tracked<>(eOpacity, pct -> cfg.backgroundOpacity = clampF(fromPct(pct), 0f, 1f)));
 
-            var eIcon = eb.startIntSlider(Text.literal("Icon Size (px)"), cfg.iconSize, 8, 64)
+            var eIcon = eb.startIntSlider(Component.literal("Icon Size (px)"), cfg.iconSize, 8, 64)
                     .setSaveConsumer(v -> { cfg.iconSize = clamp(v, 8, 64); cfg.save(); })
                     .build();
             cat.addEntry(eIcon);
             tracked.add(new ConfigLiveBridge.Tracked<>(eIcon, v -> cfg.iconSize = clamp(v, 8, 64)));
 
-            var ePad = eb.startIntSlider(Text.literal("Pill Padding (px)"), cfg.pillPadding, 0, 24)
+            var ePad = eb.startIntSlider(Component.literal("Pill Padding (px)"), cfg.pillPadding, 0, 24)
                     .setSaveConsumer(v -> { cfg.pillPadding = clamp(v, 0, 24); cfg.save(); })
                     .build();
             cat.addEntry(ePad);
             tracked.add(new ConfigLiveBridge.Tracked<>(ePad, v -> cfg.pillPadding = clamp(v, 0, 24)));
 
-            var eTextScale = eb.startIntSlider(Text.literal("Text Scale"),
+            var eTextScale = eb.startIntSlider(Component.literal("Text Scale"),
                             toSteps(cfg.textScale, 0.50f, 3.00f, 0.05f), 0, stepsRange(0.50f, 3.00f, 0.05f))
-                    .setTextGetter(s -> Text.literal(String.format("%.2f×", fromSteps(s, 0.50f, 0.05f))))
+                    .setTextGetter(s -> Component.literal(String.format("%.2f×", fromSteps(s, 0.50f, 0.05f))))
                     .setSaveConsumer(s -> { cfg.textScale = clampF(fromSteps(s, 0.50f, 0.05f), 0.50f, 3.00f); cfg.save(); })
                     .build();
             cat.addEntry(eTextScale);
             tracked.add(new ConfigLiveBridge.Tracked<>(eTextScale, s -> cfg.textScale = clampF(fromSteps(s, 0.50f, 0.05f), 0.50f, 3.00f)));
 
-            var eHeightScale = eb.startIntSlider(Text.literal("Pill Height Scale"),
+            var eHeightScale = eb.startIntSlider(Component.literal("Pill Height Scale"),
                             toSteps(cfg.pillHeightScale, 0.50f, 2.50f, 0.05f), 0, stepsRange(0.50f, 2.50f, 0.05f))
-                    .setTextGetter(s -> Text.literal(String.format("%.2f×", fromSteps(s, 0.50f, 0.05f))))
+                    .setTextGetter(s -> Component.literal(String.format("%.2f×", fromSteps(s, 0.50f, 0.05f))))
                     .setSaveConsumer(s -> { cfg.pillHeightScale = clampF(fromSteps(s, 0.50f, 0.05f), 0.50f, 2.50f); cfg.save(); })
                     .build();
             cat.addEntry(eHeightScale);
             tracked.add(new ConfigLiveBridge.Tracked<>(eHeightScale, s -> cfg.pillHeightScale = clampF(fromSteps(s, 0.50f, 0.05f), 0.50f, 2.50f)));
 
-            var eCornerR = eb.startIntSlider(Text.literal("Corner Radius (px)"), cfg.cornerRadius, 0, 32)
+            var eCornerR = eb.startIntSlider(Component.literal("Corner Radius (px)"), cfg.cornerRadius, 0, 32)
                     .setSaveConsumer(v -> { cfg.cornerRadius = clamp(v, 0, 32); cfg.save(); })
                     .build();
             cat.addEntry(eCornerR);
             tracked.add(new ConfigLiveBridge.Tracked<>(eCornerR, v -> cfg.cornerRadius = clamp(v, 0, 32)));
 
-            var eSpacing = eb.startIntSlider(Text.literal("Spacing Between Pills (px)"), cfg.spacing, 0, 48)
+            var eSpacing = eb.startIntSlider(Component.literal("Spacing Between Pills (px)"), cfg.spacing, 0, 48)
                     .setSaveConsumer(v -> { cfg.spacing = clamp(v, 0, 48); cfg.save(); })
                     .build();
             cat.addEntry(eSpacing);
             tracked.add(new ConfigLiveBridge.Tracked<>(eSpacing, v -> cfg.spacing = clamp(v, 0, 48)));
 
-            var eExtra = eb.startIntSlider(Text.literal("Extra Width (single pill only)"), cfg.pillExtraWidth, 0, 64)
+            var eExtra = eb.startIntSlider(Component.literal("Extra Width (single pill only)"), cfg.pillExtraWidth, 0, 64)
                     .setSaveConsumer(v -> { cfg.pillExtraWidth = clamp(v, 0, 64); cfg.save(); })
                     .build();
             cat.addEntry(eExtra);
             tracked.add(new ConfigLiveBridge.Tracked<>(eExtra, v -> cfg.pillExtraWidth = clamp(v, 0, 64)));
 
-            var eShadow = eb.startBooleanToggle(Text.literal("Text Shadow"), cfg.shadow)
+            var eShadow = eb.startBooleanToggle(Component.literal("Text Shadow"), cfg.shadow)
                     .setSaveConsumer(v -> { cfg.shadow = v; cfg.save(); })
                     .build();
             cat.addEntry(eShadow);
             tracked.add(new ConfigLiveBridge.Tracked<>(eShadow, v -> cfg.shadow = v));
 
-            var eNudge = eb.startIntSlider(Text.literal("Vertical Text Nudge (px)"), cfg.verticalNudge, -16, 16)
+            var eNudge = eb.startIntSlider(Component.literal("Vertical Text Nudge (px)"), cfg.verticalNudge, -16, 16)
                     .setSaveConsumer(v -> { cfg.verticalNudge = clamp(v, -16, 16); cfg.save(); })
                     .build();
             cat.addEntry(eNudge);
             tracked.add(new ConfigLiveBridge.Tracked<>(eNudge, v -> cfg.verticalNudge = clamp(v, -16, 16)));
 
-            var eStyle = eb.startEnumSelector(Text.literal("Corner Style"), LTConfig.CornerStyle.class, cfg.cornerStyle)
-                    .setTooltip(Text.literal("ROUND = corner radius below; PILL = fully rounded ends; SQUIRCLE = soft square"))
+            var eStyle = eb.startEnumSelector(Component.literal("Corner Style"), LTConfig.CornerStyle.class, cfg.cornerStyle)
+                    .setTooltip(Component.literal("ROUND = corner radius below; PILL = fully rounded ends; SQUIRCLE = soft square"))
                     .setSaveConsumer(v -> { cfg.cornerStyle = v; cfg.save(); })
                     .build();
             cat.addEntry(eStyle);
             tracked.add(new ConfigLiveBridge.Tracked<>(eStyle, v -> cfg.cornerStyle = v));
 
-            var eBorder = eb.startIntSlider(Text.literal("Border Width (px)"), cfg.borderWidth, 0, 6)
+            var eBorder = eb.startIntSlider(Component.literal("Border Width (px)"), cfg.borderWidth, 0, 6)
                     .setSaveConsumer(v -> { cfg.borderWidth = clamp(v, 0, 6); cfg.save(); })
                     .build();
             cat.addEntry(eBorder);
@@ -150,21 +150,21 @@ public final class LTClothConfig {
 
         // ---- Position ----
         {
-            var cat = builder.getOrCreateCategory(Text.literal("Position"));
+            var cat = builder.getOrCreateCategory(Component.literal("Position"));
 
-            var ePos = eb.startEnumSelector(Text.literal("Anchor Position"), LTConfig.Position.class, cfg.position)
+            var ePos = eb.startEnumSelector(Component.literal("Anchor Position"), LTConfig.Position.class, cfg.position)
                     .setSaveConsumer(v -> { cfg.position = v; cfg.save(); })
                     .build();
             cat.addEntry(ePos);
             tracked.add(new ConfigLiveBridge.Tracked<>(ePos, v -> cfg.position = v));
 
-            var eX = eb.startIntField(Text.literal("X Offset (px)"), cfg.xOffset)
+            var eX = eb.startIntField(Component.literal("X Offset (px)"), cfg.xOffset)
                     .setSaveConsumer(v -> { cfg.xOffset = v; cfg.save(); })
                     .build();
             cat.addEntry(eX);
             tracked.add(new ConfigLiveBridge.Tracked<>(eX, v -> cfg.xOffset = v));
 
-            var eY = eb.startIntField(Text.literal("Y Offset (px)"), cfg.yOffset)
+            var eY = eb.startIntField(Component.literal("Y Offset (px)"), cfg.yOffset)
                     .setSaveConsumer(v -> { cfg.yOffset = v; cfg.save(); })
                     .build();
             cat.addEntry(eY);

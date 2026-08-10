@@ -3,8 +3,8 @@ package com.fugginbeenus.locationtooltip.region;
 import com.fugginbeenus.locationtooltip.net.LTPackets;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.minecraft.server.MinecraftServer;
-import net.minecraft.server.network.ServerPlayerEntity;
-import net.minecraft.util.math.BlockPos;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.core.BlockPos;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -23,36 +23,36 @@ public final class SelectionManager {
 
     private SelectionManager() {}
 
-    public static void setFirst(ServerPlayerEntity p, BlockPos a)  {
-        CURRENT.computeIfAbsent(p.getUuid(), id -> new Selection(a)).a = a;
+    public static void setFirst(ServerPlayer p, BlockPos a)  {
+        CURRENT.computeIfAbsent(p.getUUID(), id -> new Selection(a)).a = a;
     }
 
-    public static void setSecond(ServerPlayerEntity p, BlockPos b) {
-        CURRENT.computeIfAbsent(p.getUuid(), id -> new Selection(null)).b = b;
+    public static void setSecond(ServerPlayer p, BlockPos b) {
+        CURRENT.computeIfAbsent(p.getUUID(), id -> new Selection(null)).b = b;
     }
 
-    public static BlockPos getFirst(ServerPlayerEntity p) {
-        var s = CURRENT.get(p.getUuid());
+    public static BlockPos getFirst(ServerPlayer p) {
+        var s = CURRENT.get(p.getUUID());
         return s == null ? null : s.a;
     }
 
-    public static BlockPos getSecond(ServerPlayerEntity p) {
-        var s = CURRENT.get(p.getUuid());
+    public static BlockPos getSecond(ServerPlayer p) {
+        var s = CURRENT.get(p.getUUID());
         return s == null ? null : s.b;
     }
 
-    public static boolean hasBoth(ServerPlayerEntity p) {
-        var s = CURRENT.get(p.getUuid());
+    public static boolean hasBoth(ServerPlayer p) {
+        var s = CURRENT.get(p.getUUID());
         return s != null && s.ready();
     }
 
-    public static void clear(ServerPlayerEntity p) {
-        CURRENT.remove(p.getUuid());
+    public static void clear(ServerPlayer p) {
+        CURRENT.remove(p.getUUID());
         LTPackets.sendSelectionClear(p);
     }
 
-    public static void openNamingScreen(ServerPlayerEntity p) {
-        var s = CURRENT.get(p.getUuid());
+    public static void openNamingScreen(ServerPlayer p) {
+        var s = CURRENT.get(p.getUUID());
         if (s == null || !s.ready()) return;
         LTPackets.openName(p, s.a, s.b);
     }
@@ -65,7 +65,7 @@ public final class SelectionManager {
         if (CURRENT.isEmpty()) return;
 
         for (var entry : CURRENT.entrySet()) {
-            ServerPlayerEntity player = server.getPlayerManager().getPlayer(entry.getKey());
+            ServerPlayer player = server.getPlayerList().getPlayer(entry.getKey());
             if (player == null) continue;
             var sel = entry.getValue();
             if (!sel.ready()) continue;

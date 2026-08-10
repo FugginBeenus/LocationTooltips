@@ -2,8 +2,8 @@ package com.fugginbeenus.locationtooltip.region;
 
 import com.fugginbeenus.locationtooltip.region.flag.RegionFlag;
 import com.fugginbeenus.locationtooltip.region.flag.RegionFlags;
-import net.minecraft.util.Identifier;
-import net.minecraft.util.math.BlockPos;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.core.BlockPos;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -18,7 +18,7 @@ import java.util.UUID;
 public final class Region {
     public final String id;          // stable unique id (string form)
     public String name;              // editable display name
-    public final Identifier dim;     // dimension id
+    public final ResourceLocation dim;     // dimension id
     public final BlockPos min;       // normalized min corner (<=)
     public final BlockPos max;       // normalized max corner (>=)
 
@@ -45,17 +45,17 @@ public final class Region {
     public UUID owner;  // Player UUID who created this region (null = admin-created)
 
     /** Create a new region with a fresh id, auto-normalizing a/b into min/max. */
-    public Region(String name, Identifier dim, BlockPos a, BlockPos b) {
+    public Region(String name, ResourceLocation dim, BlockPos a, BlockPos b) {
         this(UUID.randomUUID().toString(), name, dim, a, b);
     }
 
     /** Create a region with explicit id, auto-normalizing a/b into min/max. */
-    public Region(String id, String name, Identifier dim, BlockPos a, BlockPos b) {
+    public Region(String id, String name, ResourceLocation dim, BlockPos a, BlockPos b) {
         this(id, name, dim, a, b, null);  // null owner by default
     }
 
     /** Create a region with explicit id and owner, auto-normalizing a/b into min/max. */
-    public Region(String id, String name, Identifier dim, BlockPos a, BlockPos b, UUID owner) {
+    public Region(String id, String name, ResourceLocation dim, BlockPos a, BlockPos b, UUID owner) {
         Objects.requireNonNull(id, "id");
         Objects.requireNonNull(name, "name");
         Objects.requireNonNull(dim, "dim");

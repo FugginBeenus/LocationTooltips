@@ -29,7 +29,7 @@ public final class LocationTooltip implements ModInitializer {
 
         // OPTIMIZATION: Register cleanup events to prevent memory leaks
         ServerPlayConnectionEvents.DISCONNECT.register((handler, server) -> {
-            RegionTicker.onPlayerDisconnect(handler.player.getUuid());
+            RegionTicker.onPlayerDisconnect(handler.player.getUUID());
         });
 
         ServerLifecycleEvents.SERVER_STOPPING.register(server -> {

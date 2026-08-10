@@ -3,8 +3,8 @@ package com.fugginbeenus.locationtooltip.net.client;
 import com.fugginbeenus.locationtooltip.net.LTPayloads;
 import io.netty.buffer.Unpooled;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.network.PacketByteBuf;
+import net.minecraft.client.Minecraft;
+import net.minecraft.network.FriendlyByteBuf;
 
 /** Client-side networking transport — the client counterpart to {@link com.fugginbeenus.locationtooltip.net.LTNet}. */
 public final class LTNetClient {
@@ -12,12 +12,12 @@ public final class LTNetClient {
 
     @FunctionalInterface
     public interface ClientReceiver<T> {
-        void receive(MinecraftClient client, T payload);
+        void receive(Minecraft client, T payload);
     }
 
     //? if >=1.21 {
-    /*private static final java.util.Map<net.minecraft.util.Identifier, LTPayloads.Def<?>> DEFS = new java.util.HashMap<>();
-    private static final java.util.Map<net.minecraft.util.Identifier, ClientReceiver<?>> HANDLERS = new java.util.HashMap<>();
+    /*private static final java.util.Map<net.minecraft.resources.ResourceLocation, LTPayloads.Def<?>> DEFS = new java.util.HashMap<>();
+    private static final java.util.Map<net.minecraft.resources.ResourceLocation, ClientReceiver<?>> HANDLERS = new java.util.HashMap<>();
 
     public static void init() {
         ClientPlayNetworking.registerGlobalReceiver(com.fugginbeenus.locationtooltip.net.LTNet.LTCarrier.ID,
@@ -30,16 +30,16 @@ public final class LTNetClient {
     }
 
     @SuppressWarnings("unchecked")
-    private static void dispatch(MinecraftClient client, com.fugginbeenus.locationtooltip.net.LTNet.LTCarrier carrier) {
+    private static void dispatch(Minecraft client, com.fugginbeenus.locationtooltip.net.LTNet.LTCarrier carrier) {
         LTPayloads.Def<Object> def = (LTPayloads.Def<Object>) DEFS.get(carrier.channel());
         ClientReceiver<Object> handler = (ClientReceiver<Object>) HANDLERS.get(carrier.channel());
         if (def == null || handler == null) return;
-        Object value = def.reader().apply(new PacketByteBuf(Unpooled.wrappedBuffer(carrier.data())));
+        Object value = def.reader().apply(new FriendlyByteBuf(Unpooled.wrappedBuffer(carrier.data())));
         client.execute(() -> handler.receive(client, value));
     }
 
     public static <T> void send(LTPayloads.Def<T> def, T payload) {
-        PacketByteBuf buf = new PacketByteBuf(Unpooled.buffer());
+        FriendlyByteBuf buf = new FriendlyByteBuf(Unpooled.buffer());
         def.writer().accept(payload, buf);
         byte[] data = new byte[buf.readableBytes()];
         buf.readBytes(data);
@@ -56,7 +56,7 @@ public final class LTNetClient {
     }
 
     public static <T> void send(LTPayloads.Def<T> def, T payload) {
-        PacketByteBuf buf = new PacketByteBuf(Unpooled.buffer());
+        FriendlyByteBuf buf = new FriendlyByteBuf(Unpooled.buffer());
         def.writer().accept(payload, buf);
         ClientPlayNetworking.send(def.id(), buf);
     }

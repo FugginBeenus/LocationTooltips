@@ -1,8 +1,9 @@
 package com.fugginbeenus.locationtooltip.client;
 
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.gui.DrawContext;
-import net.minecraft.util.Identifier;
+import com.fugginbeenus.locationtooltip.util.LTId;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.resources.ResourceLocation;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -19,19 +20,19 @@ import java.util.Map;
 public final class FlagIcons {
     private FlagIcons() {}
 
-    private static final Map<String, Identifier> PATHS = new HashMap<>();
+    private static final Map<String, ResourceLocation> PATHS = new HashMap<>();
     private static final Map<String, Boolean> EXISTS = new HashMap<>();
 
-    private static Identifier path(String flagId) {
+    private static ResourceLocation path(String flagId) {
         return PATHS.computeIfAbsent(flagId,
-                id -> Identifier.of("locationtooltip", "textures/gui/flags/" + id + ".png"));
+                id -> LTId.of("locationtooltip", "textures/gui/flags/" + id + ".png"));
     }
 
     /** True if an icon texture exists for this flag (cached). */
     public static boolean has(String flagId) {
         return EXISTS.computeIfAbsent(flagId, id -> {
             try {
-                return MinecraftClient.getInstance().getResourceManager().getResource(path(id)).isPresent();
+                return Minecraft.getInstance().getResourceManager().getResource(path(id)).isPresent();
             } catch (Throwable t) {
                 return false;
             }
@@ -39,9 +40,9 @@ public final class FlagIcons {
     }
 
     /** Draw the flag icon scaled to size×size at (x,y). Returns false (drawing nothing) if absent. */
-    public static boolean draw(DrawContext ctx, String flagId, int x, int y, int size) {
+    public static boolean draw(GuiGraphics ctx, String flagId, int x, int y, int size) {
         if (!has(flagId)) return false;
-        ctx.drawTexture(path(flagId), x, y, size, size, 0f, 0f, 16, 16, 16, 16);
+        ctx.blit(path(flagId), x, y, size, size, 0f, 0f, 16, 16, 16, 16);
         return true;
     }
 }

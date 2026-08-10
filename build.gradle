@@ -11,8 +11,9 @@ base {
     archivesName = (findProperty("archives_base_name") ?: "locationtooltip").toString()
 }
 
-// Per-version: Minecraft is Java 17 through 1.20.4 and Java 21 from 1.20.5 on.
+// Per-version: Minecraft is Java 17 through 1.20.4, 21 from 1.20.5, 25 from 26.1.
 def javaVersion = Integer.parseInt(property('java_version').toString())
+def unobfuscated = Boolean.parseBoolean((findProperty('unobfuscated') ?: 'false').toString())
 
 java {
     toolchain { languageVersion = JavaLanguageVersion.of(javaVersion) }
@@ -28,7 +29,10 @@ repositories {
 
 dependencies {
     minecraft "com.mojang:minecraft:${property('minecraft_version')}"
-    mappings "net.fabricmc:yarn:${property('yarn_mappings')}:v2"
+    // Minecraft ships unobfuscated from 1.21.11 on, so only the older versions need mappings.
+    if (!unobfuscated) {
+        mappings loom.officialMojangMappings()
+    }
     modImplementation "net.fabricmc:fabric-loader:${property('loader_version')}"
     modImplementation "net.fabricmc.fabric-api:fabric-api:${property('fabric_api_version')}"
 
