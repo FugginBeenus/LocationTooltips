@@ -59,6 +59,7 @@ dependencies {
     } else {
         mappings loom.officialMojangMappings()
     }
+
     // Mod dependencies only need remapping while Minecraft is still obfuscated. On the
     // unobfuscated versions they are already in the right namespace, so they come in as plain
     // dependencies (what the official 26.x template does).
@@ -81,7 +82,12 @@ dependencies {
     }
 }
 
-loom {}
+loom {
+    // 26.x ships real names already, so there is no intermediary step to go through.
+    if (unobfuscated) {
+        noIntermediateMappings()
+    }
+}
 
 // Mojang renamed ResourceLocation to Identifier in 1.21.11, and did it consistently
 // (ResourceLocationArgument, writeResourceLocation, ...). The source tree keeps the older
