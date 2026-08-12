@@ -52,6 +52,30 @@ public class AdminRegionRenderer {
         regions.clear();
     }
 
+    /** The 12 edges of every tracked region, as {x1,y1,z1,x2,y2,z2,r,g,b}. */
+    public static java.util.List<double[]> edges() {
+        java.util.List<double[]> out = new ArrayList<>();
+        for (RegionBox box : regions) {
+            float r = box.structure ? 0.25f : 1.0f;
+            float g = box.structure ? 0.75f : 0.65f;
+            float b = box.structure ? 1.0f : 0.15f;
+            double x1 = box.min.getX(), y1 = box.min.getY(), z1 = box.min.getZ();
+            double x2 = box.max.getX(), y2 = box.max.getY(), z2 = box.max.getZ();
+            double[][] corners = {
+                    {x1, y1, z1, x2, y1, z1}, {x2, y1, z1, x2, y1, z2},
+                    {x2, y1, z2, x1, y1, z2}, {x1, y1, z2, x1, y1, z1},
+                    {x1, y2, z1, x2, y2, z1}, {x2, y2, z1, x2, y2, z2},
+                    {x2, y2, z2, x1, y2, z2}, {x1, y2, z2, x1, y2, z1},
+                    {x1, y1, z1, x1, y2, z1}, {x2, y1, z1, x2, y2, z1},
+                    {x2, y1, z2, x2, y2, z2}, {x1, y1, z2, x1, y2, z2},
+            };
+            for (double[] c : corners) {
+                out.add(new double[]{c[0], c[1], c[2], c[3], c[4], c[5], r, g, b});
+            }
+        }
+        return out;
+    }
+
     //? if <26.1 {
     private static void render(WorldRenderContext context) {
         if (regions.isEmpty()) return;

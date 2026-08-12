@@ -37,14 +37,14 @@ public final class ConfigLiveBridge {
         if (initialized) return;
         initialized = true;
 
+        // 26.x gives no way to ask which screen is open, so there is no way to tell when the
+        // session ended and the values should stop being written. Cloth saves through its own
+        // hooks there, so skipping this only costs the live preview.
+        //? if <26.1 {
         ClientTickEvents.END_CLIENT_TICK.register(client -> {
             final Object open = openScreenRef.get();
             if (open == null) return;
-            //? if >=26.1 {
-            /*if (false) {
-            *///?} else {
             if (client.screen != open) {
-            //?}
                 CURRENT.clear();
                 openScreenRef.clear();
                 return;
@@ -56,6 +56,7 @@ public final class ConfigLiveBridge {
             }
             cfg.save(); // persist live
         });
+        //?}
     }
 
     /** Start a live session for the given screen with all tracked entries. */
