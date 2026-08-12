@@ -39,7 +39,7 @@ public class SelectionRenderer {
 
     //? if <26.1 {
     private static void render(WorldRenderContext context) {
-        draw(LTBoxRender.begin(context));
+        drawSafely(LTBoxRender.begin(context));
     }
     //?}
 
@@ -47,9 +47,18 @@ public class SelectionRenderer {
     /*public static void submitBoxes(com.mojang.blaze3d.vertex.PoseStack matrices,
                                    net.minecraft.client.renderer.SubmitNodeCollector collector,
                                    net.minecraft.world.phys.Vec3 cam) {
-        draw(LTBoxRender.begin(matrices, collector, cam));
+        drawSafely(LTBoxRender.begin(matrices, collector, cam));
     }
     *///?}
+
+    /** Always pops the pose, even when draw() bails out early. */
+    private static void drawSafely(LTBoxRender box) {
+        try {
+            draw(box);
+        } finally {
+            box.end();
+        }
+    }
 
     private static void draw(LTBoxRender box) {
         if (corner1 == null || corner2 == null) return;
@@ -99,6 +108,5 @@ public class SelectionRenderer {
         box.face(maxX, minY, minZ, maxX, maxY, minZ, maxX, maxY, maxZ, maxX, minY, maxZ, r, g, b, sideFaceAlpha);
         box.drawQuads();
 
-        box.end();
     }
 }

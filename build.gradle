@@ -153,6 +153,7 @@ tasks.processResources {
     inputs.property "minecraft_dep", mcVersion
     inputs.property "modernItemModels", modernItemModels
     inputs.property "modernData", modernData
+    inputs.property "modernGui", modernGui
     filesMatching("fabric.mod.json") {
         expand("version": project.version, "minecraft_dep": mcVersion)
     }
@@ -174,7 +175,14 @@ tasks.processResources {
             filter { line -> line.replace('"item":', '"id":') }
         }
         filesMatching("data/locationtooltip/recipes/*.json") {
-            filter { line -> line.replace('"item": "locationtooltip:', '"id": "locationtooltip:') }
+            filter { line ->
+                line = line.replace('"item": "locationtooltip:', '"id": "locationtooltip:')
+                // 26.x takes a bare id for ingredients: "S": "minecraft:stick"
+                if (modernGui) {
+                    line = line.replaceAll(/"(\w)": \{ "item": ("[^"]+") \}/, '"$1": $2')
+                }
+                line
+            }
         }
         eachFile { f ->
             f.path = f.path

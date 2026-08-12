@@ -54,7 +54,7 @@ public class AdminRegionRenderer {
 
     //? if <26.1 {
     private static void render(WorldRenderContext context) {
-        draw(LTBoxRender.begin(context));
+        drawSafely(LTBoxRender.begin(context));
     }
     //?}
 
@@ -62,9 +62,18 @@ public class AdminRegionRenderer {
     /*public static void submitBoxes(com.mojang.blaze3d.vertex.PoseStack matrices,
                                    net.minecraft.client.renderer.SubmitNodeCollector collector,
                                    net.minecraft.world.phys.Vec3 cam) {
-        draw(LTBoxRender.begin(matrices, collector, cam));
+        drawSafely(LTBoxRender.begin(matrices, collector, cam));
     }
     *///?}
+
+    /** Always pops the pose, even when draw() bails out early. */
+    private static void drawSafely(LTBoxRender r) {
+        try {
+            draw(r);
+        } finally {
+            r.end();
+        }
+    }
 
     private static void draw(LTBoxRender r) {
         if (regions.isEmpty()) return;
@@ -115,6 +124,5 @@ public class AdminRegionRenderer {
         }
         r.drawQuads();
 
-        r.end();
     }
 }
