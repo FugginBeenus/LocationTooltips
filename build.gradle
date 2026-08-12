@@ -162,6 +162,7 @@ tasks.processResources {
     // renderer hook only exists where Fabric has no world-render event.
     def dropMixins = []
     if (modernItemModels) dropMixins << "ModelPredicateRegistryInvoker"
+    if (!modernItemModels) dropMixins << "RangeSelectPropertiesAccessor"
     if (!modernGui) dropMixins << "LevelRendererMixin"
     if (dropMixins) {
         filesMatching("locationtooltip.mixins.json") {

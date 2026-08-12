@@ -9,6 +9,7 @@
   ],
   "client": [
     "LevelRendererMixin",
+    "RangeSelectPropertiesAccessor",
     "ModelPredicateRegistryInvoker",
     "BossBarHudAccessor"
   ],

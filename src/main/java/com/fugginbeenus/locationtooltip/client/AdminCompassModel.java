@@ -30,6 +30,10 @@ public final class AdminCompassModel {
     // 1.21.11 made item predicates data-driven and its registry is closed to mods, so the
     // needle only animates on the older versions. The compass itself works everywhere.
     public static void register() {
+        //? if >=1.21.11 {
+        /*com.fugginbeenus.locationtooltip.mixin.RangeSelectPropertiesAccessor.locationtooltip$idMapper()
+                .put(AdminCompassAngle.ID, AdminCompassAngle.MAP_CODEC);
+        *///?}
         //? if <1.21.11 {
         ModelPredicateRegistryInvoker.locationtooltip$register(
                 LTItems.ADMIN_COMPASS,
@@ -44,7 +48,7 @@ public final class AdminCompassModel {
     }
 
     /** Centre of the closest cached region in this dimension, or null if none are known. */
-    private static BlockPos nearestRegionCenter(ResourceLocation dim, BlockPos from) {
+    static BlockPos nearestRegionCenter(ResourceLocation dim, BlockPos from) {
         AdminClientCache.Row[] rows = AdminClientCache.current();
         if (rows == null || rows.length == 0) return null;
 
