@@ -16,6 +16,24 @@ base {
 def javaVersion = Integer.parseInt(property('java_version').toString())
 def unobfuscated = Boolean.parseBoolean((findProperty('unobfuscated') ?: 'false').toString())
 
+/**
+ * Mappings for the unobfuscated versions. The names in the jar are already the real ones, so
+ * this is an empty (identity) mapping — but it has to declare a "named" namespace, or Loom
+ * refuses to remap any sources, including Fabric API's.
+ */
+def emptyMappingsJar() {
+    def jar = layout.buildDirectory.file("lt-mappings/identity-mappings.jar").get().asFile
+    if (!jar.exists()) {
+        jar.parentFile.mkdirs()
+        def tiny = new File(jar.parentFile, "mappings.tiny")
+        tiny.text = "tiny\t2\t0\tofficial\tintermediary\tnamed\n"
+        ant.zip(destfile: jar) {
+            zipfileset(file: tiny, fullpath: "mappings/mappings.tiny")
+        }
+    }
+    return jar
+}
+
 java {
     toolchain { languageVersion = JavaLanguageVersion.of(javaVersion) }
     // The unobfuscated versions map through an empty intermediary, which has no named
@@ -37,7 +55,7 @@ dependencies {
     // Minecraft stopped publishing mappings once it shipped unobfuscated (26.1 on); those
     // versions take the empty intermediary instead, since the jar already has real names.
     if (unobfuscated) {
-        mappings "net.fabricmc:intermediary:0.0.0:v2"
+        mappings files(emptyMappingsJar())
     } else {
         mappings loom.officialMojangMappings()
     }
@@ -49,7 +67,7 @@ dependencies {
     // The loader always goes through Loom: its POM declares no dependencies, and Loom is what
     // reads the jar to put the loader's own libraries (ASM, Mixin) on the run classpath.
     modImplementation "net.fabricmc:fabric-loader:${property('loader_version')}"
-    add(mod, "net.fabricmc.fabric-api:fabric-api:${property('fabric_api_version')}")
+    modImplementation "net.fabricmc.fabric-api:fabric-api:${property('fabric_api_version')}"
 
     // Both are optional at runtime, so a version we cannot resolve yet just drops out of the
     // build for that Minecraft version rather than blocking it.
