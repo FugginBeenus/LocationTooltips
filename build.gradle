@@ -95,6 +95,8 @@ loom {
 // version switch on all ~80 usages.
 // 1.21.11 renamed a lot and replaced the item predicate API with data-driven item models.
 def modernItemModels = stonecutter.eval(stonecutter.current.version, ">=1.21.11")
+// 26.x swapped the immediate GuiGraphics for a render-state extractor.
+def modernGui = stonecutter.eval(stonecutter.current.version, ">=26.1")
 
 stonecutter.replacements {
     def modern = modernItemModels
@@ -115,8 +117,6 @@ stonecutter.replacements {
         }
     }
 
-    // 26.x swapped the immediate GuiGraphics for a render-state extractor.
-    def modernGui = stonecutter.eval(stonecutter.current.version, ">=26.1")
     [
         "GuiGraphics"  : "GuiGraphicsExtractor",
         ".drawString(" : ".text(",
@@ -156,10 +156,15 @@ tasks.processResources {
     filesMatching("fabric.mod.json") {
         expand("version": project.version, "minecraft_dep": mcVersion)
     }
-    // The compass-needle mixin has no target once item predicates became data-driven.
-    if (modernItemModels) {
+    // Mixins that only apply to some versions are stripped from the config for the rest:
+    // the compass needle lost its target once item predicates went data-driven, and the level
+    // renderer hook only exists where Fabric has no world-render event.
+    def dropMixins = []
+    if (modernItemModels) dropMixins << "ModelPredicateRegistryInvoker"
+    if (!modernGui) dropMixins << "LevelRendererMixin"
+    if (dropMixins) {
         filesMatching("locationtooltip.mixins.json") {
-            filter { line -> line.contains("ModelPredicateRegistryInvoker") ? null : line }
+            filter { line -> dropMixins.any { line.contains(it) } ? null : line }
         }
     }
     // 1.21 uses singular datapack folders and "id" (not "item") in advancement icons and recipe

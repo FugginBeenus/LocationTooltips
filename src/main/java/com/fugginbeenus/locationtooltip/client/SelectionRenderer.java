@@ -39,6 +39,19 @@ public class SelectionRenderer {
 
     //? if <26.1 {
     private static void render(WorldRenderContext context) {
+        draw(LTBoxRender.begin(context));
+    }
+    //?}
+
+    //? if >=26.1 {
+    /*public static void submitBoxes(com.mojang.blaze3d.vertex.PoseStack matrices,
+                                   net.minecraft.client.renderer.SubmitNodeCollector collector,
+                                   net.minecraft.world.phys.Vec3 cam) {
+        draw(LTBoxRender.begin(matrices, collector, cam));
+    }
+    *///?}
+
+    private static void draw(LTBoxRender box) {
         if (corner1 == null || corner2 == null) return;
 
         int minX = Math.min(corner1.getX(), corner2.getX());
@@ -61,7 +74,6 @@ public class SelectionRenderer {
         float faceAlpha = 0.15f * pulse;
         float sideFaceAlpha = 0.08f * pulse;
 
-        LTBoxRender box = LTBoxRender.begin(context);
 
         box.startQuads();
         box.edgeBox(minX, minY, minZ, maxX, minY, minZ, w, r, g, b, 1.0f);
@@ -89,5 +101,4 @@ public class SelectionRenderer {
 
         box.end();
     }
-    //?}
 }

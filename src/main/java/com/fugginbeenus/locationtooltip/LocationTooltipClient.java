@@ -117,11 +117,6 @@ public final class LocationTooltipClient implements ClientModInitializer {
                 com.fugginbeenus.locationtooltip.client.AdminRegionRenderer.updateRegions(rows, hereDim);
             }
 
-            // 26.x cannot draw the boxes, so the edges are traced with particles instead.
-            //? if >=26.1 {
-            /*com.fugginbeenus.locationtooltip.client.RegionEdgeParticles.tick(
-                    com.fugginbeenus.locationtooltip.client.AdminRegionRenderer.edges());
-            *///?}
         });
     }
     private static final org.slf4j.Logger LOG = org.slf4j.LoggerFactory.getLogger("locationtooltip");

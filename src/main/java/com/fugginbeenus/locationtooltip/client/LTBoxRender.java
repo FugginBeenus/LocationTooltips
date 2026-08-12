@@ -1,46 +1,64 @@
 package com.fugginbeenus.locationtooltip.client;
 
-//? if <26.1 {
-import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderContext;
 import com.mojang.blaze3d.vertex.PoseStack;
-import com.mojang.blaze3d.vertex.VertexConsumer;
-import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.world.phys.Vec3;
-import org.joml.Matrix4f;
-//?}
+
+import java.util.ArrayList;
+import java.util.List;
 
 /**
- * Draws the world-space region boxes. Geometry goes through the vanilla debug-box render type
- * on the frame's shared buffer, so blending and depth come from that type rather than from
- * manual render-state calls, which the 1.21.5 render rewrite removed.
+ * Draws the world-space region boxes.
+ *
+ * The geometry is built into a buffer and handed over in one go, because how it gets to the
+ * screen differs per version: older ones write into the frame's shared buffer, while 26.x
+ * submits it to the level renderer. The box maths below is shared.
  */
-//? if >=26.1 {
-/*public final class LTBoxRender {
-}
-*///?} else {
 public final class LTBoxRender {
-    private final PoseStack matrices;
-    private final MultiBufferSource consumers;
-    private VertexConsumer buffer;
-    private Matrix4f matrix;
 
-    private LTBoxRender(PoseStack matrices, MultiBufferSource consumers) {
+    /** x, y, z, r, g, b, a */
+    private final List<float[]> verts = new ArrayList<>();
+    private final PoseStack matrices;
+
+    //? if >=26.1 {
+    /*private final net.minecraft.client.renderer.SubmitNodeCollector collector;
+
+    private LTBoxRender(PoseStack matrices, net.minecraft.client.renderer.SubmitNodeCollector collector) {
+        this.matrices = matrices;
+        this.collector = collector;
+    }
+
+    // Called from the level renderer, where the pose is already at the camera.
+    public static LTBoxRender begin(PoseStack matrices,
+                                    net.minecraft.client.renderer.SubmitNodeCollector collector,
+                                    Vec3 cam) {
+        matrices.pushPose();
+        matrices.translate(-cam.x, -cam.y, -cam.z);
+        return new LTBoxRender(matrices, collector);
+    }
+
+    public void drawQuads() {
+        if (verts.isEmpty()) return;
+        List<float[]> batch = new ArrayList<>(verts);
+        collector.submitCustomGeometry(matrices,
+                net.minecraft.client.renderer.rendertype.RenderTypes.debugFilledBox(),
+                (pose, consumer) -> {
+                    for (float[] v : batch) {
+                        consumer.addVertex(pose.pose(), v[0], v[1], v[2])
+                                .setColor(v[3], v[4], v[5], v[6]);
+                    }
+                });
+        verts.clear();
+    }
+    *///?} else {
+    private final net.minecraft.client.renderer.MultiBufferSource consumers;
+
+    private LTBoxRender(PoseStack matrices, net.minecraft.client.renderer.MultiBufferSource consumers) {
         this.matrices = matrices;
         this.consumers = consumers;
     }
 
-    //? if >=1.21.11 {
-    /*private static net.minecraft.client.renderer.rendertype.RenderType boxType() {
-        return net.minecraft.client.renderer.rendertype.RenderTypes.debugFilledBox();
-    }
-    *///?} else {
-    private static net.minecraft.client.renderer.RenderType boxType() {
-        return net.minecraft.client.renderer.RenderType.debugFilledBox();
-    }
-    //?}
-
     /** Translate to camera-relative space and take the frame's buffer. */
-    public static LTBoxRender begin(WorldRenderContext ctx) {
+    public static LTBoxRender begin(net.fabricmc.fabric.api.client.rendering.v1.WorldRenderContext ctx) {
         //? if >=1.21.11 {
         /*PoseStack matrices = ctx.matrices();
         Vec3 cam = ctx.worldState().cameraRenderState.pos;
@@ -54,19 +72,45 @@ public final class LTBoxRender {
         return new LTBoxRender(matrices, ctx.consumers());
     }
 
-    public void startQuads() {
-        matrix = matrices.last().pose();
-        buffer = consumers.getBuffer(boxType());
+    public void drawQuads() {
+        if (verts.isEmpty()) return;
+        var type = boxType();
+        var buffer = consumers.getBuffer(type);
+        var matrix = matrices.last().pose();
+        for (float[] v : verts) {
+            //? if >=1.21 {
+            /*buffer.addVertex(matrix, v[0], v[1], v[2]).setColor(v[3], v[4], v[5], v[6]);
+            *///?} else {
+            buffer.vertex(matrix, v[0], v[1], v[2]).color(v[3], v[4], v[5], v[6]).endVertex();
+            //?}
+        }
+        if (consumers instanceof net.minecraft.client.renderer.MultiBufferSource.BufferSource source) {
+            source.endBatch(type);
+        }
+        verts.clear();
     }
 
-    public void drawQuads() {
-        if (consumers instanceof MultiBufferSource.BufferSource source) {
-            source.endBatch(boxType());
-        }
+    //? if >=1.21.11 {
+    /*private static net.minecraft.client.renderer.rendertype.RenderType boxType() {
+        return net.minecraft.client.renderer.rendertype.RenderTypes.debugFilledBox();
+    }
+    *///?} else {
+    private static net.minecraft.client.renderer.RenderType boxType() {
+        return net.minecraft.client.renderer.RenderType.debugFilledBox();
+    }
+    //?}
+    //?}
+
+    public void startQuads() {
+        verts.clear();
     }
 
     public void end() {
         matrices.popPose();
+    }
+
+    private void emit(double x, double y, double z, float r, float g, float b, float a) {
+        verts.add(new float[]{(float) x, (float) y, (float) z, r, g, b, a});
     }
 
     private void quad(double x1, double y1, double z1,
@@ -74,17 +118,10 @@ public final class LTBoxRender {
                       double x3, double y3, double z3,
                       double x4, double y4, double z4,
                       float r, float g, float b, float a) {
-        //? if >=1.21 {
-        /*buffer.addVertex(matrix, (float) x1, (float) y1, (float) z1).setColor(r, g, b, a);
-        buffer.addVertex(matrix, (float) x2, (float) y2, (float) z2).setColor(r, g, b, a);
-        buffer.addVertex(matrix, (float) x3, (float) y3, (float) z3).setColor(r, g, b, a);
-        buffer.addVertex(matrix, (float) x4, (float) y4, (float) z4).setColor(r, g, b, a);
-        *///?} else {
-        buffer.vertex(matrix, (float) x1, (float) y1, (float) z1).color(r, g, b, a).endVertex();
-        buffer.vertex(matrix, (float) x2, (float) y2, (float) z2).color(r, g, b, a).endVertex();
-        buffer.vertex(matrix, (float) x3, (float) y3, (float) z3).color(r, g, b, a).endVertex();
-        buffer.vertex(matrix, (float) x4, (float) y4, (float) z4).color(r, g, b, a).endVertex();
-        //?}
+        emit(x1, y1, z1, r, g, b, a);
+        emit(x2, y2, z2, r, g, b, a);
+        emit(x3, y3, z3, r, g, b, a);
+        emit(x4, y4, z4, r, g, b, a);
     }
 
     /** One flat quad in the current batch. */
@@ -127,4 +164,3 @@ public final class LTBoxRender {
         }
     }
 }
-//?}

@@ -52,32 +52,21 @@ public class AdminRegionRenderer {
         regions.clear();
     }
 
-    /** The 12 edges of every tracked region, as {x1,y1,z1,x2,y2,z2,r,g,b}. */
-    public static java.util.List<double[]> edges() {
-        java.util.List<double[]> out = new ArrayList<>();
-        for (RegionBox box : regions) {
-            float r = box.structure ? 0.25f : 1.0f;
-            float g = box.structure ? 0.75f : 0.65f;
-            float b = box.structure ? 1.0f : 0.15f;
-            double x1 = box.min.getX(), y1 = box.min.getY(), z1 = box.min.getZ();
-            double x2 = box.max.getX(), y2 = box.max.getY(), z2 = box.max.getZ();
-            double[][] corners = {
-                    {x1, y1, z1, x2, y1, z1}, {x2, y1, z1, x2, y1, z2},
-                    {x2, y1, z2, x1, y1, z2}, {x1, y1, z2, x1, y1, z1},
-                    {x1, y2, z1, x2, y2, z1}, {x2, y2, z1, x2, y2, z2},
-                    {x2, y2, z2, x1, y2, z2}, {x1, y2, z2, x1, y2, z1},
-                    {x1, y1, z1, x1, y2, z1}, {x2, y1, z1, x2, y2, z1},
-                    {x2, y1, z2, x2, y2, z2}, {x1, y1, z2, x1, y2, z2},
-            };
-            for (double[] c : corners) {
-                out.add(new double[]{c[0], c[1], c[2], c[3], c[4], c[5], r, g, b});
-            }
-        }
-        return out;
-    }
-
     //? if <26.1 {
     private static void render(WorldRenderContext context) {
+        draw(LTBoxRender.begin(context));
+    }
+    //?}
+
+    //? if >=26.1 {
+    /*public static void submitBoxes(com.mojang.blaze3d.vertex.PoseStack matrices,
+                                   net.minecraft.client.renderer.SubmitNodeCollector collector,
+                                   net.minecraft.world.phys.Vec3 cam) {
+        draw(LTBoxRender.begin(matrices, collector, cam));
+    }
+    *///?}
+
+    private static void draw(LTBoxRender r) {
         if (regions.isEmpty()) return;
 
         float pulse = (float) (0.8 + 0.2 * Math.sin((System.currentTimeMillis() - lastUpdateTime) / 1000.0 * 2.0));
@@ -85,7 +74,6 @@ public class AdminRegionRenderer {
         float faceAlpha = 0.10f * pulse;
         float sideFaceAlpha = 0.06f * pulse;
 
-        LTBoxRender r = LTBoxRender.begin(context);
 
         r.startQuads();
         for (RegionBox box : regions) {
@@ -129,5 +117,4 @@ public class AdminRegionRenderer {
 
         r.end();
     }
-    //?}
 }
