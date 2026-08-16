@@ -252,6 +252,51 @@ public class RegionCommands {
                                                 })
                                         )
                                 )
+                                .then(Commands.literal("villagenames")
+                                        .executes(ctx -> {
+                                            StructureConfig cfg = StructureConfig.get();
+                                            ctx.getSource().sendSuccess(() -> Component.literal("Automatic village names: "
+                                                    + (cfg.nameVillages ? "§aON" : "§cOFF")
+                                                    + "§r | players may name villages: "
+                                                    + (cfg.allowPlayerVillageNaming ? "§aON" : "§cOFF")), false);
+                                            return 1;
+                                        })
+                                        .then(Commands.literal("on")
+                                                .executes(ctx -> {
+                                                    StructureConfig.get().setNameVillages(true);
+                                                    ctx.getSource().sendSuccess(() -> Component.literal(
+                                                            "§aVillages will be given a place name when nothing else has named them."), false);
+                                                    return 1;
+                                                })
+                                        )
+                                        .then(Commands.literal("off")
+                                                .executes(ctx -> {
+                                                    StructureConfig.get().setNameVillages(false);
+                                                    ctx.getSource().sendSuccess(() -> Component.literal(
+                                                            "§eVillages will keep their plain structure name."), false);
+                                                    return 1;
+                                                })
+                                        )
+                                        .then(Commands.literal("players")
+                                                .then(Commands.literal("on")
+                                                        .executes(ctx -> {
+                                                            StructureConfig.get().setAllowPlayerVillageNaming(true);
+                                                            ctx.getSource().sendSuccess(() -> Component.literal(
+                                                                    "§aPlayers can now name a village they are standing in with /ltname. "
+                                                                            + "This does not give them any control over its flags."), false);
+                                                            return 1;
+                                                        })
+                                                )
+                                                .then(Commands.literal("off")
+                                                        .executes(ctx -> {
+                                                            StructureConfig.get().setAllowPlayerVillageNaming(false);
+                                                            ctx.getSource().sendSuccess(() -> Component.literal(
+                                                                    "§ePlayers can no longer name villages. Names already set are kept."), false);
+                                                            return 1;
+                                                        })
+                                                )
+                                        )
+                                )
                         )
 
                         .then(Commands.literal("flags")
@@ -283,6 +328,17 @@ public class RegionCommands {
                                     com.fugginbeenus.locationtooltip.util.LTChat.tell(player, Component.literal("§aSelection cleared."), false);
 
                                     return 1;
+                                })
+                        )
+        );
+
+        dispatcher.register(
+                Commands.literal("ltname")
+                        .then(Commands.argument("name", StringArgumentType.greedyString())
+                                .executes(ctx -> {
+                                    ServerPlayer player = ctx.getSource().getPlayerOrException();
+                                    String name = StringArgumentType.getString(ctx, "name");
+                                    return RegionManager.of(player.level().getServer()).nameVillageAt(player, name) ? 1 : 0;
                                 })
                         )
         );

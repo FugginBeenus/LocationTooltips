@@ -29,6 +29,8 @@ public abstract class RegionConfigScreen extends Screen {
     protected abstract Map<String, Boolean> initialFlags();
     protected abstract void onConfirm(String name, Map<String, Boolean> flags);
 
+    protected boolean showFlags() { return true; }
+
     @Override
     protected void init() {
         panelW = Math.min(340, this.width - 24);
@@ -36,12 +38,15 @@ public abstract class RegionConfigScreen extends Screen {
         colW = (innerW - 4) / 2;
 
         flags = (flags == null) ? new FlagEditor(initialFlags()) : new FlagEditor(flags.overrides());
-        gridContentH = flags.height();
+        gridContentH = showFlags() ? flags.height() : 0;
 
-        final int headerH = 30, nameH = 18, gapName = 8, labelH = 10, gapLabel = 4, gapGrid = 10, btnH = 20, bottomPad = 12;
+        final int headerH = 30, nameH = 18, gapName = 8, btnH = 20, bottomPad = 12;
+        final int labelH = showFlags() ? 10 : 0;
+        final int gapLabel = showFlags() ? 4 : 0;
+        final int gapGrid = 10;
         int fixed = headerH + nameH + gapName + labelH + gapLabel + gapGrid + btnH + bottomPad;
         int availH = this.height - 12;
-        int gridViewMax = Math.max(40, availH - fixed);
+        int gridViewMax = Math.max(showFlags() ? 40 : 0, availH - fixed);
         gridViewH = Math.min(gridContentH, gridViewMax);
 
         panelH = fixed + gridViewH;
@@ -121,7 +126,7 @@ public abstract class RegionConfigScreen extends Screen {
         if (button != 0) return false;
         if (LTGui.hovered(mx, my, panelX + PAD, btnY, colW, 20)) { confirm(); return true; }
         if (LTGui.hovered(mx, my, panelX + PAD + colW + 4, btnY, colW, 20)) { onClose(); return true; }
-        if (LTGui.hovered(mx, my, panelX + PAD, gridTop, innerW, gridViewH)) {
+        if (showFlags() && LTGui.hovered(mx, my, panelX + PAD, gridTop, innerW, gridViewH)) {
             flags.layout(panelX + PAD, gridTop - gridScroll, colW, 18, 4);
             if (flags.mouseClicked(mx, my)) return true;
         }
@@ -173,13 +178,15 @@ public abstract class RegionConfigScreen extends Screen {
             ctx.drawString(this.font, Component.literal("Region name…"), panelX + PAD + 5, nameY + 5, LTGui.FAINT, false);
         }
 
-        ctx.drawString(this.font, Component.literal("Protection — click to cycle Inherit / Allow / Deny"),
-                panelX + PAD, labelY, LTGui.SUBTEXT, false);
+        if (showFlags()) {
+            ctx.drawString(this.font, Component.literal("Protection — click to cycle Inherit / Allow / Deny"),
+                    panelX + PAD, labelY, LTGui.SUBTEXT, false);
 
-        ctx.enableScissor(panelX + PAD, gridTop, panelX + panelW - PAD, gridTop + gridViewH);
-        flags.layout(panelX + PAD, gridTop - gridScroll, colW, 18, 4);
-        flags.render(ctx, this.font, mouseX, mouseY);
-        ctx.disableScissor();
+            ctx.enableScissor(panelX + PAD, gridTop, panelX + panelW - PAD, gridTop + gridViewH);
+            flags.layout(panelX + PAD, gridTop - gridScroll, colW, 18, 4);
+            flags.render(ctx, this.font, mouseX, mouseY);
+            ctx.disableScissor();
+        }
 
         if (maxScroll() > 0) {
             int tx = panelX + panelW - PAD - 3;

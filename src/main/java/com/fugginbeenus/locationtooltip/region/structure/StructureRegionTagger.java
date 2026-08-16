@@ -117,6 +117,7 @@ public final class StructureRegionTagger {
                 RegionManager mgr = RegionManager.of(server);
                 if (!mgr.exists(region.id)) return;
                 if (region.source != RegionSource.STRUCTURE) return;
+                if (region.namedBy != null) return;
                 StructureNaming.providerName(server, dim, sid, box).ifPresent(name -> {
                     if (!name.equals(region.name)) {
                         region.name = name;

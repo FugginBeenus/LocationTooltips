@@ -76,7 +76,7 @@ public final class LTPayloads {
     public static final Def<SelectionClear> SELECTION_CLEAR = new Def<>(id("selection_clear"), SelectionClear::write, SelectionClear::read);
 
     public record RegionEntry(String id, String name, ResourceLocation dim, BlockPos min, BlockPos max,
-                              Map<String, Boolean> flags, String ownerName, String source) {
+                              Map<String, Boolean> flags, String ownerName, String source, boolean nameable) {
         void write(FriendlyByteBuf buf) {
             buf.writeUtf(id);
             buf.writeUtf(name);
@@ -86,12 +86,13 @@ public final class LTPayloads {
             writeFlags(buf, flags);
             buf.writeUtf(ownerName);
             buf.writeUtf(source);
+            buf.writeBoolean(nameable);
         }
         static RegionEntry read(FriendlyByteBuf buf) {
             return new RegionEntry(
                     buf.readUtf(32767), buf.readUtf(32767), buf.readResourceLocation(),
                     buf.readBlockPos(), buf.readBlockPos(),
-                    readFlags(buf), buf.readUtf(32767), buf.readUtf(32767));
+                    readFlags(buf), buf.readUtf(32767), buf.readUtf(32767), buf.readBoolean());
         }
     }
 
@@ -139,6 +140,18 @@ public final class LTPayloads {
         }
     }
     public static final Def<AdminRename> ADMIN_RENAME = new Def<>(id("admin_rename"), AdminRename::write, AdminRename::read);
+
+    public record PlayerNameRegion(String id, String newName) {
+        void write(FriendlyByteBuf buf) {
+            buf.writeUtf(id);
+            buf.writeUtf(newName);
+        }
+        static PlayerNameRegion read(FriendlyByteBuf buf) {
+            return new PlayerNameRegion(buf.readUtf(32767), buf.readUtf(32767));
+        }
+    }
+    public static final Def<PlayerNameRegion> PLAYER_NAME_REGION =
+            new Def<>(id("player_name_region"), PlayerNameRegion::write, PlayerNameRegion::read);
 
     public record AdminDelete(String id) {
         void write(FriendlyByteBuf buf) { buf.writeUtf(id); }

@@ -30,6 +30,8 @@ public final class Region {
 
     public UUID owner;
 
+    public UUID namedBy = null;
+
     public Region(String name, ResourceLocation dim, BlockPos a, BlockPos b) {
         this(UUID.randomUUID().toString(), name, dim, a, b);
     }
@@ -96,6 +98,12 @@ public final class Region {
     public boolean canBeEditedBy(UUID playerUuid, boolean isOp) {
         if (isOp) return true;
         return isOwnedBy(playerUuid);
+    }
+
+    public boolean canBeRenamedBy(UUID playerUuid, boolean isOp) {
+        if (canBeEditedBy(playerUuid, isOp)) return true;
+        if (source != RegionSource.STRUCTURE) return false;
+        return namedBy == null || namedBy.equals(playerUuid);
     }
 
     public Boolean getFlagOverride(String flagId) {

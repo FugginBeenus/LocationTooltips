@@ -35,6 +35,9 @@ public final class LTPackets {
 
         LTNet.registerReceiver(LTPayloads.ADMIN_DELETE, (server, player, p) ->
                 RegionManager.of(server).deleteRegion(player, p.id()));
+
+        LTNet.registerReceiver(LTPayloads.PLAYER_NAME_REGION, (server, player, p) ->
+                RegionManager.of(server).nameVillage(player, p.id(), p.newName()));
     }
 
     public static void openName(ServerPlayer player, BlockPos a, BlockPos b) {
@@ -50,6 +53,10 @@ public final class LTPackets {
     }
 
     public static void sendAdminList(ServerPlayer player, List<Region> regions, boolean isOp) {
+        sendAdminList(player, regions, isOp, null);
+    }
+
+    public static void sendAdminList(ServerPlayer player, List<Region> regions, boolean isOp, String nameableId) {
         List<LTPayloads.RegionEntry> entries = new ArrayList<>(regions.size());
         for (Region r : regions) {
             String ownerName;
@@ -62,7 +69,8 @@ public final class LTPackets {
                 ownerName = "";
             }
             entries.add(new LTPayloads.RegionEntry(
-                    r.id, r.name, r.dim, r.min, r.max, r.flagOverrides(), ownerName, r.source.name()));
+                    r.id, r.name, r.dim, r.min, r.max, r.flagOverrides(), ownerName, r.source.name(),
+                    r.id.equals(nameableId)));
         }
         LTNet.send(player, LTPayloads.ADMIN_LIST, new LTPayloads.AdminList(entries));
     }

@@ -39,6 +39,8 @@ public final class WaystonesSync {
             Region r = mgr.smallestStructureContaining(w.dim(), w.pos());
             if (r == null) continue;
 
+            if (r.namedBy != null) continue;
+
             if (r.waystoneUid != null && !r.waystoneUid.equals(w.uid())) continue;
 
             if (w.name().equals(r.name)) {

@@ -85,6 +85,9 @@ final class RegionStorage {
                 if (o.has("waystoneUid") && !o.get("waystoneUid").isJsonNull()) {
                     rgn.waystoneUid = o.get("waystoneUid").getAsString();
                 }
+                if (o.has("namedBy") && !o.get("namedBy").isJsonNull()) {
+                    try { rgn.namedBy = UUID.fromString(o.get("namedBy").getAsString()); } catch (Exception ignored) {}
+                }
 
                 list.add(rgn);
             }
@@ -127,6 +130,9 @@ final class RegionStorage {
             if (r.owner != null) {
                 o.addProperty("owner", r.owner.toString());
             }
+            if (r.namedBy != null) {
+                o.addProperty("namedBy", r.namedBy.toString());
+            }
 
             arr.add(o);
         }
@@ -137,8 +143,6 @@ final class RegionStorage {
             e.printStackTrace();
         }
     }
-
-    /* ---------------- helpers ---------------- */
 
     private static Path fileFor(MinecraftServer server, ResourceLocation dim) {
         Path root = server.getWorldPath(LevelResource.ROOT);

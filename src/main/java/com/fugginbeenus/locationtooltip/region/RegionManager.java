@@ -162,13 +162,16 @@ public final class RegionManager {
             }
         }
 
+        Region nameable = nameableVillageFor(player, dim, p, isOp);
+        if (nameable != null && !near.contains(nameable)) near.add(nameable);
+
         near.sort(
                 Comparator
                         .comparingDouble((Region r) -> distance2ToBox(p, boxOf(r)))
                         .thenComparing((Region r) -> r.name, String.CASE_INSENSITIVE_ORDER)
         );
 
-        LTPackets.sendAdminList(player, near, isOp);
+        LTPackets.sendAdminList(player, near, isOp, nameable == null ? null : nameable.id);
     }
 
     public void sendAllTo(ServerPlayer player, @Nullable ResourceLocation dim) {
@@ -178,9 +181,13 @@ public final class RegionManager {
         for (Region r : listFor(dim)) {
             if (isOp || r.isOwnedBy(player.getUUID())) all.add(r);
         }
+        Region nameable = nameableVillageFor(
+                player, player.level().dimension().location(), player.blockPosition(), isOp);
+        if (nameable != null && !all.contains(nameable)) all.add(nameable);
+
         all.sort(Comparator.comparing((Region r) -> r.name, String.CASE_INSENSITIVE_ORDER));
 
-        LTPackets.sendAdminList(player, all, isOp);
+        LTPackets.sendAdminList(player, all, isOp, nameable == null ? null : nameable.id);
     }
 
     public void createRegion(ServerPlayer player, String name, BlockPos a, BlockPos b, Map<String, Boolean> flags) {
@@ -234,9 +241,9 @@ public final class RegionManager {
     }
 
     private static void denyEdit(ServerPlayer player) {
-        com.fugginbeenus.locationtooltip.util.LTChat.tell(player, 
+        com.fugginbeenus.locationtooltip.util.LTChat.tell(player,
                 Component.literal("You don't have permission to modify this region.").withStyle(ChatFormatting.RED),
-                true /* action bar */
+                true
         );
     }
 
@@ -257,6 +264,75 @@ public final class RegionManager {
         saveDim(r.dim);
         sendNearbyTo(player, 512);
         pushNameTo(player);
+    }
+
+    public boolean nameVillageAt(ServerPlayer player, String rawName) {
+        ResourceLocation dim = player.level().dimension().location();
+        return applyVillageName(player, smallestVillageContaining(dim, player.blockPosition()), rawName);
+    }
+
+    public boolean nameVillage(ServerPlayer player, String regionId, String rawName) {
+        Region r = findById(regionId);
+        ResourceLocation dim = player.level().dimension().location();
+        if (r != null && (!r.dim.equals(dim) || !r.contains(player.blockPosition()))) r = null;
+        return applyVillageName(player, r, rawName);
+    }
+
+    private boolean applyVillageName(ServerPlayer player, @Nullable Region r, String rawName) {
+        if (!com.fugginbeenus.locationtooltip.region.structure.StructureConfig.get().allowPlayerVillageNaming) {
+            tell(player, Component.literal("Naming villages is turned off on this server.").withStyle(ChatFormatting.RED));
+            return false;
+        }
+
+        String name = sanitizeName(rawName);
+        if (name.isEmpty()) {
+            tell(player, Component.literal("That name is empty.").withStyle(ChatFormatting.RED));
+            return false;
+        }
+
+        if (r == null || r.source != RegionSource.STRUCTURE
+                || r.category == null || !r.category.contains("village")) {
+            tell(player, Component.literal("Stand inside a village to name it.").withStyle(ChatFormatting.RED));
+            return false;
+        }
+
+        boolean isOp = com.fugginbeenus.locationtooltip.util.LTPerms.isAdmin(player);
+        if (!r.canBeRenamedBy(player.getUUID(), isOp)) {
+            tell(player, Component.literal("Someone else has already named this village.").withStyle(ChatFormatting.RED));
+            return false;
+        }
+
+        String previous = r.name;
+        r.name = name;
+        r.namedBy = player.getUUID();
+        saveDim(r.dim);
+        pushNameTo(player);
+        sendNearbyTo(player, 512);
+
+        tell(player, Component.literal("")
+                .append(Component.literal(previous).withStyle(ChatFormatting.GRAY))
+                .append(Component.literal(" is now known as ").withStyle(ChatFormatting.GRAY))
+                .append(Component.literal(name).withStyle(ChatFormatting.AQUA)));
+        return true;
+    }
+
+    private @Nullable Region nameableVillageFor(ServerPlayer player, ResourceLocation dim, BlockPos pos, boolean isOp) {
+        if (isOp) return null;
+        if (!com.fugginbeenus.locationtooltip.region.structure.StructureConfig.get().allowPlayerVillageNaming) return null;
+        Region r = smallestVillageContaining(dim, pos);
+        if (r == null) return null;
+        return r.canBeRenamedBy(player.getUUID(), false) ? r : null;
+    }
+
+    private static void tell(ServerPlayer player, Component message) {
+        com.fugginbeenus.locationtooltip.util.LTChat.tell(player, message, false);
+    }
+
+    private static String sanitizeName(String raw) {
+        if (raw == null) return "";
+        String s = raw.replace('§', ' ').trim();
+        if (s.length() > 48) s = s.substring(0, 48).trim();
+        return s;
     }
 
     public void deleteRegion(ServerPlayer player, String id) {
@@ -331,6 +407,14 @@ public final class RegionManager {
     public @Nullable Region smallestStructureContaining(ResourceLocation dim, BlockPos pos) {
         for (Region r : allContaining(dim, pos)) {
             if (r.source == RegionSource.STRUCTURE) return r;
+        }
+        return null;
+    }
+
+    public @Nullable Region smallestVillageContaining(ResourceLocation dim, BlockPos pos) {
+        for (Region r : allContaining(dim, pos)) {
+            if (r.source != RegionSource.STRUCTURE) continue;
+            if (r.category != null && r.category.contains("village")) return r;
         }
         return null;
     }

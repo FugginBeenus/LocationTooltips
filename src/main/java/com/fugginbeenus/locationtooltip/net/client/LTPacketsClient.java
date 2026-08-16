@@ -67,6 +67,10 @@ public final class LTPacketsClient {
         LTNetClient.send(LTPayloads.ADMIN_DELETE, new LTPayloads.AdminDelete(id));
     }
 
+    public static void sendPlayerName(String id, String newName) {
+        LTNetClient.send(LTPayloads.PLAYER_NAME_REGION, new LTPayloads.PlayerNameRegion(id, newName));
+    }
+
     public static void sendCreate(String name, BlockPos a, BlockPos b, Map<String, Boolean> flags) {
         LTNetClient.send(LTPayloads.CREATE_REGION, new LTPayloads.CreateRegion(name, a, b, flags));
     }
@@ -92,7 +96,7 @@ public final class LTPacketsClient {
         for (int i = 0; i < entries.size(); i++) {
             LTPayloads.RegionEntry e = entries.get(i);
             out[i] = new AdminPanelScreen.RegionRow(e.id(), e.name(), e.dim(), e.min(), e.max(),
-                    e.flags(), e.ownerName(), e.source());
+                    e.flags(), e.ownerName(), e.source(), e.nameable());
         }
         return out;
     }

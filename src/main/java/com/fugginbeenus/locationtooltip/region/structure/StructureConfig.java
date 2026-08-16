@@ -24,6 +24,8 @@ public final class StructureConfig {
 
     public boolean nameVillages = true;
 
+    public boolean allowPlayerVillageNaming = false;
+
     public Set<String> structures = defaultStructures();
 
     public Set<String> denied = new LinkedHashSet<>();
@@ -106,6 +108,11 @@ public final class StructureConfig {
 
     public void setNameVillages(boolean value) {
         this.nameVillages = value;
+        save();
+    }
+
+    public void setAllowPlayerVillageNaming(boolean value) {
+        this.allowPlayerVillageNaming = value;
         save();
     }
 

@@ -22,11 +22,14 @@ public class AdminPanelScreen extends Screen {
         public java.util.Map<String, Boolean> flags;
         public String ownerName;
         public String source;
+        public final boolean nameable;
 
         public RegionRow(String id, String name, ResourceLocation dim, BlockPos a, BlockPos b,
-                         java.util.Map<String, Boolean> flags, String ownerName, String source) {
+                         java.util.Map<String, Boolean> flags, String ownerName, String source,
+                         boolean nameable) {
             this.id = id; this.name = name; this.dim = dim; this.a = a; this.b = b;
             this.flags = flags; this.ownerName = ownerName; this.source = source;
+            this.nameable = nameable;
         }
         public boolean isStructure() { return "STRUCTURE".equals(source); }
     }
@@ -173,6 +176,15 @@ public class AdminPanelScreen extends Screen {
         for (int i = 0; i < vis.size(); i++) {
             int rowY = listY - scroll + i * ROW_H;
             if (rowY + ROW_H <= listY || rowY >= listY + listH) continue;
+            RegionRow row = vis.get(i);
+            if (row.nameable) {
+                int[] name = nameRect(rowY);
+                if (LTGui.hovered(mx, my, name[0], name[1], name[2], name[3])) {
+                    Minecraft.getInstance().setScreen(new NameVillageScreen(row, this));
+                    return true;
+                }
+                continue;
+            }
             int[] edit = editRect(rowY), del = deleteRect(rowY);
             if (LTGui.hovered(mx, my, edit[0], edit[1], edit[2], edit[3])) {
                 Minecraft.getInstance().setScreen(new EditRegionScreen(vis.get(i), this));
@@ -203,6 +215,12 @@ public class AdminPanelScreen extends Screen {
     }
 
     private int[] deleteRect(int rowY) {
+        int w = 54, h = 18;
+        int x = listX + listW - 12 - w;
+        return new int[]{x, rowY + (ROW_H - h) / 2, w, h};
+    }
+
+    private int[] nameRect(int rowY) {
         int w = 54, h = 18;
         int x = listX + listW - 12 - w;
         return new int[]{x, rowY + (ROW_H - h) / 2, w, h};
@@ -291,6 +309,16 @@ public class AdminPanelScreen extends Screen {
         if (r.ownerName != null && !r.ownerName.isEmpty()) sub += " §8• §7" + r.ownerName;
         ctx.drawString(this.font, sub, listX + 12, rowY + 18, LTGui.SUBTEXT, false);
 
+        if (r.nameable) {
+            ctx.drawString(this.font, "§8you are standing here — name it", listX + 12, rowY + 30, 0xFF6A7079, false);
+            int[] nameBtn = nameRect(rowY);
+            LTGui.button(ctx, this.font, nameBtn[0], nameBtn[1], nameBtn[2], nameBtn[3], "Name",
+                    LTGui.hovered(mouseX, mouseY, nameBtn[0], nameBtn[1], nameBtn[2], nameBtn[3])
+                            && mouseY >= listY && mouseY < listY + listH,
+                    LTGui.OK, LTGui.OK_HOVER);
+            return;
+        }
+
         int fx = listX + 12;
         int fyMax = listX + listW - 12 - 54 - 6 - 46 - 8;
         if (r.flags != null && !r.flags.isEmpty()) {
@@ -341,6 +369,32 @@ public class AdminPanelScreen extends Screen {
             row.name = name;
             row.flags = new java.util.LinkedHashMap<>(newFlags);
             LTPacketsClient.sendAdminRename(row.id, name, newFlags);
+            onClose();
+        }
+
+        @Override public void onClose() { Minecraft.getInstance().setScreen(returnTo); }
+    }
+
+    public static class NameVillageScreen extends RegionConfigScreen {
+        private final RegionRow row;
+        private final Screen returnTo;
+
+        public NameVillageScreen(RegionRow row, Screen returnTo) {
+            super("Name Village");
+            this.row = row;
+            this.returnTo = returnTo;
+        }
+
+        @Override protected String headerTitle() { return "Name This Village"; }
+        @Override protected String confirmLabel() { return "Name"; }
+        @Override protected String initialName() { return row.name; }
+        @Override protected java.util.Map<String, Boolean> initialFlags() { return java.util.Map.of(); }
+        @Override protected boolean showFlags() { return false; }
+
+        @Override
+        protected void onConfirm(String name, java.util.Map<String, Boolean> newFlags) {
+            row.name = name;
+            LTPacketsClient.sendPlayerName(row.id, name);
             onClose();
         }
 

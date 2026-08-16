@@ -223,8 +223,6 @@ public final class LTClothConfig {
         return screen;
     }
 
-    /* ---------------- numeric helpers ---------------- */
-
     private static int clamp(int v, int lo, int hi) { return Math.max(lo, Math.min(hi, v)); }
     private static float clampF(float v, float lo, float hi) { return Math.max(lo, Math.min(hi, v)); }
 
