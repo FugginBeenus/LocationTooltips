@@ -5,7 +5,11 @@
   "mixins": [
     "MobEntityMixin",
     "ExplosionMixin",
-    "FireBlockMixin"
+    "FireBlockMixin",
+    "LevelMixin",
+    "EndermanTakeBlockGoalMixin",
+    "EndermanLeaveBlockGoalMixin",
+    "ItemEntityMixin"
   ],
   "client": [
     "LevelRendererMixin",
