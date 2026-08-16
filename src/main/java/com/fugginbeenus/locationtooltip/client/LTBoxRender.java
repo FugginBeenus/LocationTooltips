@@ -30,7 +30,7 @@ public final class LTBoxRender {
         if (verts.isEmpty()) return;
         List<float[]> batch = new ArrayList<>(verts);
         collector.submitCustomGeometry(matrices,
-                net.minecraft.client.renderer.rendertype.RenderTypes.debugFilledBox(),
+                net.minecraft.client.renderer.rendertype.RenderTypes.debugQuads(),
                 (pose, consumer) -> {
                     for (float[] v : batch) {
                         consumer.addVertex(pose.pose(), v[0], v[1], v[2])
@@ -81,11 +81,11 @@ public final class LTBoxRender {
 
     //? if >=1.21.11 {
     /*private static net.minecraft.client.renderer.rendertype.RenderType boxType() {
-        return net.minecraft.client.renderer.rendertype.RenderTypes.debugFilledBox();
+        return net.minecraft.client.renderer.rendertype.RenderTypes.debugQuads();
     }
     *///?} else {
     private static net.minecraft.client.renderer.RenderType boxType() {
-        return net.minecraft.client.renderer.RenderType.debugFilledBox();
+        return net.minecraft.client.renderer.RenderType.debugQuads();
     }
     //?}
     //?}
