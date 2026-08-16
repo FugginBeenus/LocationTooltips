@@ -43,6 +43,8 @@ public final class StructureRegionTagger {
             }
         }
 
+        StructureNaming.addProvider(new VillageNaming());
+
         //? if >=26.1 {
         /*ServerChunkEvents.CHUNK_LOAD.register((world, chunk, isNew) -> onChunkLoad(world, chunk));
         *///?} else {

@@ -46,6 +46,8 @@ public class LocationHudOverlay implements HudRenderCallback {
 
     private static final ResourceLocation ICON_REGION = LTId.of("locationtooltip", "textures/gui/region.png");
     private static final ResourceLocation ICON_CLOCK  = LTId.of("locationtooltip", "textures/gui/clock.png");
+    private static final ResourceLocation ICON_COORDS = LTId.of("locationtooltip", "textures/gui/coordinates.png");
+    private static final ResourceLocation ICON_BIOME  = LTId.of("locationtooltip", "textures/gui/biome.png");
 
     @Override
     //? if >=26.1 {
@@ -186,31 +188,36 @@ public class LocationHudOverlay implements HudRenderCallback {
     private static void extraPills(GuiGraphics ctx, LTConfig cfg, Minecraft mc,
                                    int pad, float s, int contentH, int totalH, int bg) {
         if (cfg.showCoords) {
-            textPill(ctx, cfg, mc, coordsText(mc), cfg.coordsPosition,
+            iconPill(ctx, cfg, mc, ICON_COORDS, coordsText(mc), cfg.coordsPosition,
                     cfg.coordsXOffset, cfg.coordsYOffset, pad, s, contentH, totalH, bg);
         }
         if (cfg.showBiome) {
-            String biome = biomeText(mc);
-            if (biome != null) {
-                textPill(ctx, cfg, mc, biome, cfg.biomePosition,
-                        cfg.biomeXOffset, cfg.biomeYOffset, pad, s, contentH, totalH, bg);
-            }
+            iconPill(ctx, cfg, mc, ICON_BIOME, biomeText(mc), cfg.biomePosition,
+                    cfg.biomeXOffset, cfg.biomeYOffset, pad, s, contentH, totalH, bg);
         }
     }
 
-    private static void textPill(GuiGraphics ctx, LTConfig cfg, Minecraft mc, String text,
+    private static void iconPill(GuiGraphics ctx, LTConfig cfg, Minecraft mc,
+                                 ResourceLocation iconTexture, String text,
                                  LTConfig.Position pos, int xOff, int yOff,
                                  int pad, float s, int contentH, int totalH, int bg) {
         if (text == null || text.isEmpty()) return;
 
+        final int icon = Math.max(8, cfg.iconSize);
         final int textH = (int) (mc.font.lineHeight * s);
         final int textW = (int) (mc.font.width(text) * s);
-        final int totalW = pad + textW + pad + Math.max(0, cfg.pillExtraWidth);
+        final int totalW = pad + icon + 4 + textW + pad + Math.max(0, cfg.pillExtraWidth);
 
         int[] xy = anchor(pos, mc.getWindow(), totalW, totalH, xOff, yOff);
         drawPill(ctx, cfg, xy[0], xy[1], totalW, totalH, bg);
 
-        ltPush(ctx, xy[0] + pad, xy[1] + pad + cfg.verticalNudge + (contentH - textH) / 2f, s);
+        int cx = xy[0] + pad;
+        int cy = xy[1] + pad + cfg.verticalNudge;
+
+        ltIcon(ctx, iconTexture, cx, cy + ((contentH - icon) / 2), icon);
+        cx += icon + 4;
+
+        ltPush(ctx, cx, cy + (contentH - textH) / 2f, s);
         ctx.drawString(mc.font, Component.literal(text), 0, 0, 0xFFFFFFFF, cfg.shadow);
         ltPop(ctx);
     }

@@ -22,6 +22,8 @@ public final class StructureConfig {
 
     public boolean tagModdedStructures = true;
 
+    public boolean nameVillages = true;
+
     public Set<String> structures = defaultStructures();
 
     public Set<String> denied = new LinkedHashSet<>();
@@ -99,6 +101,11 @@ public final class StructureConfig {
 
     public void setEnabled(boolean value) {
         enabled = value;
+        save();
+    }
+
+    public void setNameVillages(boolean value) {
+        this.nameVillages = value;
         save();
     }
 
