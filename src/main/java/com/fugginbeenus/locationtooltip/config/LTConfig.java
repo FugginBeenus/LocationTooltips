@@ -21,16 +21,16 @@ public final class LTConfig {
     public String  separator      = " • ";
     public boolean splitElements  = true;
 
-    public float  backgroundOpacity = 0.85f;
-    public int    iconSize          = 16;
-    public int    pillPadding       = 6;
-    public float  textScale         = 1.0f;
+    public float  backgroundOpacity = 0.25f;
+    public int    iconSize          = 9;
+    public int    pillPadding       = 2;
+    public float  textScale         = 0.6f;
     public float  pillHeightScale   = 1.0f;
     public int    cornerRadius      = 1;
-    public int    spacing           = 8;
+    public int    spacing           = 5;
     public int    pillExtraWidth    = 0;
     public boolean shadow           = true;
-    public int    verticalNudge     = 1;
+    public int    verticalNudge     = 0;
 
     public CornerStyle cornerStyle = CornerStyle.ROUND;
     public float cornerExponent = 4.0f;
@@ -40,17 +40,17 @@ public final class LTConfig {
 
     public Position position = Position.TOP_CENTER;
     public int xOffset = 0;
-    public int yOffset = 8;
+    public int yOffset = 4;
 
-    public boolean showCoords = false;
-    public Position coordsPosition = Position.TOP_LEFT;
+    public boolean showCoords = true;
+    public Position coordsPosition = Position.TOP_CENTER;
     public int coordsXOffset = 8;
-    public int coordsYOffset = 8;
+    public int coordsYOffset = 4;
 
-    public boolean showBiome = false;
-    public Position biomePosition = Position.TOP_LEFT;
+    public boolean showBiome = true;
+    public Position biomePosition = Position.TOP_CENTER;
     public int biomeXOffset = 8;
-    public int biomeYOffset = 30;
+    public int biomeYOffset = 4;
 
     public boolean useTexturedPills = false;
 
