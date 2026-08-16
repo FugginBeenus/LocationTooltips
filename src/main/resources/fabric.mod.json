@@ -3,9 +3,15 @@
   "id": "locationtooltip",
   "version": "${version}",
   "name": "Location Tooltip",
-  "description": "Pretty region HUD + admin tools.",
+  "description": "Shows the name of wherever you are standing. Draw your own regions, lock down what people can do inside them, and let villages name themselves.",
   "authors": ["fugginbeenus"],
+  "contact": {
+    "homepage": "https://modrinth.com/mod/location-tooltip",
+    "sources": "https://github.com/FugginBeenus/LocationTooltips",
+    "issues": "https://github.com/FugginBeenus/LocationTooltips/issues"
+  },
   "license": "MIT",
+  "icon": "assets/locationtooltip/icon.png",
   "environment": "*",
   "entrypoints": {
     "main":   ["com.fugginbeenus.locationtooltip.LocationTooltip"],
