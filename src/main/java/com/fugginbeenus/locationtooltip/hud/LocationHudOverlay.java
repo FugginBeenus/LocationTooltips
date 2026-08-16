@@ -12,6 +12,7 @@ import net.minecraft.client.gui.GuiGraphics;
 import com.mojang.blaze3d.platform.Window;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.util.Mth;
 
 //? if >=26.1 {
 /*public class LocationHudOverlay implements HudElement {
@@ -77,7 +78,6 @@ public class LocationHudOverlay implements HudRenderCallback {
 
         final boolean hasRegion = region != null && !region.isEmpty();
         final boolean hasTime   = time   != null && !time.isEmpty();
-        if (!hasRegion && !hasTime) return;
 
         final int icon  = Math.max(8, cfg.iconSize);
         final int pad   = Math.max(0, cfg.pillPadding);
@@ -91,6 +91,10 @@ public class LocationHudOverlay implements HudRenderCallback {
 
         final int alpha = (int) (Math.max(0f, Math.min(1f, cfg.backgroundOpacity)) * 255) & 0xFF;
         final int bg = (alpha << 24);
+
+        extraPills(ctx, cfg, mc, pad, s, contentH, totalH, bg);
+
+        if (!hasRegion && !hasTime) return;
 
         if (!cfg.splitElements) {
             final String text = hasRegion && hasTime ? region + cfg.separator + time : (hasRegion ? region : time);
@@ -177,6 +181,68 @@ public class LocationHudOverlay implements HudRenderCallback {
             return false;
         }
         //?}
+    }
+
+    private static void extraPills(GuiGraphics ctx, LTConfig cfg, Minecraft mc,
+                                   int pad, float s, int contentH, int totalH, int bg) {
+        if (cfg.showCoords) {
+            textPill(ctx, cfg, mc, coordsText(mc), cfg.coordsPosition,
+                    cfg.coordsXOffset, cfg.coordsYOffset, pad, s, contentH, totalH, bg);
+        }
+        if (cfg.showBiome) {
+            String biome = biomeText(mc);
+            if (biome != null) {
+                textPill(ctx, cfg, mc, biome, cfg.biomePosition,
+                        cfg.biomeXOffset, cfg.biomeYOffset, pad, s, contentH, totalH, bg);
+            }
+        }
+    }
+
+    private static void textPill(GuiGraphics ctx, LTConfig cfg, Minecraft mc, String text,
+                                 LTConfig.Position pos, int xOff, int yOff,
+                                 int pad, float s, int contentH, int totalH, int bg) {
+        if (text == null || text.isEmpty()) return;
+
+        final int textH = (int) (mc.font.lineHeight * s);
+        final int textW = (int) (mc.font.width(text) * s);
+        final int totalW = pad + textW + pad + Math.max(0, cfg.pillExtraWidth);
+
+        int[] xy = anchor(pos, mc.getWindow(), totalW, totalH, xOff, yOff);
+        drawPill(ctx, cfg, xy[0], xy[1], totalW, totalH, bg);
+
+        ltPush(ctx, xy[0] + pad, xy[1] + pad + cfg.verticalNudge + (contentH - textH) / 2f, s);
+        ctx.drawString(mc.font, Component.literal(text), 0, 0, 0xFFFFFFFF, cfg.shadow);
+        ltPop(ctx);
+    }
+
+    private static String coordsText(Minecraft mc) {
+        if (mc.player == null) return null;
+        return Mth.floor(mc.player.getX()) + ", " + Mth.floor(mc.player.getY()) + ", " + Mth.floor(mc.player.getZ());
+    }
+
+    private static String biomeText(Minecraft mc) {
+        if (mc.player == null || mc.level == null) return null;
+        try {
+            var key = mc.level.getBiome(mc.player.blockPosition()).unwrapKey().orElse(null);
+            if (key == null) return null;
+            var id = key.location();
+            String translation = "biome." + id.getNamespace() + "." + id.getPath();
+            String name = Component.translatable(translation).getString();
+            return translation.equals(name) ? prettify(id.getPath()) : name;
+        } catch (Throwable ignored) {
+            return null;
+        }
+    }
+
+    private static String prettify(String path) {
+        String[] parts = path.split("_");
+        StringBuilder sb = new StringBuilder();
+        for (String part : parts) {
+            if (part.isEmpty()) continue;
+            if (sb.length() > 0) sb.append(' ');
+            sb.append(Character.toUpperCase(part.charAt(0))).append(part.substring(1));
+        }
+        return sb.toString();
     }
 
     private static int[] anchor(LTConfig.Position pos, Window win, int w, int h, int dx, int dy) {

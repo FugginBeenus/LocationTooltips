@@ -42,6 +42,16 @@ public final class LTConfig {
     public int xOffset = 0;
     public int yOffset = 8;
 
+    public boolean showCoords = false;
+    public Position coordsPosition = Position.TOP_LEFT;
+    public int coordsXOffset = 8;
+    public int coordsYOffset = 8;
+
+    public boolean showBiome = false;
+    public Position biomePosition = Position.TOP_LEFT;
+    public int biomeXOffset = 8;
+    public int biomeYOffset = 30;
+
     public boolean useTexturedPills = false;
 
     public int texW = 64;

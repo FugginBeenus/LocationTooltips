@@ -162,6 +162,62 @@ public final class LTClothConfig {
             tracked.add(new ConfigLiveBridge.Tracked<>(eY, v -> cfg.yOffset = v));
         }
 
+        {
+            var cat = builder.getOrCreateCategory(Component.literal("Coordinates"));
+
+            var eOn = eb.startBooleanToggle(Component.literal("Show Coordinates"), cfg.showCoords)
+                    .setSaveConsumer(v -> { cfg.showCoords = v; cfg.save(); })
+                    .build();
+            cat.addEntry(eOn);
+            tracked.add(new ConfigLiveBridge.Tracked<>(eOn, v -> cfg.showCoords = v));
+
+            var ePos = eb.startEnumSelector(Component.literal("Anchor Position"), LTConfig.Position.class, cfg.coordsPosition)
+                    .setSaveConsumer(v -> { cfg.coordsPosition = v; cfg.save(); })
+                    .build();
+            cat.addEntry(ePos);
+            tracked.add(new ConfigLiveBridge.Tracked<>(ePos, v -> cfg.coordsPosition = v));
+
+            var eX = eb.startIntField(Component.literal("X Offset (px)"), cfg.coordsXOffset)
+                    .setSaveConsumer(v -> { cfg.coordsXOffset = v; cfg.save(); })
+                    .build();
+            cat.addEntry(eX);
+            tracked.add(new ConfigLiveBridge.Tracked<>(eX, v -> cfg.coordsXOffset = v));
+
+            var eY2 = eb.startIntField(Component.literal("Y Offset (px)"), cfg.coordsYOffset)
+                    .setSaveConsumer(v -> { cfg.coordsYOffset = v; cfg.save(); })
+                    .build();
+            cat.addEntry(eY2);
+            tracked.add(new ConfigLiveBridge.Tracked<>(eY2, v -> cfg.coordsYOffset = v));
+        }
+
+        {
+            var cat = builder.getOrCreateCategory(Component.literal("Biome"));
+
+            var eOn = eb.startBooleanToggle(Component.literal("Show Biome"), cfg.showBiome)
+                    .setSaveConsumer(v -> { cfg.showBiome = v; cfg.save(); })
+                    .build();
+            cat.addEntry(eOn);
+            tracked.add(new ConfigLiveBridge.Tracked<>(eOn, v -> cfg.showBiome = v));
+
+            var ePos = eb.startEnumSelector(Component.literal("Anchor Position"), LTConfig.Position.class, cfg.biomePosition)
+                    .setSaveConsumer(v -> { cfg.biomePosition = v; cfg.save(); })
+                    .build();
+            cat.addEntry(ePos);
+            tracked.add(new ConfigLiveBridge.Tracked<>(ePos, v -> cfg.biomePosition = v));
+
+            var eX = eb.startIntField(Component.literal("X Offset (px)"), cfg.biomeXOffset)
+                    .setSaveConsumer(v -> { cfg.biomeXOffset = v; cfg.save(); })
+                    .build();
+            cat.addEntry(eX);
+            tracked.add(new ConfigLiveBridge.Tracked<>(eX, v -> cfg.biomeXOffset = v));
+
+            var eY3 = eb.startIntField(Component.literal("Y Offset (px)"), cfg.biomeYOffset)
+                    .setSaveConsumer(v -> { cfg.biomeYOffset = v; cfg.save(); })
+                    .build();
+            cat.addEntry(eY3);
+            tracked.add(new ConfigLiveBridge.Tracked<>(eY3, v -> cfg.biomeYOffset = v));
+        }
+
         Screen screen = builder.build();
         ConfigLiveBridge.beginSession(screen, tracked);
         return screen;
