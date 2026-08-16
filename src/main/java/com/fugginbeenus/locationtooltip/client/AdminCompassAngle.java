@@ -1,17 +1,9 @@
 package com.fugginbeenus.locationtooltip.client;
 
-/**
- * The Admin Compass needle on 1.21.11 and newer.
- *
- * Item predicates became data-driven item models, so the needle is now a model property that
- * the item's own model definition dispatches on. Extending vanilla's needle helper means the
- * easing and the aimless spin behave exactly like a real compass; all we supply is the target.
- */
 //? if >=1.21.11 {
 /*public final class AdminCompassAngle
         extends net.minecraft.client.renderer.item.properties.numeric.NeedleDirectionHelper
         implements net.minecraft.client.renderer.item.properties.numeric.RangeSelectItemModelProperty {
-
     public static final net.minecraft.resources.Identifier ID =
             com.fugginbeenus.locationtooltip.util.LTId.of("locationtooltip", "region_angle");
 
@@ -42,7 +34,6 @@ package com.fugginbeenus.locationtooltip.client;
         net.minecraft.core.BlockPos target = AdminCompassModel.nearestRegionCenter(
                 level.dimension().identifier(), net.minecraft.core.BlockPos.containing(pos));
 
-        // No known region: let the needle spin, the way a compass does out of range.
         if (target == null) {
             return net.minecraft.util.Mth.positiveModulo(seed * 0.00390625F, 1.0F);
         }

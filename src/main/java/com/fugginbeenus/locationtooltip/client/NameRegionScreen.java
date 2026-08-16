@@ -6,12 +6,7 @@ import net.minecraft.core.BlockPos;
 
 import java.util.Map;
 
-/**
- * Region creation card. Name + protection flags, then sends the new region to the server.
- * Layout/scroll handled by {@link RegionConfigScreen}.
- */
 public class NameRegionScreen extends RegionConfigScreen {
-
     private final BlockPos a, b;
 
     public NameRegionScreen(BlockPos a, BlockPos b) {

@@ -6,16 +6,7 @@ import net.minecraft.world.phys.Vec3;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * Draws the world-space region boxes.
- *
- * The geometry is built into a buffer and handed over in one go, because how it gets to the
- * screen differs per version: older ones write into the frame's shared buffer, while 26.x
- * submits it to the level renderer. The box maths below is shared.
- */
 public final class LTBoxRender {
-
-    /** x, y, z, r, g, b, a */
     private final List<float[]> verts = new ArrayList<>();
     private final PoseStack matrices;
 
@@ -27,7 +18,6 @@ public final class LTBoxRender {
         this.collector = collector;
     }
 
-    // Called from the level renderer, where the pose is already at the camera.
     public static LTBoxRender begin(PoseStack matrices,
                                     net.minecraft.client.renderer.SubmitNodeCollector collector,
                                     Vec3 cam) {
@@ -57,7 +47,6 @@ public final class LTBoxRender {
         this.consumers = consumers;
     }
 
-    /** Translate to camera-relative space and take the frame's buffer. */
     public static LTBoxRender begin(net.fabricmc.fabric.api.client.rendering.v1.WorldRenderContext ctx) {
         //? if >=1.21.11 {
         /*PoseStack matrices = ctx.matrices();
@@ -124,7 +113,6 @@ public final class LTBoxRender {
         emit(x4, y4, z4, r, g, b, a);
     }
 
-    /** One flat quad in the current batch. */
     public void face(double x1, double y1, double z1,
                      double x2, double y2, double z2,
                      double x3, double y3, double z3,
@@ -133,7 +121,6 @@ public final class LTBoxRender {
         quad(x1, y1, z1, x2, y2, z2, x3, y3, z3, x4, y4, z4, r, g, b, a);
     }
 
-    /** A rectangular beam along one axis between two points, drawn as its 4 sides. */
     public void edgeBox(double x1, double y1, double z1,
                         double x2, double y2, double z2,
                         float width, float r, float g, float b, float a) {

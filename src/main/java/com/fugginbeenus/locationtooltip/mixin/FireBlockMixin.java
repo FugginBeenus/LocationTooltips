@@ -11,14 +11,8 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
-/**
- * Stops fire from spreading to / burning blocks inside regions with the {@code fire-spread}
- * flag denied. {@code checkBurnOut} is called for each neighbour fire tries to ignite;
- * we cancel it when the target position is protected.
- */
 @Mixin(FireBlock.class)
 public class FireBlockMixin {
-
     @Inject(method = "checkBurnOut", at = @At("HEAD"), cancellable = true)
     private void locationtooltip$blockFireSpread(Level world, BlockPos pos, int spreadFactor,
                                                  RandomSource random, int currentAge, CallbackInfo ci) {

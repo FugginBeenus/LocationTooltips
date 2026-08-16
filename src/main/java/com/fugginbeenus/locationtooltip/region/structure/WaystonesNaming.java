@@ -13,31 +13,16 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Stream;
 
-/**
- * Optional Waystones integration, done via reflection so the mod carries no build- or
- * runtime-dependency on Waystones (and avoids a Loom version conflict). Only registered when
- * the {@code waystones} mod is present.
- *
- * <p>If a (preferably naturally-generated) named waystone sits inside a structure's bounding
- * box, its themed name is used as the region's name — so a village shows its waystone name
- * (e.g. "Restful Hamlet") instead of the generic "Plains Village".
- *
- * <p>Handles both API generations: 1.20.1 (Waystones 14.x, {@code IWaystone}, name is a String)
- * and 1.21+ (Waystones 21.x, {@code Waystone}, name is a Component). {@code getAllWaystones} and
- * {@code getPos/getDimension/getWaystoneUid/hasName/wasGenerated} are identical across both.
- */
 public final class WaystonesNaming implements StructureNameProvider {
-
-    /** A waystone's data, pulled out of the reflective API into something plain. */
     public record WaystoneInfo(String uid, String name, ResourceLocation dim, BlockPos pos, boolean generated) {}
 
-    private final Method getAllWaystones; // static WaystonesAPI.getAllWaystones(MinecraftServer)
-    private final Method getName;         // getName() -> String (1.20.1) or Component (1.21+)
-    private final Method getPos;          // IWaystone.getPosition() -> BlockPos
-    private final Method getDimension;    // IWaystone.getDimension() -> ResourceKey<Level>
-    private final Method hasName;         // IWaystone.hasName() -> boolean
-    private final Method wasGenerated;    // IWaystone.wasGenerated() -> boolean
-    private final Method getWaystoneUid;  // IWaystone.getWaystoneUid() -> UUID
+    private final Method getAllWaystones;
+    private final Method getName;
+    private final Method getPos;
+    private final Method getDimension;
+    private final Method hasName;
+    private final Method wasGenerated;
+    private final Method getWaystoneUid;
     private final boolean ready;
 
     public WaystonesNaming() {
@@ -55,7 +40,6 @@ public final class WaystonesNaming implements StructureNameProvider {
             uid = waystone.getMethod("getWaystoneUid");
             ok = true;
         } catch (Throwable t) {
-            // Waystones absent or API changed → provider stays inert.
         }
         this.getAllWaystones = all;
         this.getName = name;
@@ -67,11 +51,6 @@ public final class WaystonesNaming implements StructureNameProvider {
         this.ready = ok;
     }
 
-    /**
-     * Every currently-known named waystone. Note Waystones only registers a naturally
-     * generated waystone once a player activates it, which is why region naming is synced
-     * periodically rather than only when the structure is first tagged.
-     */
     @SuppressWarnings("unchecked")
     public List<WaystoneInfo> listNamedWaystones(MinecraftServer server) {
         if (!ready) return List.of();
@@ -128,7 +107,6 @@ public final class WaystonesNaming implements StructureNameProvider {
             });
             if (matches.isEmpty()) return Optional.empty();
 
-            // Prefer naturally-generated waystones (themed names), else any named one.
             String generated = pickName(matches, true);
             if (generated != null) return Optional.of(generated);
             return Optional.ofNullable(pickName(matches, false));
@@ -149,7 +127,6 @@ public final class WaystonesNaming implements StructureNameProvider {
         return null;
     }
 
-    /** The waystone interface is Waystone on 1.21+ and IWaystone on 1.20.1. */
     private static Class<?> waystoneClass() throws ClassNotFoundException {
         try {
             return Class.forName("net.blay09.mods.waystones.api.Waystone");
@@ -158,7 +135,6 @@ public final class WaystonesNaming implements StructureNameProvider {
         }
     }
 
-    /** getName() is a String on 1.20.1 and a Component on 1.21+. */
     private static String waystoneName(Object result) {
         if (result instanceof String s) return s;
         if (result instanceof net.minecraft.network.chat.Component t) return t.getString();

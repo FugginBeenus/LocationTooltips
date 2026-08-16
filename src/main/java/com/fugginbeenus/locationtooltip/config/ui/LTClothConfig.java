@@ -8,12 +8,6 @@ import net.minecraft.network.chat.Component;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * ClothConfig screen for Location Tooltip (LIVE).
- * - Uses native int sliders; floats are mapped to step sliders.
- * - Live updates: entries are polled each tick while this screen is open.
- * - Still saves on "Done".
- */
 public final class LTClothConfig {
     private LTClothConfig() {}
 
@@ -29,7 +23,6 @@ public final class LTClothConfig {
         builder.setSavingRunnable(cfg::save);
         final var eb = builder.entryBuilder();
 
-        // ---- General ----
         {
             var cat = builder.getOrCreateCategory(Component.literal("General"));
 
@@ -64,7 +57,6 @@ public final class LTClothConfig {
             tracked.add(new ConfigLiveBridge.Tracked<>(eSplit, v -> cfg.splitElements = v));
         }
 
-        // ---- Appearance ----
         {
             var cat = builder.getOrCreateCategory(Component.literal("Appearance"));
 
@@ -148,7 +140,6 @@ public final class LTClothConfig {
             tracked.add(new ConfigLiveBridge.Tracked<>(eBorder, v -> cfg.borderWidth = clamp(v, 0, 6)));
         }
 
-        // ---- Position ----
         {
             var cat = builder.getOrCreateCategory(Component.literal("Position"));
 
@@ -171,10 +162,6 @@ public final class LTClothConfig {
             tracked.add(new ConfigLiveBridge.Tracked<>(eY, v -> cfg.yOffset = v));
         }
 
-        // (9-slice "Textured Pills" options removed — the vector HUD renderer doesn't use them.
-        //  The fields remain in LTConfig for back-compat so old config files still load cleanly.)
-
-        // Build the screen and start the live session
         Screen screen = builder.build();
         ConfigLiveBridge.beginSession(screen, tracked);
         return screen;
@@ -185,12 +172,10 @@ public final class LTClothConfig {
     private static int clamp(int v, int lo, int hi) { return Math.max(lo, Math.min(hi, v)); }
     private static float clampF(float v, float lo, float hi) { return Math.max(lo, Math.min(hi, v)); }
 
-    // 0..1 <-> 0..100%
     private static int toPct(float f) { return (int)Math.round(clampF(f, 0f, 1f) * 100f); }
     private static float fromPct(int pct) { return clampF(pct / 100f, 0f, 1f); }
     private static String toPctLabel(int pct) { return pct + "%"; }
 
-    // Float slider via steps: value = base + steps * step
     private static int stepsRange(float base, float max, float step) {
         return Math.round((max - base) / step);
     }

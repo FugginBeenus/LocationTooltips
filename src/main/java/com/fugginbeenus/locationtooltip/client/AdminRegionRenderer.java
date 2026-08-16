@@ -10,15 +10,13 @@ import net.minecraft.core.BlockPos;
 import java.util.ArrayList;
 import java.util.List;
 
-/** Draws every nearby region's box while the admin compass is held. */
 public class AdminRegionRenderer {
-
     private static final List<RegionBox> regions = new ArrayList<>();
     private static long lastUpdateTime = 0;
 
     private static class RegionBox {
         final BlockPos min, max;
-        final boolean structure; // auto-tagged structure region → rendered in a distinct color
+        final boolean structure;
         RegionBox(BlockPos a, BlockPos b, boolean structure) {
             int minX = Math.min(a.getX(), b.getX());
             int minY = Math.min(a.getY(), b.getY());
@@ -66,7 +64,6 @@ public class AdminRegionRenderer {
     }
     *///?}
 
-    /** Always pops the pose, even when draw() bails out early. */
     private static void drawSafely(LTBoxRender r) {
         try {
             draw(r);
@@ -82,7 +79,6 @@ public class AdminRegionRenderer {
         float w = 0.07f;
         float faceAlpha = 0.10f * pulse;
         float sideFaceAlpha = 0.06f * pulse;
-
 
         r.startQuads();
         for (RegionBox box : regions) {
@@ -123,6 +119,5 @@ public class AdminRegionRenderer {
             r.face(maxX, minY, minZ, maxX, maxY, minZ, maxX, maxY, maxZ, maxX, minY, maxZ, cr, cg, cb, sideFaceAlpha);
         }
         r.drawQuads();
-
     }
 }

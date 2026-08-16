@@ -13,22 +13,15 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 
-/**
- * Sleek admin region browser (opened by the Admin Compass / keybind). Custom-rendered via
- * {@link LTGui}: a scrollable card with search, per-region rows (name, dimension, owner, flag
- * icons) and scroll-aware Edit/Delete actions, plus a draggable scrollbar.
- */
 public class AdminPanelScreen extends Screen {
-
-    // ===== data model (kept stable — referenced by LTPacketsClient) =====
     public static class RegionRow {
         public final String id;
         public String name;
         public final ResourceLocation dim;
         public final BlockPos a, b;
-        public java.util.Map<String, Boolean> flags; // id -> allow/deny; absent = inherit
-        public String ownerName;  // Player name or "Server" for admin regions
-        public String source;     // PLAYER / SERVER / STRUCTURE
+        public java.util.Map<String, Boolean> flags;
+        public String ownerName;
+        public String source;
 
         public RegionRow(String id, String name, ResourceLocation dim, BlockPos a, BlockPos b,
                          java.util.Map<String, Boolean> flags, String ownerName, String source) {
@@ -55,7 +48,6 @@ public class AdminPanelScreen extends Screen {
         instance = this;
     }
 
-    /** Called from LTPacketsClient when new data arrives. */
     public static void receiveList(RegionRow[] rows) {
         if (instance == null) return;
         instance.regions.clear();
@@ -89,10 +81,9 @@ public class AdminPanelScreen extends Screen {
     @Override
     public void tick() {
         super.tick();
-        if (++ticks % 100 == 0) LTPacketsClient.requestAllAdminList(); // refresh ~5s
+        if (++ticks % 100 == 0) LTPacketsClient.requestAllAdminList();
     }
 
-    // ===== filtered view =====
     private List<RegionRow> visible() {
         String q = (searchField == null) ? "" : searchField.getValue().trim().toLowerCase(Locale.ROOT);
         if (q.isEmpty()) return regions;
@@ -107,7 +98,6 @@ public class AdminPanelScreen extends Screen {
         if (scroll > max) scroll = max;
     }
 
-    // ===== input =====
     //? if >=1.21 {
     /*@Override
     public boolean mouseScrolled(double mx, double my, double horizontalAmount, double amount) {
@@ -169,10 +159,8 @@ public class AdminPanelScreen extends Screen {
     private boolean ltClick(double mx, double my, int button) {
         if (button != 0) return false;
 
-        // close X
         if (LTGui.hovered(mx, my, panelX + panelW - 12 - 16, panelY + 8, 16, 16)) { onClose(); return true; }
 
-        // scrollbar
         int max = Math.max(0, visible().size() * ROW_H - listH);
         if (max > 0 && LTGui.hovered(mx, my, listX + listW - 4, listY, 4, listH)) {
             draggingScroll = true;
@@ -180,11 +168,10 @@ public class AdminPanelScreen extends Screen {
             return true;
         }
 
-        // row action buttons (scroll-aware)
         List<RegionRow> vis = visible();
         for (int i = 0; i < vis.size(); i++) {
             int rowY = listY - scroll + i * ROW_H;
-            if (rowY + ROW_H <= listY || rowY >= listY + listH) continue; // off-screen
+            if (rowY + ROW_H <= listY || rowY >= listY + listH) continue;
             int[] edit = editRect(rowY), del = deleteRect(rowY);
             if (LTGui.hovered(mx, my, edit[0], edit[1], edit[2], edit[3])) {
                 Minecraft.getInstance().setScreen(new EditRegionScreen(vis.get(i), this));
@@ -192,7 +179,7 @@ public class AdminPanelScreen extends Screen {
             }
             if (LTGui.hovered(mx, my, del[0], del[1], del[2], del[3])) {
                 RegionRow r = vis.get(i);
-                regions.remove(r);                 // optimistic local removal
+                regions.remove(r);
                 LTPacketsClient.sendAdminDelete(r.id);
                 clampScroll();
                 return true;
@@ -220,7 +207,6 @@ public class AdminPanelScreen extends Screen {
         return new int[]{x, rowY + (ROW_H - h) / 2, w, h};
     }
 
-    // Skip 1.21's default screen blur; render() draws our own dim.
     //? if >=26.1 {
     /*@Override
     public void extractBackground(GuiGraphics context, int mouseX, int mouseY, float delta) {
@@ -231,7 +217,6 @@ public class AdminPanelScreen extends Screen {
     }
     *///?}
 
-    // ===== render =====
     //? if >=26.1 {
     /*@Override
     public void extractRenderState(GuiGraphics ctx, int mouseX, int mouseY, float delta) {
@@ -242,7 +227,7 @@ public class AdminPanelScreen extends Screen {
     @Override
     public void render(GuiGraphics ctx, int mouseX, int mouseY, float delta) {
         ltDraw(ctx, mouseX, mouseY, delta);
-        super.render(ctx, mouseX, mouseY, delta);   // widgets (the text field)
+        super.render(ctx, mouseX, mouseY, delta);
     }
     //?}
 
@@ -250,12 +235,10 @@ public class AdminPanelScreen extends Screen {
         ctx.fill(0, 0, this.width, this.height, LTGui.DIM);
         LTGui.panel(ctx, panelX, panelY, panelW, panelH);
 
-        // header
         LTGui.roundRect(ctx, panelX, panelY, panelW, 30, 6, LTGui.PANEL_HEAD);
         ctx.drawString(this.font, Component.literal("§lRegions"), panelX + 12, panelY + 11, LTGui.TEXT, false);
         ctx.fill(panelX + 10, panelY + 29, panelX + panelW - 10, panelY + 30, LTGui.ACCENT);
 
-        // search field
         int searchW = 150;
         int searchX = panelX + panelW - 12 - 16 - 6 - searchW;
         LTGui.field(ctx, searchX, panelY + 8, searchW, 16, searchField != null && searchField.isFocused());
@@ -263,12 +246,10 @@ public class AdminPanelScreen extends Screen {
             ctx.drawString(this.font, Component.literal("Search…"), searchX + 5, panelY + 11, LTGui.FAINT, false);
         }
 
-        // close X
         boolean closeHover = LTGui.hovered(mouseX, mouseY, panelX + panelW - 12 - 16, panelY + 8, 16, 16);
         LTGui.roundRect(ctx, panelX + panelW - 12 - 16, panelY + 8, 16, 16, 4, closeHover ? LTGui.DANGER_HOVER : LTGui.BTN);
         ctx.drawString(this.font, Component.literal("✕"), panelX + panelW - 12 - 16 + 5, panelY + 12, LTGui.TEXT, false);
 
-        // list
         List<RegionRow> vis = visible();
         ctx.enableScissor(listX, listY, listX + listW, listY + listH);
         if (vis.isEmpty()) {
@@ -282,7 +263,6 @@ public class AdminPanelScreen extends Screen {
         }
         ctx.disableScissor();
 
-        // scrollbar
         int max = Math.max(0, vis.size() * ROW_H - listH);
         if (max > 0) {
             int trackX = listX + listW - 4;
@@ -292,11 +272,9 @@ public class AdminPanelScreen extends Screen {
             LTGui.roundRect(ctx, trackX, thumbY, 4, thumbH, 2, LTGui.ACCENT_DIM);
         }
 
-        // footer
         ctx.drawString(this.font,
                 Component.literal("§7" + vis.size() + (vis.size() == 1 ? " region" : " regions")),
                 panelX + 12, panelY + panelH - 16, LTGui.SUBTEXT, false);
-
     }
 
     private void renderRow(GuiGraphics ctx, RegionRow r, int rowY, int mouseX, int mouseY) {
@@ -304,21 +282,17 @@ public class AdminPanelScreen extends Screen {
                 && mouseY >= listY && mouseY < listY + listH;
         LTGui.roundRect(ctx, listX, rowY + 1, listW, ROW_H - 2, 4, hover ? LTGui.ROW_HOVER : LTGui.ROW_ALT);
 
-        // source accent dot (cyan = structure, orange = normal)
         int dotColor = r.isStructure() ? 0xFF40C4D4 : 0xFFE0A53C;
         ctx.fill(listX + 4, rowY + 6, listX + 6, rowY + ROW_H - 6, dotColor);
 
-        // name
         ctx.drawString(this.font, r.name, listX + 12, rowY + 6, LTGui.TEXT, false);
 
-        // dim + owner
         String sub = "§7" + r.dim.getPath();
         if (r.ownerName != null && !r.ownerName.isEmpty()) sub += " §8• §7" + r.ownerName;
         ctx.drawString(this.font, sub, listX + 12, rowY + 18, LTGui.SUBTEXT, false);
 
-        // flag icons
         int fx = listX + 12;
-        int fyMax = listX + listW - 12 - 54 - 6 - 46 - 8; // keep clear of buttons
+        int fyMax = listX + listW - 12 - 54 - 6 - 46 - 8;
         if (r.flags != null && !r.flags.isEmpty()) {
             for (java.util.Map.Entry<String, Boolean> e : r.flags.entrySet()) {
                 if (fx > fyMax) { ctx.drawString(this.font, "…", fx, rowY + 30, LTGui.FAINT, false); break; }
@@ -335,7 +309,6 @@ public class AdminPanelScreen extends Screen {
             ctx.drawString(this.font, "§8default", listX + 12, rowY + 30, 0xFF6A7079, false);
         }
 
-        // action buttons
         int[] edit = editRect(rowY), del = deleteRect(rowY);
         LTGui.button(ctx, this.font, edit[0], edit[1], edit[2], edit[3], "Edit",
                 LTGui.hovered(mouseX, mouseY, edit[0], edit[1], edit[2], edit[3]) && mouseY >= listY && mouseY < listY + listH,
@@ -348,7 +321,6 @@ public class AdminPanelScreen extends Screen {
     @Override public boolean shouldCloseOnEsc() { return true; }
     @Override public void onClose() { Minecraft.getInstance().setScreen(null); }
 
-    // ===== edit subscreen =====
     public static class EditRegionScreen extends RegionConfigScreen {
         private final RegionRow row;
         private final Screen returnTo;

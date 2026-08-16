@@ -8,12 +8,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
-/**
- * Resolves the display name for an auto-tagged structure region by asking each registered
- * {@link StructureNameProvider} in turn, then falling back to {@link StructureNames}.
- *
- * Integrations (e.g. Waystones) register a provider at init if their mod is present.
- */
 public final class StructureNaming {
     private StructureNaming() {}
 
@@ -27,20 +21,17 @@ public final class StructureNaming {
         return !PROVIDERS.isEmpty();
     }
 
-    /** Name from a provider only (no fallback) — used by delayed re-resolution. */
     public static Optional<String> providerName(MinecraftServer server, ResourceLocation dim, ResourceLocation structureId, BoundingBox box) {
         for (StructureNameProvider p : PROVIDERS) {
             try {
                 Optional<String> name = p.nameFor(server, dim, structureId, box);
                 if (name != null && name.isPresent()) return name;
             } catch (Throwable ignored) {
-                // A misbehaving integration must never break structure tagging.
             }
         }
         return Optional.empty();
     }
 
-    /** Final name: a provider's name if any, otherwise the built-in structure name. */
     public static String resolve(MinecraftServer server, ResourceLocation dim, ResourceLocation structureId, BoundingBox box) {
         return providerName(server, dim, structureId, box)
                 .orElseGet(() -> StructureNames.displayName(structureId));

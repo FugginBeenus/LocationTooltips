@@ -25,31 +25,22 @@ import net.minecraft.core.particles.DustParticleOptions;
 import org.joml.Vector3f;
 import org.lwjgl.glfw.GLFW;
 
-// com/fugginbeenus/locationtooltip/LocationTooltipClient.java
 @Environment(EnvType.CLIENT)
 public final class LocationTooltipClient implements ClientModInitializer {
-
     private static KeyMapping openAdminKey;
 
     @Override
     public void onInitializeClient() {
-        // Packets (client receivers)
-
         LTItems.init();
         LTPacketsClient.initClient();
 
-        // Admin Compass needle (points at the nearest known region)
         com.fugginbeenus.locationtooltip.client.AdminCompassModel.register();
 
-
-        // Initialize live bridge once (idempotent now)
         com.fugginbeenus.locationtooltip.config.ui.ConfigLiveBridge.init();
 
-        // Config load + save on shutdown
         LTConfig.get();
         ClientLifecycleEvents.CLIENT_STOPPING.register(c -> LTConfig.get().save());
 
-        // HUD overlay (register once)
         //? if >=26.1 {
         /*HudElementRegistry.addLast(LTId.of("locationtooltip", "pill"), new LocationHudOverlay());
         *///?} else {
@@ -70,7 +61,6 @@ public final class LocationTooltipClient implements ClientModInitializer {
                 )
         );
 
-        // Client tick: keypress + admin compass visuals
         ClientTickEvents.END_CLIENT_TICK.register(client -> {
             if (client == null) return;
 
@@ -84,7 +74,6 @@ public final class LocationTooltipClient implements ClientModInitializer {
 
             if (client.player == null || client.level == null) return;
 
-            // Check if holding admin compass
             boolean holding = false;
             var main = client.player.getMainHandItem();
             if (!main.isEmpty() && main.is(LTItems.ADMIN_COMPASS)) holding = true;
@@ -94,13 +83,10 @@ public final class LocationTooltipClient implements ClientModInitializer {
             }
 
             if (!holding) {
-                // Not holding compass - clear regions
                 com.fugginbeenus.locationtooltip.client.AdminRegionRenderer.clearAll();
                 return;
             }
 
-            // Holding compass - refresh the in-world region boxes (nearby only).
-            // Skip while the panel is open; it does its own (all-regions) refresh. [GambaPVP]
             //? if >=26.1 {
             /*if ((client.level.getGameTime() % 20L) == 0L) {
             *///?} else {
@@ -109,14 +95,12 @@ public final class LocationTooltipClient implements ClientModInitializer {
                 LTPacketsClient.requestAdminList(256);
             }
 
-            // Update renderer with current regions
             var world = client.level;
             var hereDim = world.dimension().location();
             var rows = AdminClientCache.current();
             if (rows != null && rows.length > 0) {
                 com.fugginbeenus.locationtooltip.client.AdminRegionRenderer.updateRegions(rows, hereDim);
             }
-
         });
     }
     private static final org.slf4j.Logger LOG = org.slf4j.LoggerFactory.getLogger("locationtooltip");

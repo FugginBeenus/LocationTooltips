@@ -8,11 +8,9 @@ import net.minecraft.resources.ResourceLocation;
 public final class AdvancementUtil {
     private AdvancementUtil() {}
 
-    /** Grants all remaining criteria on the given advancement id (no-ops if missing or already done). */
     public static void grant(ServerPlayer player, ResourceLocation id) {
         if (player == null || player.level().getServer() == null) return;
-        // The lookup is named getAdvancement on 1.20.1 and get on 1.21+, and returns an
-        // Advancement vs an AdvancementHolder, which var absorbs.
+
         //? if >=1.21 {
         /*var adv = player.level().getServer().getAdvancements().get(id);
         *///?} else {

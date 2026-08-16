@@ -3,20 +3,14 @@ package com.fugginbeenus.locationtooltip.client;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
 
-/**
- * Tiny shared UI toolkit for the mod's custom screens: a dark "high-end" theme + rounded-rect
- * drawing, hover testing, fields and buttons. Built on vanilla {@link GuiGraphics} (no GUI
- * library dependency).
- */
 public final class LTGui {
     private LTGui() {}
 
-    // ---- theme ----
-    public static final int DIM         = 0xC00A0A0F; // full-screen scrim
-    public static final int PANEL       = 0xF014141C; // panel body
-    public static final int PANEL_HEAD  = 0xFF1B1B26; // header strip
-    public static final int BORDER      = 0xFF30303F; // panel/field border
-    public static final int ACCENT      = 0xFF40C4D4; // teal accent
+    public static final int DIM         = 0xC00A0A0F;
+    public static final int PANEL       = 0xF014141C;
+    public static final int PANEL_HEAD  = 0xFF1B1B26;
+    public static final int BORDER      = 0xFF30303F;
+    public static final int ACCENT      = 0xFF40C4D4;
     public static final int ACCENT_DIM  = 0x5540C4D4;
     public static final int ROW_ALT     = 0x0EFFFFFF;
     public static final int ROW_HOVER   = 0x22FFFFFF;
@@ -35,15 +29,14 @@ public final class LTGui {
         return mx >= x && mx < x + w && my >= y && my < y + h;
     }
 
-    /** Solid rounded rectangle (anti-aliased-ish via per-row corner insets). */
     public static void roundRect(GuiGraphics ctx, int x, int y, int w, int h, int r, int argb) {
         if (w <= 0 || h <= 0) return;
         r = Math.max(0, Math.min(r, Math.min(w, h) / 2));
         int x2 = x + w, y2 = y + h;
         if (r <= 0) { ctx.fill(x, y, x2, y2, argb); return; }
-        ctx.fill(x + r, y, x2 - r, y2, argb);       // center band (full height)
-        ctx.fill(x, y + r, x + r, y2 - r, argb);    // left band (middle)
-        ctx.fill(x2 - r, y + r, x2, y2 - r, argb);  // right band (middle)
+        ctx.fill(x + r, y, x2 - r, y2, argb);
+        ctx.fill(x, y + r, x + r, y2 - r, argb);
+        ctx.fill(x2 - r, y + r, x2, y2 - r, argb);
         for (int i = 0; i < r; i++) {
             double dy = r - i - 0.5;
             int dx = (int) Math.round(Math.sqrt(Math.max(0, (double) r * r - dy * dy)));
@@ -52,7 +45,6 @@ public final class LTGui {
         }
     }
 
-    /** 1px rounded border (edges only). */
     public static void roundBorder(GuiGraphics ctx, int x, int y, int w, int h, int r, int argb) {
         if (w <= 0 || h <= 0) return;
         ctx.fill(x + r, y, x + w - r, y + 1, argb);
@@ -61,19 +53,16 @@ public final class LTGui {
         ctx.fill(x + w - 1, y + r, x + w, y + h - r, argb);
     }
 
-    /** Panel with body + subtle border. */
     public static void panel(GuiGraphics ctx, int x, int y, int w, int h) {
         roundRect(ctx, x, y, w, h, 6, PANEL);
         roundBorder(ctx, x, y, w, h, 6, BORDER);
     }
 
-    /** A field background (use with a EditBox that has drawsBackground=false). */
     public static void field(GuiGraphics ctx, int x, int y, int w, int h, boolean focused) {
         roundRect(ctx, x, y, w, h, 4, FIELD);
         roundBorder(ctx, x, y, w, h, 4, focused ? ACCENT : BORDER);
     }
 
-    /** Pill button; caller does the click via hovered(). */
     public static void button(GuiGraphics ctx, Font tr, int x, int y, int w, int h,
                               String label, boolean hover, int base, int baseHover) {
         roundRect(ctx, x, y, w, h, 4, hover ? baseHover : base);

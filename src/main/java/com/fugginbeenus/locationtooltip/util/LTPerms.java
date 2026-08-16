@@ -3,10 +3,6 @@ package com.fugginbeenus.locationtooltip.util;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.server.level.ServerPlayer;
 
-/**
- * Whether someone may manage every region rather than just their own. 1.21.11 replaced the
- * numeric op levels with a permission set, so both shapes live here instead of at each call site.
- */
 public final class LTPerms {
     private LTPerms() {}
 

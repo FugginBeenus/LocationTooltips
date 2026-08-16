@@ -51,12 +51,10 @@ public final class LTPacketsClient {
         LTNetClient.registerReceiver(LTPayloads.REGION_CREATED, (client, p) -> celebrate());
     }
 
-    // -------- client → server --------
     public static void requestAdminList(int radius) {
         LTNetClient.send(LTPayloads.REQUEST_ADMIN_LIST, new LTPayloads.RequestAdminList(radius));
     }
 
-    /** Request every region (all dimensions), not just nearby ones. Contributed by GambaPVP. */
     public static void requestAllAdminList() {
         LTNetClient.send(LTPayloads.REQUEST_ADMIN_LIST, new LTPayloads.RequestAdminList(-1));
     }
@@ -73,7 +71,6 @@ public final class LTPacketsClient {
         LTNetClient.send(LTPayloads.CREATE_REGION, new LTPayloads.CreateRegion(name, a, b, flags));
     }
 
-    // -------- helpers --------
     private static void celebrate() {
         Minecraft mc = Minecraft.getInstance();
         if (mc == null || mc.level == null || mc.player == null) return;

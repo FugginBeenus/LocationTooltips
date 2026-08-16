@@ -19,15 +19,13 @@ public final class LocationTooltip implements ModInitializer {
 
     @Override
     public void onInitialize() {
-        // COMMON/SERVER-SAFE ONLY. No client classes here.
-        LTItems.init();  // Initialize items (wand, compass)
+        LTItems.init();
         LTPackets.register();
         RegionTicker.register();
         SelectionManager.registerServerTicker();
-        RegionProtection.register();  // NEW: Register protection handlers
-        com.fugginbeenus.locationtooltip.region.structure.StructureRegionTagger.register();  // auto-tag world structures
+        RegionProtection.register();
+        com.fugginbeenus.locationtooltip.region.structure.StructureRegionTagger.register();
 
-        // OPTIMIZATION: Register cleanup events to prevent memory leaks
         ServerPlayConnectionEvents.DISCONNECT.register((handler, server) -> {
             RegionTicker.onPlayerDisconnect(handler.player.getUUID());
         });
@@ -36,7 +34,6 @@ public final class LocationTooltip implements ModInitializer {
             RegionManager.cleanup(server);
         });
 
-        // Register commands
         CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, environment) -> {
             DebugCommands.register(dispatcher);
             com.fugginbeenus.locationtooltip.server.RegionCommands.register(dispatcher, registryAccess);

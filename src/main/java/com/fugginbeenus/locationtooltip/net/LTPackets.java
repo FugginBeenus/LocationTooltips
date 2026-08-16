@@ -11,11 +11,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
-/**
- * High-level server packet API: registers receivers (wiring them to {@link RegionManager})
- * and exposes typed send methods. Transport lives in {@link LTNet}; wire layout in
- * {@link LTPayloads}. Callers here don't touch buffers or the networking API.
- */
 public final class LTPackets {
     private LTPackets() {}
 
@@ -29,7 +24,7 @@ public final class LTPackets {
 
         LTNet.registerReceiver(LTPayloads.REQUEST_ADMIN_LIST, (server, player, p) -> {
             if (p.radius() < 0) {
-                RegionManager.of(server).sendAllTo(player, null); // negative radius = all regions, all dims
+                RegionManager.of(server).sendAllTo(player, null);
             } else {
                 RegionManager.of(server).sendNearbyTo(player, p.radius());
             }
@@ -64,7 +59,7 @@ public final class LTPackets {
             } else if (isOp) {
                 ownerName = "Server";
             } else {
-                ownerName = ""; // players don't see owner names
+                ownerName = "";
             }
             entries.add(new LTPayloads.RegionEntry(
                     r.id, r.name, r.dim, r.min, r.max, r.flagOverrides(), ownerName, r.source.name()));

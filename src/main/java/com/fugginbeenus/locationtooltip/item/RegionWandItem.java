@@ -18,14 +18,7 @@ import net.minecraft.world.level.Level;
 
 import java.util.List;
 
-/**
- * A special admin/player tool used to select region corners and name regions.
- * - Right-click: set first corner
- * - Left-click: set second corner
- * - Shift+Right-click: open region naming UI
- */
 public class RegionWandItem extends Item {
-
     public RegionWandItem(Properties settings) {
         super(settings);
     }

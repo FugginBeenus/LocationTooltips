@@ -16,13 +16,7 @@ import net.minecraft.server.level.ServerPlayer;
 
 import java.util.List;
 
-/**
- * Admin-only item:
- *  - Server side: sends S2C to open the Admin Panel, and triggers a nearby list refresh.
- *  - No client imports here, so it's safe for dedicated servers.
- */
 public class AdminCompassItem extends Item {
-
     public AdminCompassItem(Properties settings) {
         super(settings);
     }
@@ -40,7 +34,7 @@ public class AdminCompassItem extends Item {
         ItemStack stack = player.getItemInHand(hand);
         return openPanel(world, player)
                 ? InteractionResultHolder.success(stack)
-                : InteractionResultHolder.consume(stack); // consume still plays the hand animation
+                : InteractionResultHolder.consume(stack);
     }
     //?}
 

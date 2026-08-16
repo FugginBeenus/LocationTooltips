@@ -10,15 +10,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-/**
- * Custom-drawn tri-state flag editor: a 2-column grid of flag cells, each showing the flag's
- * icon, name, and current state (Inherit / Allow / Deny) with a colored state accent. Clicking
- * a cell cycles the state. Holds a sparse override map (absent = inherit).
- *
- * Self-rendered (not vanilla widgets) so it matches the redesigned screens and can show icons.
- */
 public final class FlagEditor {
-
     private final Map<String, Boolean> overrides = new LinkedHashMap<>();
     private final List<RegionFlag> flags = new ArrayList<>(RegionFlags.all());
 
@@ -63,7 +55,7 @@ public final class FlagEditor {
             int stateColor = (v == null) ? LTGui.FAINT : (v ? LTGui.OK_HOVER : LTGui.DANGER_HOVER);
 
             LTGui.roundRect(ctx, bx, by, colW, rowH, 4, hover ? LTGui.BTN_HOVER : LTGui.BTN);
-            ctx.fill(bx, by + 2, bx + 2, by + rowH - 2, stateColor); // state accent bar
+            ctx.fill(bx, by + 2, bx + 2, by + rowH - 2, stateColor);
 
             int iconY = by + (rowH - 12) / 2;
             boolean hasIcon = FlagIcons.draw(ctx, f.id, bx + 6, iconY, 12);
@@ -77,7 +69,6 @@ public final class FlagEditor {
         }
     }
 
-    /** Returns true if a cell was clicked (state cycled). */
     public boolean mouseClicked(double mx, double my) {
         for (int i = 0; i < flags.size(); i++) {
             if (LTGui.hovered(mx, my, cellX(i), cellY(i), colW, rowH)) {
@@ -90,9 +81,9 @@ public final class FlagEditor {
 
     private void cycle(String id) {
         Boolean cur = overrides.get(id);
-        if (cur == null) overrides.put(id, Boolean.TRUE);   // inherit -> allow
-        else if (cur) overrides.put(id, Boolean.FALSE);     // allow   -> deny
-        else overrides.remove(id);                          // deny    -> inherit
+        if (cur == null) overrides.put(id, Boolean.TRUE);
+        else if (cur) overrides.put(id, Boolean.FALSE);
+        else overrides.remove(id);
     }
 
     private static String shortName(RegionFlag f) {

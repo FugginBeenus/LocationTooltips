@@ -12,23 +12,9 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.GlobalPos;
 
-/**
- * Gives the Admin Compass a real, moving needle — it points at the nearest known region
- * instead of world spawn.
- *
- * Uses vanilla's {@link CompassItemPropertyFunction} (so the needle eases/wobbles exactly
- * like a normal compass) behind an "angle" model predicate, with the 32 admin_compass_XX
- * frames supplying the art. Returning {@code null} from the target makes vanilla fall back to
- * its "aimless" spin, which is what we want when no regions are known yet.
- *
- * Region positions come from {@link AdminClientCache}, which refreshes while the compass is
- * held (and whenever the admin panel is open).
- */
 public final class AdminCompassModel {
     private AdminCompassModel() {}
 
-    // 1.21.11 made item predicates data-driven and its registry is closed to mods, so the
-    // needle only animates on the older versions. The compass itself works everywhere.
     public static void register() {
         //? if >=1.21.11 {
         /*com.fugginbeenus.locationtooltip.mixin.RangeSelectPropertiesAccessor.locationtooltip$idMapper()
@@ -47,7 +33,6 @@ public final class AdminCompassModel {
         //?}
     }
 
-    /** Centre of the closest cached region in this dimension, or null if none are known. */
     static BlockPos nearestRegionCenter(ResourceLocation dim, BlockPos from) {
         AdminClientCache.Row[] rows = AdminClientCache.current();
         if (rows == null || rows.length == 0) return null;

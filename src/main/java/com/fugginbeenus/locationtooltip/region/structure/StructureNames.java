@@ -4,22 +4,17 @@ import net.minecraft.resources.ResourceLocation;
 
 import java.util.Map;
 
-/**
- * Resolves a friendly display name for a structure id. Vanilla structures get a curated
- * label; anything else (incl. modded structures) falls back to a prettified path, so the
- * system works for mods without per-mod code.
- */
 public final class StructureNames {
     private StructureNames() {}
 
     private static final Map<String, String> NICE = Map.ofEntries(
-            // Villages — show the biome variant
+
             Map.entry("village_plains",        "Plains Village"),
             Map.entry("village_desert",        "Desert Village"),
             Map.entry("village_savanna",       "Savanna Village"),
             Map.entry("village_snowy",         "Snowy Village"),
             Map.entry("village_taiga",         "Taiga Village"),
-            // Landmarks
+
             Map.entry("pillager_outpost",      "Pillager Outpost"),
             Map.entry("mansion",               "Woodland Mansion"),
             Map.entry("monument",              "Ocean Monument"),
@@ -33,7 +28,7 @@ public final class StructureNames {
             Map.entry("swamp_hut",             "Witch Hut"),
             Map.entry("igloo",                 "Igloo"),
             Map.entry("trail_ruins",           "Trail Ruins"),
-            // Names ready for if/when coverage expands beyond the landmark list
+
             Map.entry("shipwreck",             "Shipwreck"),
             Map.entry("shipwreck_beached",     "Beached Shipwreck"),
             Map.entry("ocean_ruin_cold",       "Cold Ocean Ruins"),
@@ -51,7 +46,6 @@ public final class StructureNames {
             Map.entry("ruined_portal_nether",  "Ruined Portal")
     );
 
-    /** Friendly name for a structure id (curated for vanilla, prettified path otherwise). */
     public static String displayName(ResourceLocation structureId) {
         String nice = NICE.get(structureId.getPath());
         return (nice != null) ? nice : prettify(structureId.getPath());

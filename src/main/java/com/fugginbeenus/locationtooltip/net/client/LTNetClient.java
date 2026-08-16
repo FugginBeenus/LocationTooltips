@@ -6,7 +6,6 @@ import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.minecraft.client.Minecraft;
 import net.minecraft.network.FriendlyByteBuf;
 
-/** Client-side networking transport — the client counterpart to {@link com.fugginbeenus.locationtooltip.net.LTNet}. */
 public final class LTNetClient {
     private LTNetClient() {}
 

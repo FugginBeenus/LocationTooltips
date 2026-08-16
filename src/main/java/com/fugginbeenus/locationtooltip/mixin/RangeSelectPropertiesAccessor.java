@@ -1,11 +1,5 @@
 package com.fugginbeenus.locationtooltip.mixin;
 
-/**
- * Reaches the registry of range-select item model properties, which is private and has no
- * Fabric wrapper, so the Admin Compass can register the property its model dispatches on.
- *
- * Client-only, and only present from 1.21.11, where item predicates became data-driven.
- */
 //? if >=1.21.11 {
 /*@org.spongepowered.asm.mixin.Mixin(net.minecraft.client.renderer.item.properties.numeric.RangeSelectItemModelProperties.class)
 public interface RangeSelectPropertiesAccessor {

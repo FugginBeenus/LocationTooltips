@@ -7,12 +7,6 @@ import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
 
-/**
- * Server-side networking transport — the only server file that touches the version-specific
- * Fabric networking API. 1.20.1 uses the ResourceLocation + FriendlyByteBuf API that was removed in
- * 1.20.5+; the 1.21 branch multiplexes every channel through a single {@code CustomPacketPayload}
- * and dispatches internally by id, so the {@link LTPayloads.Def} abstraction is unchanged.
- */
 public final class LTNet {
     private LTNet() {}
 

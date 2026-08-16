@@ -24,25 +24,17 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.core.BlockPos;
 
-/**
- * Command-based region creation for when the wand doesn't work
- * (spawn protection, other mods interfering, etc.)
- */
 public class RegionCommands {
-
-    /** Tab-completion for flag ids, sourced from the flag registry. */
     private static final SuggestionProvider<CommandSourceStack> FLAG_SUGGESTIONS = (ctx, builder) -> {
         for (RegionFlag f : RegionFlags.all()) builder.suggest(f.id);
         return builder.buildFuture();
     };
 
-    /** Tab-completion for ALL structure registry ids (incl. modded), for `structures enable`. */
     private static final SuggestionProvider<CommandSourceStack> ALL_STRUCTURE_IDS = (ctx, builder) ->
             SharedSuggestionProvider.suggestResource(
                     ctx.getSource().getServer().registryAccess().registryOrThrow(Registries.STRUCTURE).keySet(),
                     builder);
 
-    /** Tab-completion for currently-enabled structure ids, for `structures disable`. */
     private static final SuggestionProvider<CommandSourceStack> ENABLED_STRUCTURE_IDS = (ctx, builder) -> {
         for (String s : StructureConfig.get().structures) builder.suggest(s);
         return builder.buildFuture();
@@ -51,9 +43,8 @@ public class RegionCommands {
     public static void register(CommandDispatcher<CommandSourceStack> dispatcher, CommandBuildContext registryAccess) {
         dispatcher.register(
                 Commands.literal("ltregion")
-                        .requires(com.fugginbeenus.locationtooltip.util.LTPerms::isAdmin) // OP level 2
+                        .requires(com.fugginbeenus.locationtooltip.util.LTPerms::isAdmin)
 
-                        // /ltregion pos1 - Set first corner at current position
                         .then(Commands.literal("pos1")
                                 .executes(ctx -> {
                                     CommandSourceStack source = ctx.getSource();
@@ -67,7 +58,6 @@ public class RegionCommands {
                                 })
                         )
 
-                        // /ltregion pos2 - Set second corner at current position
                         .then(Commands.literal("pos2")
                                 .executes(ctx -> {
                                     CommandSourceStack source = ctx.getSource();
@@ -77,7 +67,6 @@ public class RegionCommands {
                                     com.fugginbeenus.locationtooltip.region.SelectionManager.setSecond(player, pos);
                                     com.fugginbeenus.locationtooltip.util.LTChat.tell(player, Component.literal("§aSecond corner set at " + pos.toShortString()), false);
 
-                                    // Check if both are set
                                     if (com.fugginbeenus.locationtooltip.region.SelectionManager.hasBoth(player)) {
                                         com.fugginbeenus.locationtooltip.util.LTChat.tell(player, Component.literal("§6Both corners set! Use §e/ltregion create <name> §6to create the region."), false);
                                     }
@@ -86,7 +75,6 @@ public class RegionCommands {
                                 })
                         )
 
-                        // /ltregion create <name> - Create region from pos1/pos2
                         .then(Commands.literal("create")
                                 .then(Commands.argument("name", StringArgumentType.greedyString())
                                         .executes(ctx -> {
@@ -102,7 +90,6 @@ public class RegionCommands {
                                             BlockPos a = com.fugginbeenus.locationtooltip.region.SelectionManager.getFirst(player);
                                             BlockPos b = com.fugginbeenus.locationtooltip.region.SelectionManager.getSecond(player);
 
-                                            // Create the region with default settings
                                             RegionManager.of(player.level().getServer()).createRegion(player, name, a, b, java.util.Map.of());
 
                                             return 1;
@@ -110,7 +97,6 @@ public class RegionCommands {
                                 )
                         )
 
-                        // /ltregion createhere <name> <radius> - Create region around current position
                         .then(Commands.literal("createhere")
                                 .then(Commands.argument("name", StringArgumentType.string())
                                         .then(Commands.argument("radius", IntegerArgumentType.integer(1, 1000))
@@ -132,7 +118,6 @@ public class RegionCommands {
                                 )
                         )
 
-                        // /ltregion createbox <name> <x1> <y1> <z1> <x2> <y2> <z2> - Create region by coordinates
                         .then(Commands.literal("createbox")
                                 .then(Commands.argument("name", StringArgumentType.string())
                                         .then(Commands.argument("x1", IntegerArgumentType.integer())
@@ -169,7 +154,6 @@ public class RegionCommands {
                                 )
                         )
 
-                        // /ltregion structures <status|on|off|rescan> - Manage auto structure regions
                         .then(Commands.literal("structures")
                                 .then(Commands.literal("status")
                                         .executes(ctx -> {
@@ -270,7 +254,6 @@ public class RegionCommands {
                                 )
                         )
 
-                        // /ltregion flags - List flags + state for the region you're standing in
                         .then(Commands.literal("flags")
                                 .executes(ctx -> {
                                     ServerPlayer player = ctx.getSource().getPlayerOrException();
@@ -279,7 +262,6 @@ public class RegionCommands {
                                 })
                         )
 
-                        // /ltregion flag <flag> <allow|deny|inherit> - Set a flag on the region you're in
                         .then(Commands.literal("flag")
                                 .then(Commands.argument("flag", StringArgumentType.word())
                                         .suggests(FLAG_SUGGESTIONS)
@@ -292,7 +274,6 @@ public class RegionCommands {
                                 )
                         )
 
-                        // /ltregion clear - Clear current selection
                         .then(Commands.literal("clear")
                                 .executes(ctx -> {
                                     CommandSourceStack source = ctx.getSource();
@@ -307,7 +288,6 @@ public class RegionCommands {
         );
     }
 
-    /** Apply a flag value (true=allow, false=deny, null=inherit) to the region the player is in. */
     private static int setFlag(CommandContext<CommandSourceStack> ctx, Boolean value) throws CommandSyntaxException {
         ServerPlayer player = ctx.getSource().getPlayerOrException();
         String flag = StringArgumentType.getString(ctx, "flag");

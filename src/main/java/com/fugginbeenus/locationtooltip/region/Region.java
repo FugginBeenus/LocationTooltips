@@ -10,51 +10,34 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
 
-/**
- * Immutable, axis-aligned rectangular region in a single dimension.
- *
- * OPTIMIZED: Cached position components for faster contains() checks
- */
 public final class Region {
-    public final String id;          // stable unique id (string form)
-    public String name;              // editable display name
-    public final ResourceLocation dim;     // dimension id
-    public final BlockPos min;       // normalized min corner (<=)
-    public final BlockPos max;       // normalized max corner (>=)
+    public final String id;
+    public String name;
+    public final ResourceLocation dim;
+    public final BlockPos min;
+    public final BlockPos max;
 
-    // OPTIMIZATION: Cached bounds for faster contains() checks (avoids 6 method calls per check)
     private final int minX, minY, minZ;
     private final int maxX, maxY, maxZ;
 
-    // Per-region flag OVERRIDES (sparse): a present entry is an explicit allow/deny;
-    // an absent entry means "inherit from a containing region, else the flag's default".
-    // See RegionFlags for the registry of known flags and their defaults.
     private final Map<String, Boolean> flagOverrides = new HashMap<>();
 
-    // Where this region came from (player, server/admin, or auto-generated structure).
     public RegionSource source = RegionSource.PLAYER;
 
-    // Optional category/type tag (e.g. "village", "shop"); used for HUD styling + structure tagging.
     public String category = null;
 
-    // UUID (as string) of the waystone that named this region, if any. Lets a waystone keep
-    // its claim (so its later renames follow) while stopping other waystones stealing it.
     public String waystoneUid = null;
 
-    // Owner system
-    public UUID owner;  // Player UUID who created this region (null = admin-created)
+    public UUID owner;
 
-    /** Create a new region with a fresh id, auto-normalizing a/b into min/max. */
     public Region(String name, ResourceLocation dim, BlockPos a, BlockPos b) {
         this(UUID.randomUUID().toString(), name, dim, a, b);
     }
 
-    /** Create a region with explicit id, auto-normalizing a/b into min/max. */
     public Region(String id, String name, ResourceLocation dim, BlockPos a, BlockPos b) {
-        this(id, name, dim, a, b, null);  // null owner by default
+        this(id, name, dim, a, b, null);
     }
 
-    /** Create a region with explicit id and owner, auto-normalizing a/b into min/max. */
     public Region(String id, String name, ResourceLocation dim, BlockPos a, BlockPos b, UUID owner) {
         Objects.requireNonNull(id, "id");
         Objects.requireNonNull(name, "name");
@@ -76,7 +59,6 @@ public final class Region {
         this.max = new BlockPos(maxX, maxY, maxZ);
         this.owner = owner;
 
-        // Cache bounds for faster contains() checks
         this.minX = minX;
         this.minY = minY;
         this.minZ = minZ;
@@ -85,10 +67,6 @@ public final class Region {
         this.maxZ = maxZ;
     }
 
-    /**
-     * OPTIMIZED: Check if a position is contained in this region.
-     * Uses cached bounds to avoid repeated BlockPos method calls.
-     */
     public boolean contains(BlockPos p) {
         int x = p.getX();
         int y = p.getY();
@@ -103,9 +81,6 @@ public final class Region {
     public int sizeY() { return maxY - minY + 1; }
     public int sizeZ() { return maxZ - minZ + 1; }
 
-    /**
-     * Calculate the volume of this region (used for nested region priority)
-     */
     public long volume() {
         long dx = (long) (maxX - minX + 1);
         long dy = (long) (maxY - minY + 1);
@@ -113,49 +88,32 @@ public final class Region {
         return Math.max(1L, dx) * Math.max(1L, dy) * Math.max(1L, dz);
     }
 
-    /**
-     * Check if a player owns this region
-     */
     public boolean isOwnedBy(UUID playerUuid) {
-        if (owner == null) return false;  // Admin-created regions have no owner
+        if (owner == null) return false;
         return owner.equals(playerUuid);
     }
 
-    /**
-     * Check if this region can be edited by a player
-     */
     public boolean canBeEditedBy(UUID playerUuid, boolean isOp) {
-        if (isOp) return true;  // Admins can edit anything
-        return isOwnedBy(playerUuid);  // Players can only edit their own
+        if (isOp) return true;
+        return isOwnedBy(playerUuid);
     }
 
-    // ===== Flags =====
-
-    /** This region's explicit override for a flag, or null if it doesn't set one (inherits). */
     public Boolean getFlagOverride(String flagId) {
         return flagOverrides.get(flagId);
     }
 
-    /** True if this region explicitly sets the flag (vs. inheriting it). */
     public boolean hasFlagOverride(String flagId) {
         return flagOverrides.containsKey(flagId);
     }
 
-    /** Set an explicit allow/deny for a flag on this region. */
     public void setFlag(String flagId, boolean value) {
         flagOverrides.put(flagId, value);
     }
 
-    /** Remove this region's override so the flag inherits / falls back to its default. */
     public void clearFlag(String flagId) {
         flagOverrides.remove(flagId);
     }
 
-    /**
-     * Effective value for THIS region alone: its override if set, otherwise the flag's
-     * registered default. Note this ignores nested-region inheritance — for the value
-     * that actually applies at a position, use {@code RegionManager.resolveFlag(...)}.
-     */
     public boolean flagOrDefault(String flagId) {
         Boolean v = flagOverrides.get(flagId);
         if (v != null) return v;
@@ -163,7 +121,6 @@ public final class Region {
         return f != null ? f.defaultValue : true;
     }
 
-    /** Live view of this region's overrides (used by storage + networking). */
     public Map<String, Boolean> flagOverrides() {
         return flagOverrides;
     }

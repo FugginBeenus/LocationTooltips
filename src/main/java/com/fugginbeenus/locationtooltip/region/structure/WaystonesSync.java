@@ -10,22 +10,10 @@ import net.minecraft.ChatFormatting;
 
 import java.util.List;
 
-/**
- * Keeps auto-tagged structure regions named after the waystone inside them.
- *
- * <p>Waystones only registers a naturally-generated waystone once a player <em>activates</em>
- * it, and a player can place or rename a waystone at any time — so a one-shot check when the
- * structure is first tagged misses both cases. Instead we sweep periodically: for each named
- * waystone, find the structure region containing it and adopt the waystone's name.
- *
- * <p>Claim rules: a region records the waystone UID that named it, so that waystone's later
- * renames keep following, other waystones can't steal an already-named region, and a region
- * manually renamed by an admin (which flips its source away from STRUCTURE) is left alone.
- */
 public final class WaystonesSync {
     private WaystonesSync() {}
 
-    private static final int INTERVAL_TICKS = 100; // ~5s
+    private static final int INTERVAL_TICKS = 100;
     private static WaystonesNaming provider;
     private static int ticks;
 
@@ -37,7 +25,6 @@ public final class WaystonesSync {
             try {
                 sync(server);
             } catch (Throwable ignored) {
-                // never let an integration hiccup break the server tick
             }
         });
     }
@@ -49,15 +36,13 @@ public final class WaystonesSync {
         RegionManager mgr = RegionManager.of(server);
 
         for (WaystonesNaming.WaystoneInfo w : waystones) {
-            // Only auto-generated structure regions are eligible (admin-renamed ones aren't STRUCTURE).
             Region r = mgr.smallestStructureContaining(w.dim(), w.pos());
             if (r == null) continue;
 
-            // Already claimed by a different waystone → leave it be.
             if (r.waystoneUid != null && !r.waystoneUid.equals(w.uid())) continue;
 
             if (w.name().equals(r.name)) {
-                if (r.waystoneUid == null) {           // same name already, just record the claim
+                if (r.waystoneUid == null) {
                     r.waystoneUid = w.uid();
                     mgr.touchDim(r.dim);
                 }
@@ -67,12 +52,11 @@ public final class WaystonesSync {
             String previous = r.name;
             r.name = w.name();
             r.waystoneUid = w.uid();
-            mgr.touchDim(r.dim);                        // persist on the next flush
+            mgr.touchDim(r.dim);
             announce(server, r, previous);
         }
     }
 
-    /** Tell anyone standing in the region that it just got its name. */
     private static void announce(MinecraftServer server, Region r, String previous) {
         Component msg = Component.literal("")
                 .append(Component.literal(previous).withStyle(ChatFormatting.GRAY))

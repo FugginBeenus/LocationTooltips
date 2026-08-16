@@ -9,11 +9,6 @@ import org.lwjgl.glfw.GLFW;
 
 import java.util.Map;
 
-/**
- * Shared base for the create + edit region cards: a sleek centered panel with a name field,
- * a tri-state flag grid, and confirm/cancel buttons. The card is clamped to the window height
- * and the flag grid scrolls inside it, so it never spills off-screen at high GUI scales.
- */
 public abstract class RegionConfigScreen extends Screen {
     protected static final int PAD = 14;
 
@@ -40,7 +35,6 @@ public abstract class RegionConfigScreen extends Screen {
         innerW = panelW - PAD * 2;
         colW = (innerW - 4) / 2;
 
-        // preserve flag edits + typed name across re-init (e.g. window resize)
         flags = (flags == null) ? new FlagEditor(initialFlags()) : new FlagEditor(flags.overrides());
         gridContentH = flags.height();
 
@@ -143,7 +137,6 @@ public abstract class RegionConfigScreen extends Screen {
 
     @Override public boolean shouldCloseOnEsc() { return true; }
 
-    // Skip 1.21's default screen blur; render() draws our own dim.
     //? if >=26.1 {
     /*@Override
     public void extractBackground(GuiGraphics context, int mouseX, int mouseY, float delta) {
@@ -164,7 +157,7 @@ public abstract class RegionConfigScreen extends Screen {
     @Override
     public void render(GuiGraphics ctx, int mouseX, int mouseY, float delta) {
         ltDraw(ctx, mouseX, mouseY, delta);
-        super.render(ctx, mouseX, mouseY, delta);   // widgets (the text field)
+        super.render(ctx, mouseX, mouseY, delta);
     }
     //?}
 
@@ -183,7 +176,6 @@ public abstract class RegionConfigScreen extends Screen {
         ctx.drawString(this.font, Component.literal("Protection — click to cycle Inherit / Allow / Deny"),
                 panelX + PAD, labelY, LTGui.SUBTEXT, false);
 
-        // flag grid (scrolled + clipped)
         ctx.enableScissor(panelX + PAD, gridTop, panelX + panelW - PAD, gridTop + gridViewH);
         flags.layout(panelX + PAD, gridTop - gridScroll, colW, 18, 4);
         flags.render(ctx, this.font, mouseX, mouseY);
@@ -201,6 +193,5 @@ public abstract class RegionConfigScreen extends Screen {
                 LTGui.hovered(mouseX, mouseY, panelX + PAD, btnY, colW, 20), LTGui.OK, LTGui.OK_HOVER);
         LTGui.button(ctx, this.font, panelX + PAD + colW + 4, btnY, colW, 20, "Cancel",
                 LTGui.hovered(mouseX, mouseY, panelX + PAD + colW + 4, btnY, colW, 20));
-
     }
 }

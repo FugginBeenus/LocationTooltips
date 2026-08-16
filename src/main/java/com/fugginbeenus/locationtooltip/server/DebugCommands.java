@@ -10,12 +10,7 @@ import net.minecraft.ChatFormatting;
 
 import java.util.Map;
 
-/**
- * Debug command for monitoring performance and statistics.
- * Usage: /ltdebug stats | /ltdebug reset
- */
 public class DebugCommands {
-
     public static void register(CommandDispatcher<CommandSourceStack> dispatcher) {
         dispatcher.register(
                 Commands.literal("ltdebug")
@@ -32,19 +27,15 @@ public class DebugCommands {
         var server = source.getServer();
 
         try {
-            // Get RegionManager stats
             RegionManager mgr = RegionManager.of(server);
             Map<String, Object> regionStats = mgr.getPerformanceStats();
 
-            // Get RegionTicker stats
             Map<String, Object> tickerStats = RegionTicker.getStats();
 
-            // Display header
             source.sendSuccess(() ->
                     Component.literal("=== Location Tooltip Performance Stats ===")
                             .withStyle(ChatFormatting.GOLD, ChatFormatting.BOLD), false);
 
-            // Region stats
             source.sendSuccess(() ->
                     Component.literal("\n[Region Manager]").withStyle(ChatFormatting.YELLOW), false);
 
@@ -74,7 +65,6 @@ public class DebugCommands {
                                 .withStyle(ChatFormatting.WHITE), false);
             }
 
-            // Lookup performance
             if (regionStats.containsKey("lookup_count")) {
                 long lookups = (long) regionStats.get("lookup_count");
                 source.sendSuccess(() ->
@@ -92,7 +82,6 @@ public class DebugCommands {
                 }
             }
 
-            // Ticker stats
             source.sendSuccess(() ->
                     Component.literal("\n[Region Ticker]").withStyle(ChatFormatting.YELLOW), false);
 
@@ -113,7 +102,6 @@ public class DebugCommands {
                                     tickerStats.get("min_movement_blocks")))
                             .withStyle(ChatFormatting.WHITE), false);
 
-            // Performance assessment
             source.sendSuccess(() ->
                     Component.literal("\n[Performance Assessment]").withStyle(ChatFormatting.YELLOW), false);
 
@@ -140,9 +128,8 @@ public class DebugCommands {
                         Component.literal("  " + assessment).withStyle(color), false);
             }
 
-            // Memory estimate
             int totalRegions = (int) regionStats.get("total_regions");
-            long estimatedKB = (totalRegions * 200L) / 1024; // ~200 bytes per region
+            long estimatedKB = (totalRegions * 200L) / 1024;
             source.sendSuccess(() ->
                     Component.literal(String.format("  Est. Memory: ~%d KB", estimatedKB))
                             .withStyle(ChatFormatting.WHITE), false);
@@ -152,7 +139,6 @@ public class DebugCommands {
                             .withStyle(ChatFormatting.GRAY, ChatFormatting.ITALIC), false);
 
             return 1;
-
         } catch (Exception e) {
             source.sendFailure(Component.literal("Error gathering stats: " + e.getMessage()));
             e.printStackTrace();

@@ -23,32 +23,16 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.Level;
 import org.jetbrains.annotations.Nullable;
 
-/**
- * Region protection: gates player actions on the per-region flags resolved via
- * {@link RegionManager#resolveFlag}. Operators always bypass these protections so
- * admins can build/manage inside protected zones.
- *
- * This class registers the "easy tier" handlers that ride on stable Fabric API
- * events (no mixins): block break/place, interaction, container access, entity
- * interaction, and PvP. Explosions / fire spread / mob griefing need mixins and
- * are handled separately.
- */
 public class RegionProtection {
-
-    /** Register all event-based protection handlers. */
     public static void register() {
-        AttackEntityCallback.EVENT.register(RegionProtection::onPlayerAttackEntity);   // pvp
-        PlayerBlockBreakEvents.BEFORE.register(RegionProtection::onBlockBreak);         // block-break
-        UseBlockCallback.EVENT.register(RegionProtection::onUseBlock);                  // place / interact / containers
-        UseEntityCallback.EVENT.register(RegionProtection::onUseEntity);                // entity-interact
+        AttackEntityCallback.EVENT.register(RegionProtection::onPlayerAttackEntity);
+        PlayerBlockBreakEvents.BEFORE.register(RegionProtection::onBlockBreak);
+        UseBlockCallback.EVENT.register(RegionProtection::onUseBlock);
+        UseEntityCallback.EVENT.register(RegionProtection::onUseEntity);
     }
 
-    // ===================== PvP =====================
-
-    /** Prevent PvP damage in regions where PvP is disabled. */
     private static InteractionResult onPlayerAttackEntity(
             Player attacker, Level world, InteractionHand hand, Entity target, @Nullable EntityHitResult hitResult) {
-
         if (world.isClientSide() || !(attacker instanceof ServerPlayer serverAttacker)) return InteractionResult.PASS;
         if (!(target instanceof ServerPlayer targetPlayer)) return InteractionResult.PASS;
 
@@ -69,8 +53,6 @@ public class RegionProtection {
         return InteractionResult.PASS;
     }
 
-    // ===================== Block break =====================
-
     private static boolean onBlockBreak(Level world, Player player, BlockPos pos, BlockState state, BlockEntity be) {
         if (world.isClientSide() || !(player instanceof ServerPlayer sp)) return true;
         if (bypasses(sp)) return true;
@@ -78,12 +60,10 @@ public class RegionProtection {
         var dim = world.dimension().location();
         if (!RegionManager.of(sp.level().getServer()).resolveFlag(dim, pos, RegionFlags.BLOCK_BREAK.id)) {
             deny(sp, "break blocks");
-            return false; // cancel the break
+            return false;
         }
         return true;
     }
-
-    // ===================== Use block (place / interact / containers) =====================
 
     private static InteractionResult onUseBlock(Player player, Level world, InteractionHand hand, BlockHitResult hit) {
         if (world.isClientSide() || !(player instanceof ServerPlayer sp)) return InteractionResult.PASS;
@@ -93,19 +73,16 @@ public class RegionProtection {
         RegionManager mgr = RegionManager.of(sp.level().getServer());
         BlockPos clicked = hit.getBlockPos();
 
-        // "interact = deny" is the broad lock: no right-click interactions at all.
         if (!mgr.resolveFlag(dim, clicked, RegionFlags.INTERACT.id)) {
             deny(sp, "interact here");
             return InteractionResult.FAIL;
         }
 
-        // Container access (chests, hoppers, furnaces, barrels, crafting/enchant tables...).
         if (isContainer(world, clicked) && !mgr.resolveFlag(dim, clicked, RegionFlags.CONTAINER_ACCESS.id)) {
             deny(sp, "use containers");
             return InteractionResult.FAIL;
         }
 
-        // Block placement: holding a BlockItem places at the offset face.
         ItemStack stack = player.getItemInHand(hand);
         if (stack.getItem() instanceof BlockItem) {
             BlockPos placePos = clicked.relative(hit.getDirection());
@@ -117,8 +94,6 @@ public class RegionProtection {
 
         return InteractionResult.PASS;
     }
-
-    // ===================== Use entity (armor stands, item frames, villagers...) =====================
 
     private static InteractionResult onUseEntity(Player player, Level world, InteractionHand hand, Entity entity, @Nullable EntityHitResult hit) {
         if (world.isClientSide() || !(player instanceof ServerPlayer sp)) return InteractionResult.PASS;
@@ -133,9 +108,6 @@ public class RegionProtection {
         return InteractionResult.PASS;
     }
 
-    // ===================== Mob spawning (called from MobEntityMixin) =====================
-
-    /** Check if natural mob spawning is allowed at a location. */
     public static boolean canMobSpawn(Level world, BlockPos pos) {
         if (world.isClientSide()) return true;
         var dim = world.dimension().location();
@@ -143,9 +115,6 @@ public class RegionProtection {
         return mgr.resolveFlag(dim, pos, RegionFlags.MOB_SPAWNING.id);
     }
 
-    // ===================== helpers =====================
-
-    /** Operators bypass action protections (so admins can build/manage in protected zones). */
     private static boolean bypasses(ServerPlayer p) {
         return com.fugginbeenus.locationtooltip.util.LTPerms.isAdmin(p);
     }

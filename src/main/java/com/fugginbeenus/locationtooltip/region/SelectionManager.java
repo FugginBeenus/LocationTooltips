@@ -11,7 +11,6 @@ import java.util.Map;
 import java.util.UUID;
 
 public final class SelectionManager {
-
     private static final class Selection {
         BlockPos a, b;
         Selection(BlockPos a) { this.a = a; }

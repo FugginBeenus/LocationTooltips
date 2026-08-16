@@ -6,9 +6,7 @@ import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderEvents;
 //?}
 import net.minecraft.core.BlockPos;
 
-/** Draws the pulsing box for the current wand corner selection. */
 public class SelectionRenderer {
-
     private static BlockPos corner1 = null;
     private static BlockPos corner2 = null;
     private static long lastUpdateTime = 0;
@@ -51,7 +49,6 @@ public class SelectionRenderer {
     }
     *///?}
 
-    /** Always pops the pose, even when draw() bails out early. */
     private static void drawSafely(LTBoxRender box) {
         try {
             draw(box);
@@ -83,7 +80,6 @@ public class SelectionRenderer {
         float faceAlpha = 0.15f * pulse;
         float sideFaceAlpha = 0.08f * pulse;
 
-
         box.startQuads();
         box.edgeBox(minX, minY, minZ, maxX, minY, minZ, w, r, g, b, 1.0f);
         box.edgeBox(maxX, minY, minZ, maxX, minY, maxZ, w, r, g, b, 1.0f);
@@ -107,6 +103,5 @@ public class SelectionRenderer {
         box.face(minX, minY, minZ, minX, minY, maxZ, minX, maxY, maxZ, minX, maxY, minZ, r, g, b, sideFaceAlpha);
         box.face(maxX, minY, minZ, maxX, maxY, minZ, maxX, maxY, maxZ, maxX, minY, maxZ, r, g, b, sideFaceAlpha);
         box.drawQuads();
-
     }
 }
