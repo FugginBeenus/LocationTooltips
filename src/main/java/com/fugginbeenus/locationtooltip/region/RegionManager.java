@@ -381,21 +381,33 @@ public final class RegionManager {
             return;
         }
 
-        com.fugginbeenus.locationtooltip.util.LTChat.tell(player, 
-                Component.literal("Flags for ").withStyle(ChatFormatting.GOLD)
+        var dimension = dim;
+        BlockPos pos = player.blockPosition();
+
+        com.fugginbeenus.locationtooltip.util.LTChat.tell(player,
+                Component.literal("Flags in effect at ").withStyle(ChatFormatting.GOLD)
                         .append(Component.literal(r.name).withStyle(ChatFormatting.AQUA))
                         .append(Component.literal(":").withStyle(ChatFormatting.GOLD)),
                 false);
 
         for (RegionFlag f : RegionFlags.all()) {
-            Boolean ov = r.getFlagOverride(f.id);
-            String state = (ov == null)
-                    ? "inherit (default " + (f.defaultValue ? "allow" : "deny") + ")"
-                    : (ov ? "allow" : "deny");
-            ChatFormatting color = (ov == null) ? ChatFormatting.GRAY : (ov ? ChatFormatting.GREEN : ChatFormatting.RED);
-            com.fugginbeenus.locationtooltip.util.LTChat.tell(player, 
+            boolean effective = resolveFlag(dimension, pos, f.id);
+            Region decider = decidingRegion(dimension, pos, f.id);
+
+            String source;
+            if (decider == null) {
+                source = " (default)";
+            } else if (decider == r) {
+                source = "";
+            } else {
+                source = " (from " + decider.name + ")";
+            }
+
+            com.fugginbeenus.locationtooltip.util.LTChat.tell(player,
                     Component.literal("  " + f.id + ": ").withStyle(ChatFormatting.WHITE)
-                            .append(Component.literal(state).withStyle(color)),
+                            .append(Component.literal(effective ? "allow" : "deny")
+                                    .withStyle(effective ? ChatFormatting.GREEN : ChatFormatting.RED))
+                            .append(Component.literal(source).withStyle(ChatFormatting.DARK_GRAY)),
                     false);
         }
     }
@@ -506,6 +518,13 @@ public final class RegionManager {
         }
         RegionFlag f = RegionFlags.byId(flagId);
         return f != null ? f.defaultValue : true;
+    }
+
+    public @Nullable Region decidingRegion(ResourceLocation dim, BlockPos pos, String flagId) {
+        for (Region r : allContaining(dim, pos)) {
+            if (r.getFlagOverride(flagId) != null) return r;
+        }
+        return null;
     }
 
     public String currentRegionName(ResourceLocation dim, BlockPos pos) {
