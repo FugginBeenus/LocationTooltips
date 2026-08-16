@@ -31,7 +31,7 @@ public abstract class RegionConfigScreen extends Screen {
 
     @Override
     protected void init() {
-        panelW = 340;
+        panelW = Math.min(340, this.width - 24);
         innerW = panelW - PAD * 2;
         colW = (innerW - 4) / 2;
 

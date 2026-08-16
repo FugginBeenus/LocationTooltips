@@ -38,6 +38,7 @@ public class AdminPanelScreen extends Screen {
 
     private EditBox searchField;
     private int panelX, panelY, panelW, panelH;
+    private int searchW;
     private int listX, listY, listW, listH;
     private int scroll;
     private boolean draggingScroll;
@@ -57,8 +58,8 @@ public class AdminPanelScreen extends Screen {
 
     @Override
     protected void init() {
-        panelW = 420;
-        panelH = Math.max(200, this.height - 48);
+        panelW = Math.min(420, this.width - 24);
+        panelH = Math.min(Math.max(160, this.height - 48), this.height - 12);
         panelX = (this.width - panelW) / 2;
         panelY = (this.height - panelH) / 2;
 
@@ -67,7 +68,7 @@ public class AdminPanelScreen extends Screen {
         listY = panelY + 36;
         listH = (panelY + panelH - 26) - listY;
 
-        int searchW = 150, searchH = 16;
+        searchW = Math.max(60, Math.min(150, panelW - 190));
         int searchX = panelX + panelW - 12 - 16 - 6 - searchW;
         searchField = new EditBox(this.font, searchX + 5, panelY + 11, searchW - 10, 12, Component.literal("Search"));
         searchField.setBordered(false);
@@ -239,7 +240,6 @@ public class AdminPanelScreen extends Screen {
         ctx.drawString(this.font, Component.literal("§lRegions"), panelX + 12, panelY + 11, LTGui.TEXT, false);
         ctx.fill(panelX + 10, panelY + 29, panelX + panelW - 10, panelY + 30, LTGui.ACCENT);
 
-        int searchW = 150;
         int searchX = panelX + panelW - 12 - 16 - 6 - searchW;
         LTGui.field(ctx, searchX, panelY + 8, searchW, 16, searchField != null && searchField.isFocused());
         if (searchField != null && searchField.getValue().isEmpty()) {
