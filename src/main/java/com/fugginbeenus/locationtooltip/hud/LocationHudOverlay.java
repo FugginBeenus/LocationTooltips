@@ -64,6 +64,9 @@ public class LocationHudOverlay implements HudRenderCallback {
         render(ctx, true);
     }
 
+    private record Pill(ResourceLocation leftIcon, String label, ResourceLocation rightIcon,
+                        LTConfig.Position pos, int xOff, int yOff) {}
+
     private static void render(GuiGraphics ctx, boolean preview) {
         Minecraft mc = Minecraft.getInstance();
         if (mc == null || mc.player == null) return;
@@ -73,13 +76,35 @@ public class LocationHudOverlay implements HudRenderCallback {
 
         LTConfig cfg = LTConfig.get();
 
-        if (!preview && cfg.position == LTConfig.Position.TOP_CENTER && bossBarVisible(mc)) return;
-
         String region = cfg.showRegionName ? currentTitle : null;
         String time   = (cfg.showClock && mc.level != null) ? formatTime(mc.level.getDayTime(), cfg.time24h) : null;
 
         final boolean hasRegion = region != null && !region.isEmpty();
         final boolean hasTime   = time   != null && !time.isEmpty();
+
+        java.util.List<Pill> pills = new java.util.ArrayList<>();
+        if (!cfg.splitElements && hasRegion && hasTime) {
+            pills.add(new Pill(ICON_REGION, region + cfg.separator + time, ICON_CLOCK,
+                    cfg.position, cfg.xOffset, cfg.yOffset));
+        } else {
+            if (hasRegion) pills.add(new Pill(ICON_REGION, region, null, cfg.position, cfg.xOffset, cfg.yOffset));
+            if (hasTime)   pills.add(new Pill(ICON_CLOCK, time, null, cfg.position, cfg.xOffset, cfg.yOffset));
+        }
+        if (cfg.showCoords) {
+            String coords = coordsText(mc);
+            if (coords != null && !coords.isEmpty()) {
+                pills.add(new Pill(ICON_COORDS, coords, null,
+                        cfg.coordsPosition, cfg.coordsXOffset, cfg.coordsYOffset));
+            }
+        }
+        if (cfg.showBiome) {
+            String biome = biomeText(mc);
+            if (biome != null && !biome.isEmpty()) {
+                pills.add(new Pill(ICON_BIOME, biome, null,
+                        cfg.biomePosition, cfg.biomeXOffset, cfg.biomeYOffset));
+            }
+        }
+        if (pills.isEmpty()) return;
 
         final int icon  = Math.max(8, cfg.iconSize);
         final int pad   = Math.max(0, cfg.pillPadding);
@@ -88,86 +113,67 @@ public class LocationHudOverlay implements HudRenderCallback {
         final int contentH = Math.max(textH, icon);
         final int totalH   = Math.round((contentH + pad * 2) * Math.max(0.5f, cfg.pillHeightScale));
 
-        final int regionW = hasRegion ? (int) (mc.font.width(region) * s) : 0;
-        final int timeW   = hasTime   ? (int) (mc.font.width(time)   * s) : 0;
-
         final int alpha = (int) (Math.max(0f, Math.min(1f, cfg.backgroundOpacity)) * 255) & 0xFF;
         final int bg = (alpha << 24);
 
-        extraPills(ctx, cfg, mc, pad, s, contentH, totalH, bg);
+        for (LTConfig.Position pos : LTConfig.Position.values()) {
+            java.util.List<Pill> group = new java.util.ArrayList<>();
+            for (Pill pill : pills) {
+                if (pill.pos() == pos) group.add(pill);
+            }
+            if (group.isEmpty()) continue;
+            if (!preview && pos == LTConfig.Position.TOP_CENTER && bossBarVisible(mc)) continue;
+            drawGroup(ctx, cfg, mc, group, pos, icon, pad, s, textH, contentH, totalH, bg);
+        }
+    }
 
-        if (!hasRegion && !hasTime) return;
+    private static void drawGroup(GuiGraphics ctx, LTConfig cfg, Minecraft mc,
+                                  java.util.List<Pill> group, LTConfig.Position pos,
+                                  int icon, int pad, float s, int textH,
+                                  int contentH, int totalH, int bg) {
+        int[] widths = new int[group.size()];
+        int rowW = 0;
+        for (int i = 0; i < group.size(); i++) {
+            widths[i] = pillWidth(mc, group.get(i), icon, pad, s);
+            rowW += widths[i];
+        }
+        rowW += cfg.spacing * (group.size() - 1) + Math.max(0, cfg.pillExtraWidth);
 
-        if (!cfg.splitElements) {
-            final String text = hasRegion && hasTime ? region + cfg.separator + time : (hasRegion ? region : time);
-            final int textW = (int) (mc.font.width(text) * s);
-            final int iconLeft  = hasRegion ? (icon + 4) : 0;
-            final int iconRight = hasTime   ? (icon + 4) : 0;
-            final int totalW = pad + iconLeft + textW + iconRight + pad + Math.max(0, cfg.pillExtraWidth);
+        Pill first = group.get(0);
+        int[] xy = anchor(pos, mc.getWindow(), rowW, totalH, first.xOff(), first.yOff());
+        int x = xy[0];
 
-            int[] xy = anchor(cfg.position, mc.getWindow(), totalW, totalH, cfg.xOffset, cfg.yOffset);
-            final int x = xy[0], y = xy[1];
-
-            drawPill(ctx, cfg, x, y, totalW, totalH, bg);
+        for (int i = 0; i < group.size(); i++) {
+            Pill pill = group.get(i);
+            drawPill(ctx, cfg, x, xy[1], widths[i], totalH, bg);
 
             int cx = x + pad;
-            int cy = y + pad + cfg.verticalNudge;
+            int cy = xy[1] + pad + cfg.verticalNudge;
 
-            if (hasRegion) {
-                ltIcon(ctx, ICON_REGION, cx, cy + ((contentH - icon) / 2), icon);
+            if (pill.leftIcon() != null) {
+                ltIcon(ctx, pill.leftIcon(), cx, cy + ((contentH - icon) / 2), icon);
                 cx += icon + 4;
             }
 
             ltPush(ctx, cx, cy + (contentH - textH) / 2f, s);
-            ctx.drawString(mc.font, Component.literal(text), 0, 0, 0xFFFFFFFF, cfg.shadow);
+            ctx.drawString(mc.font, Component.literal(pill.label()), 0, 0, 0xFFFFFFFF, cfg.shadow);
             ltPop(ctx);
-            cx += textW + 4;
 
-            if (hasTime) {
-                ltIcon(ctx, ICON_CLOCK, cx, cy + ((contentH - icon) / 2), icon);
-            }
-        } else {
-            final int regIconW = hasRegion ? (icon + 4) : 0;
-            final int timeIconW = hasTime ? (icon + 4) : 0;
-
-            final int regW = hasRegion ? pad + regIconW + regionW + pad : 0;
-            final int timW = hasTime   ? pad + timeIconW + timeW   + pad : 0;
-
-            final int pairW = regW + (hasRegion && hasTime ? cfg.spacing : 0) + timW + Math.max(0, cfg.pillExtraWidth);
-
-            int[] xy = anchor(cfg.position, mc.getWindow(), pairW, totalH, cfg.xOffset, cfg.yOffset);
-            int rx = xy[0], ry = xy[1];
-            int tx = rx + regW + (hasRegion && hasTime ? cfg.spacing : 0), ty = ry;
-
-            if (hasRegion) {
-                drawPill(ctx, cfg, rx, ry, regW, totalH, bg);
-                int cx = rx + pad;
-                int cy = ry + pad + cfg.verticalNudge;
-
-                ltIcon(ctx, ICON_REGION, cx, cy + ((contentH - icon) / 2), icon);
-                cx += icon + 4;
-
-                ltPush(ctx, cx, cy + (contentH - textH) / 2f, s);
-                ctx.drawString(mc.font, Component.literal(region), 0, 0, 0xFFFFFFFF, cfg.shadow);
-                ltPop(ctx);
+            if (pill.rightIcon() != null) {
+                cx += (int) (mc.font.width(pill.label()) * s) + 4;
+                ltIcon(ctx, pill.rightIcon(), cx, cy + ((contentH - icon) / 2), icon);
             }
 
-            if (hasTime) {
-                drawPill(ctx, cfg, tx, ty, timW, totalH, bg);
-                int cx = tx + pad;
-                int cy = ty + pad + cfg.verticalNudge;
-
-                ltIcon(ctx, ICON_CLOCK, cx, cy + ((contentH - icon) / 2), icon);
-                cx += icon + 4;
-
-                ltPush(ctx, cx, cy + (contentH - textH) / 2f, s);
-                ctx.drawString(mc.font, Component.literal(time), 0, 0, 0xFFFFFFFF, cfg.shadow);
-                ltPop(ctx);
-            }
+            x += widths[i] + cfg.spacing;
         }
     }
 
-    /* ------------------------------- helpers ------------------------------- */
+    private static int pillWidth(Minecraft mc, Pill pill, int icon, int pad, float s) {
+        int width = pad + (int) (mc.font.width(pill.label()) * s) + pad;
+        if (pill.leftIcon() != null)  width += icon + 4;
+        if (pill.rightIcon() != null) width += icon + 4;
+        return width;
+    }
 
     private static boolean bossBarVisible(Minecraft mc) {
         //? if >=26.1 {
@@ -183,43 +189,6 @@ public class LocationHudOverlay implements HudRenderCallback {
             return false;
         }
         //?}
-    }
-
-    private static void extraPills(GuiGraphics ctx, LTConfig cfg, Minecraft mc,
-                                   int pad, float s, int contentH, int totalH, int bg) {
-        if (cfg.showCoords) {
-            iconPill(ctx, cfg, mc, ICON_COORDS, coordsText(mc), cfg.coordsPosition,
-                    cfg.coordsXOffset, cfg.coordsYOffset, pad, s, contentH, totalH, bg);
-        }
-        if (cfg.showBiome) {
-            iconPill(ctx, cfg, mc, ICON_BIOME, biomeText(mc), cfg.biomePosition,
-                    cfg.biomeXOffset, cfg.biomeYOffset, pad, s, contentH, totalH, bg);
-        }
-    }
-
-    private static void iconPill(GuiGraphics ctx, LTConfig cfg, Minecraft mc,
-                                 ResourceLocation iconTexture, String text,
-                                 LTConfig.Position pos, int xOff, int yOff,
-                                 int pad, float s, int contentH, int totalH, int bg) {
-        if (text == null || text.isEmpty()) return;
-
-        final int icon = Math.max(8, cfg.iconSize);
-        final int textH = (int) (mc.font.lineHeight * s);
-        final int textW = (int) (mc.font.width(text) * s);
-        final int totalW = pad + icon + 4 + textW + pad + Math.max(0, cfg.pillExtraWidth);
-
-        int[] xy = anchor(pos, mc.getWindow(), totalW, totalH, xOff, yOff);
-        drawPill(ctx, cfg, xy[0], xy[1], totalW, totalH, bg);
-
-        int cx = xy[0] + pad;
-        int cy = xy[1] + pad + cfg.verticalNudge;
-
-        ltIcon(ctx, iconTexture, cx, cy + ((contentH - icon) / 2), icon);
-        cx += icon + 4;
-
-        ltPush(ctx, cx, cy + (contentH - textH) / 2f, s);
-        ctx.drawString(mc.font, Component.literal(text), 0, 0, 0xFFFFFFFF, cfg.shadow);
-        ltPop(ctx);
     }
 
     private static String coordsText(Minecraft mc) {
