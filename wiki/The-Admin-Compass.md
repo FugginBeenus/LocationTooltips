@@ -42,6 +42,8 @@ The box at the top filters the list as you type. It matches on the name, so if y
 
 Hit Edit on a row and you get the same screen you saw when you created the region. Change the name, cycle the protection flags, save.
 
+![Editing a region](images/naming-screen.png)
+
 Two things worth knowing.
 
 Renaming a region that was made automatically for a structure converts it to a normal region. It stops being managed by the automatic tagger and nothing will rename it later. This is how you claim a village or a fortress properly.

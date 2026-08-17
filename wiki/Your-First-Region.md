@@ -34,7 +34,7 @@ Sneak and right click, and the naming screen opens.
 
 Type a name in the box at the top. Below that is the protection grid, which you can ignore entirely for now. Everything in it starts on Inherit, which means "leave it as it is", and that is a perfectly good place to start.
 
-![The region naming screen](images/naming-screen.png)
+![The region screen, here editing an existing one. Creating looks the same, with a Create button instead of Save](images/naming-screen.png)
 
 Click Create. The region is live immediately.
 
