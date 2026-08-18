@@ -9,7 +9,7 @@ Puts the name of wherever you are standing on your screen, and gives you the too
 
 Walk around and a small pill at the top tells you where you are. Cross into somewhere you have named and the name changes. Underneath that there is a region system, so you can mark out a box, call it something, and lock down what people are allowed to do inside it.
 
-> Heavily inspired by the Origin Realms location system. The core concept isn't mine, but all the code and assets are written from scratch. I'm still pretty new to modding so development may be slow. Open to collaboration if anyone's interested.
+> Initially inspired by the Origin Realms location system. Open to collaboration if anyone's interested.
 
 ## What it does
 
