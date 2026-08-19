@@ -38,6 +38,18 @@ The name comes from the village's position in the world, which means it is the s
 
 Turn it off with `/ltregion structures villagenames off` and villages go back to plain structure names.
 
+## Villages from other mods
+
+Villages added by other mods are named the same way, and you do not have to configure anything.
+
+Where a mod names its structure after a biome, and most do, the name follows it. Where it does not, the biome the village actually generated in is used instead. So a Towns and Towers Tudor village is named for wherever it happens to have landed rather than falling back on something generic.
+
+Towns and Towers and Tidal Towns are both known to work. Anything else that adds villages should be picked up on its own.
+
+One special case is worth knowing about. The Towns and Towers ocean village is a floating town built from a mothership and its escort ships, so it gets fleet names rather than town names, things like Tempestwatch and Iron Flotilla. The whole fleet is one place with one name, not a name per ship. Tidal Towns keeps ordinary coastal names, because its ocean village is a normal village that happens to sit on the water.
+
+Wandering trader camps count as villages as far as the game is concerned, so they get tagged too. They are called Wandering Trader Camp rather than being given a town name.
+
 ## If you run Waystones
 
 Waystones wins.

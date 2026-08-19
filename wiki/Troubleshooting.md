@@ -54,6 +54,14 @@ The player has to be standing inside the village, not near it. If the village re
 
 If somebody else has already named that village, only they and admins can change it. That is deliberate.
 
+## Region borders look wrong with shaders
+
+If borders come out skewed and slide around as you move, update to 0.5.3 or newer. Older versions asked the render pipeline for their drawing buffer later than the game guarantees it. Vanilla and Sodium let that pass, Iris did not, so the boxes drew against the wrong view.
+
+If you are on 0.5.3 or newer and still see the borders shift by a pixel or two while shaders are running, that is your shaderpack's own anti aliasing jittering the picture between frames. It affects anything drawn outside the shader's own pipeline and is not something the mod can correct.
+
+Borders sit behind water and stained glass from 0.5.3 onwards. That is deliberate. They used to draw over the top of water regardless of what was in front.
+
 ## The config screen will not open
 
 You need Cloth Config installed. Mod Menu on its own gives you the button but Cloth Config is what draws the screen behind it.
