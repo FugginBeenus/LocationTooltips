@@ -13,9 +13,11 @@ public class SelectionRenderer {
     private static boolean isAdminCompass = false;
 
     public static void register() {
-        //? if <26.1 {
-        WorldRenderEvents.AFTER_TRANSLUCENT.register(SelectionRenderer::render);
-        //?}
+        //? if <1.21.11 {
+        WorldRenderEvents.BEFORE_DEBUG_RENDER.register(SelectionRenderer::render);
+        //?} elif <26.1 {
+        /*WorldRenderEvents.AFTER_TRANSLUCENT.register(SelectionRenderer::render);
+        *///?}
     }
 
     public static void setCorners(BlockPos a, BlockPos b) {

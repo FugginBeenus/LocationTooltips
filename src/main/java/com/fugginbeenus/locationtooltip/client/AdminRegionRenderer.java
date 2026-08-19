@@ -31,9 +31,11 @@ public class AdminRegionRenderer {
     }
 
     public static void register() {
-        //? if <26.1 {
-        WorldRenderEvents.AFTER_TRANSLUCENT.register(AdminRegionRenderer::render);
-        //?}
+        //? if <1.21.11 {
+        WorldRenderEvents.BEFORE_DEBUG_RENDER.register(AdminRegionRenderer::render);
+        //?} elif <26.1 {
+        /*WorldRenderEvents.AFTER_TRANSLUCENT.register(AdminRegionRenderer::render);
+        *///?}
     }
 
     public static void updateRegions(AdminClientCache.Row[] rows, ResourceLocation currentDim) {
